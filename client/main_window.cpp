@@ -1,7 +1,9 @@
 #include "main_window.h"
+#include "participate_vote_page.h"
 #include "vote_page.h"
 #include "vote_result_page.h"
 #include "workspace_page.h"
+
 
 namespace tang {
 namespace client {
@@ -19,6 +21,9 @@ void ClientMainWindow::init_page() {
 
     VotePage* vote_page = new VotePage(this);
     addPageNode("发起投票", vote_page, ElaIconType::FaceKiss);
+
+    ParticipateVotePage* participate_vote_page = new ParticipateVotePage(this);
+    addPageNode("开始投票", participate_vote_page, ElaIconType::Clouds);
 
     VoteResultPage* vote_result_page = new VoteResultPage(this);
     addPageNode("投票结果", vote_result_page, ElaIconType::Joystick);

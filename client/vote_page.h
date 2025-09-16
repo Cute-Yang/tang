@@ -16,6 +16,9 @@ public:
     ~VotePage();
 
     void set_test_model();
+
+public slots:
+    void click_vote_items(const QModelIndex& index);
 };
 }   // namespace client
 }   // namespace tang

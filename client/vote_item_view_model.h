@@ -31,6 +31,8 @@ public:
 
     // void delete_vote_item(const QString& item);
 
+    QString get_vote_item(size_t index) const ;
+
 };
 
 }   // namespace client

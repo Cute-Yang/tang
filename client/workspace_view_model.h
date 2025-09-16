@@ -100,6 +100,8 @@ public:
     void set_workspace_names(const QList<QString>& workspace_names_);
 
     void set_workspace_names(const QString* workspace_names_ptr, size_t len);
+
+    QString get_item(size_t index){return workspace_names[index];}
 };
 
 }   // namespace client

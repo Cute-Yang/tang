@@ -32,8 +32,9 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
 
     QWidget* vote_detail_container = new QWidget(page);
     // limit the width of vote_detail_container!
-    vote_detail_container->setMinimumWidth(300);
-    vote_detail_container->setMaximumWidth(480);
+    // vote_detail_container->setMinimumWidth(420);
+    // vote_detail_container->setMaximumWidth(480);
+    vote_detail_container->setFixedWidth(450);
     // not add the vote detail container to the central layout!
     //  central_layout->addWidget(vote_detail_container);
 
@@ -156,10 +157,21 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // add it to the vote detail spliter!
     vote_detail_spliter->addWidget(vote_stat_view);
 
+
+    QSplitter* vote_view_spliter = new QSplitter(page);
+    vote_view_spliter->setOrientation(Qt::Horizontal);
+    central_layout->addWidget(vote_view_spliter);
+
+
+    vote_view_spliter->setOpaqueResize(true);
     QWidget* vote_img_container = new QWidget(page);
-    vote_img_container->setMinimumHeight(300);
+    // vote_img_container->setMinimumHeight(300);
+    // vote_img_container->setMinimumWidth(420);
+    // vote_img_container->setMaximumWidth(480);
+    vote_img_container->setFixedWidth(450);
     // vote_detail_spliter->addWidget(vote_img_container);
-    central_layout->addWidget(vote_img_container);
+    // central_layout->addWidget(vote_img_container);
+    vote_view_spliter->addWidget(vote_img_container);
 
     QVBoxLayout* vote_img_layout = new QVBoxLayout(vote_img_container);
     vote_img_layout->setContentsMargins({0, 0, 0, 0});
@@ -195,7 +207,9 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_history_view = new ElaTableView(page);
     // vote_history_view->setMinimumWidth(300);
     vote_history_view->setMinimumHeight(200);
-    central_layout->addWidget(vote_history_view);
+    // central_layout->addWidget(vote_history_view);
+    vote_view_spliter->addWidget(vote_history_view);
+
     central_widget->setWindowTitle("~~~Vote result~~~");
     page->addCentralWidget(central_widget);
 }

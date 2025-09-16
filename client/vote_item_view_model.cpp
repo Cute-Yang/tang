@@ -76,5 +76,10 @@ size_t VoteItemViewModel::add_vote_items(const QStringList& items) {
     return failed_size;
 }
 
+QString VoteItemViewModel::get_vote_item(size_t index) const {
+    assert(index < vote_items.size());
+    return vote_items[index];
+}
+
 }   // namespace client
 }   // namespace tang

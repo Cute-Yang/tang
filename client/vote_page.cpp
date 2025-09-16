@@ -8,14 +8,18 @@ namespace tang {
 namespace client {
 VotePage::VotePage(QWidget* parent)
     : ElaScrollPage(parent)
-    , ui(new VotePageUi) {
+    , ui(new VotePageUi)
+    , vote_data(new VoteItemViewModel("投票项", this) ) {
     ui->setup_ui(this);
-    vote_data = new VoteItemViewModel("投票项", ui->vote_items);
+    this->setTitleVisible(false);
     ui->vote_items->setModel(vote_data);
+
+
     QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
     vote_data->add_vote_items(items);
     this->set_test_model();
 
+    // move the connect to func
     connect(ui->add_vote_item_button, &ElaToolButton::clicked, this, [this]() {
         auto text = ui->add_vote_item_line_edit->text();
         if (!vote_data->add_vote_item(text)) {
@@ -37,6 +41,8 @@ VotePage::VotePage(QWidget* parent)
     // connect(ui->vote_items,&ElaTableView::tableViewShow,this,[this](){
     //     ui->vote_items->setColumnWidth(0,ui->vote_items->width());
     // });
+
+    connect(ui->vote_items,&ElaTableView::clicked,this,&VotePage::click_vote_items);
 }
 
 VotePage::~VotePage() {
@@ -50,5 +56,16 @@ void VotePage::set_test_model() {
     // ui->vote_items->setModel(m);
     // auto g = ui->vote_items->model();
 }
+
+void VotePage::click_vote_items(const QModelIndex& index){
+    if(index.isValid()){
+        int row = index.row();
+        int col = index.column();
+        const QString vote_item = this->vote_data->get_vote_item(row);
+        ElaMessageBar::information(ElaMessageBarType::TopLeft,"click vote item",QString("当前选中的投票项是%1").arg(vote_item),2700,this);
+    }
+}
+
+
 }   // namespace client
 }   // namespace tang

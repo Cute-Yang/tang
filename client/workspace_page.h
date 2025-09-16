@@ -17,6 +17,11 @@ private:
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
 
+public slots:
+    void click_workspace_item(const QModelIndex& index);
+
+    void click_workspace_list_item(const QModelIndex& index);
+
     // void setup_ui();
 };
 

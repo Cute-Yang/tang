@@ -8,6 +8,7 @@ VoteResultPage::VoteResultPage(QWidget* parent)
     , ui(new VoteResultPageUi())
     , vote_result_model(new VoteResultViewModel("投票项", "计数","percent", this)) {
     ui->setup_ui(this);
+    this->setTitleVisible(false);
     ui->vote_stat_view->setModel(vote_result_model);
     this->set_test_data();
 }

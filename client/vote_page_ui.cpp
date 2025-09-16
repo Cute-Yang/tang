@@ -23,24 +23,24 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
         }
         )style";
     // color_central_widget->setStyleSheet(central_widget_style);
-    QVBoxLayout* central_layout = new QVBoxLayout(color_central_widget);
-
-    QWidget* vote_person_container = new QWidget(page);
-    vote_person_container->setFixedHeight(48);
+    QVBoxLayout*  central_layout         = new QVBoxLayout(color_central_widget);
+    constexpr int text_width             = 160;
+    constexpr int combox_key_width       = text_width - 5;
+    constexpr int container_fixed_height = 42;
+    QWidget*      vote_person_container  = new QWidget(page);
+    vote_person_container->setFixedHeight(container_fixed_height);
     central_layout->addWidget(vote_person_container);
     QHBoxLayout* vote_creator_layout = new QHBoxLayout(vote_person_container);
 
     vote_creator_text = new ElaText(page);
     auto font         = vote_creator_text->font();
     font.setFamily("SimSun");
-    font.setPointSizeF(9.5);
+    font.setPointSize(9);
     font.setBold(true);
 
     auto small_font = font;
     small_font.setPointSize(9);
 
-    constexpr int text_width = 160;
-    constexpr int container_fixed_height = 48;
     vote_creator_text->setText("发起人:");
     vote_creator_text->setMinimumWidth(text_width);
     vote_creator_text->setFont(font);
@@ -79,7 +79,7 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     vote_choice_type                     = new ElaText(page);
     vote_choice_type->setFont(font);
     vote_choice_type->setText("投票类型:");
-    vote_choice_type->setMinimumWidth(text_width);
+    vote_choice_type->setMinimumWidth(combox_key_width);
     vote_choice_type_layout->addWidget(vote_choice_type);
 
     vote_choice_type_combox = new ElaComboBox(page);
@@ -99,13 +99,13 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     voters_text = new ElaText(page);
     voters_text->setText("选择参与投票的人:");
     voters_text->setFont(font);
-    voters_text->setMinimumWidth(text_width);
+    voters_text->setMinimumWidth(combox_key_width);
     start_vote_layout->addWidget(voters_text);
 
     voters_combox = new ElaMultiSelectComboBox(page);
     voters_combox->setMinimumWidth(270);
     voters_combox->setFont(small_font);
-    
+
     // test datas
     voters_combox->addItems({"小鱼",
                              "柯南",
@@ -150,7 +150,7 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     central_layout->addWidget(spliter);
     spliter->setOrientation(Qt::Horizontal);
     spliter->setOpaqueResize(true);
-    vote_items             = new ElaTableView(page);
+    vote_items = new ElaTableView(page);
     vote_items->setIconSize(QSize(21, 21));
     vote_items->setFont(small_font);
     // make the column width adapt with widget,important!

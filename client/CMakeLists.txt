@@ -46,7 +46,7 @@ target_link_libraries(
 
 function(add_client_test file_path)
     get_filename_component(file_name ${file_path} NAME_WE)
-    message(STATUS "add target ${file_name} from source file {file_path}")
+    message(STATUS "add target ${file_name} from source file ${file_path}")
     add_executable(
         ${file_name}
         ${file_path}   

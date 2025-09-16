@@ -37,7 +37,8 @@ find_package(
 # find ela
 
 find_package(ElaWidgetTools REQUIRED)
+find_package(jsoncpp REQUIRED)
 
 
 add_subdirectory("client")
-# add_subdirectory("tests")
+add_subdirectory("tests")

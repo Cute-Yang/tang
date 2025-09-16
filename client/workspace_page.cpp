@@ -9,6 +9,7 @@
 #include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
+#include "ElaMessageBar.h"
 
 namespace tang {
 namespace client {
@@ -29,8 +30,10 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
         ui->workspace_content_table_view->setColumnWidth(3, 80);
         ui->workspace_content_table_view->setColumnWidth(4, 160);
     });
-}
 
+    connect(ui->workspace_content_table_view,&ElaTableView::clicked,this,&RemoteWorkspacePage::click_workspace_item);
+    connect(ui->workspace_view,&ElaListView::clicked,this,&RemoteWorkspacePage::click_workspace_list_item);
+}
 
 
 // jsut for test!!!
@@ -82,6 +85,35 @@ void RemoteWorkspacePage::set_test_model() {
 
     RemoteFileInfoListViewModel* file_info_list_model = new RemoteFileInfoListViewModel(file_infos);
     this->ui->workspace_content_list_view->setModel(file_info_list_model);
+}
+
+void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index){
+    if(!index.isValid()){
+        return;
+    }
+
+    int row = index.row();
+    int col = index.column();
+    qDebug() << "row:" << row << " col:" << col;
+
+    //here need to give format arg position
+    QString message = QString("click at row = %1 col = %2").arg(row).arg(col);
+
+    ElaMessageBar::information(ElaMessageBarType::TopRight,"点击workspace",message,2700,this);
+
+}
+
+void RemoteWorkspacePage::click_workspace_list_item(const QModelIndex& index){
+    qDebug() << "haha";
+    if(!index.isValid()){
+        return;
+    }
+    int row = index.row();
+    QString message = QString("切换工作空间为 %1").arg(row);
+    
+    ElaMessageBar::information(ElaMessageBarType::TopRight,"switch",message,2700,this);
+
+    
 }
 
 }   // namespace client
