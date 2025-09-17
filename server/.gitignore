@@ -15,6 +15,7 @@
 *.ilk
 *.map
 *.exp
+models
 
 # Precompiled Headers
 *.gch

@@ -18,8 +18,6 @@ endif ()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-message(STATUS "The cmake prefix is ${CMAKE_PREFIX_PATH}")
-set(CMAKE_PREFIX_PATH "D:/dev_libs/jsoncpp/1.9.6;D:/dev_libs/zlib/1.3.1;D:/dev_libs/mariadb/10.11")
 
 add_executable(${PROJECT_NAME} main.cc)
 
