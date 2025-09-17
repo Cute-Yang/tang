@@ -1,3 +1,4 @@
+find_package(jsoncpp REQUIRED)
 add_executable(
     test_pdf_page
     test_pdf_page.cpp   

@@ -1,5 +1,20 @@
 set(client_lib_name "client")
+# for qt!
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+
+set(QT_SDK_DIR "" CACHE PATH "Qt sdk dir" FORCE)
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets )
+find_package(
+    Qt${QT_VERSION_MAJOR} REQUIRED 
+    COMPONENTS 
+        Widgets 
+        PdfWidgets
+        Pdf
+        Charts
+)
+find_package(ElaWidgetTools REQUIRED)
 # find all the files...
 file(GLOB_RECURSE RES_PATHS *.png *.jpg *.svg *.ico *.ttf *.webp *.js)
 foreach (filepath ${RES_PATHS})
