@@ -6,9 +6,19 @@ using namespace drogon;
 
 class WorkspaceController : public drogon::HttpController<WorkspaceController> {
 public:
+    // login!
     void login(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
 
+    //sigup
+    void signup(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
+
+    //get file infos
+
+    void get_file_infos(const HttpRequestPtr& req,std::function<void(const HttpResponsePtr&)>&& callback);
+
     METHOD_LIST_BEGIN
+    ADD_METHOD_TO(WorkspaceController::login, "/api/v1/login", Get,Post);
+    ADD_METHOD_TO(WorkspaceController::signup, "api/v1/signup", Get,Post);
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is
     // /WorkspaceController/{arg2}/{arg1} METHOD_ADD(WorkspaceController::your_method_name,
