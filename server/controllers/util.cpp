@@ -62,9 +62,20 @@ void to_lower(char* s, size_t len) {
 
 
 common::FileKind get_file_kind(const std::filesystem::path& fp) {
-    if (std::filesystem::is_directory(fp)) {
+    std::error_code ec;
+    bool            is_dir = std::filesystem::is_directory(fp, ec);
+    if (ec) {
+        return common::FileKind::kError;
+    }
+    if (is_dir) {
         return common::FileKind::kFolder;
-    } else if (std::filesystem::is_regular_file(fp)) {
+    }
+    ec.clear();
+    bool is_file = std::filesystem::is_regular_file(fp, ec);
+    if (ec) {
+        return common::FileKind::kError;
+    }
+    if (is_file) {
         // to utf-8
         auto ext = drogon::utils::fromNativePath(fp.extension().native());
         // convert it -> lower!

@@ -65,6 +65,7 @@ enum class FileKind {
     kPython = 7,
     kCpp    = 8,
     kOthers = 9,
+    kError = 10,
     count
 };
 

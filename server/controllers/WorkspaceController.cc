@@ -77,8 +77,7 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
     bool is_dir = std::filesystem::is_directory(full_folder_path, ec);
     handle_fs_error(ec, callback);
     ec.clear();
-
-    if (is_dir) {
+    if (!is_dir) {
         LOG_ERROR << "expected folder,but got file...";
         make_response_from_status_code(StatusCode::kFilePathIsNotFolder, callback);
     }
@@ -94,9 +93,9 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
         // only get the name!
         file_info["file_name"] = utils::fromNativePath(entry.path().filename().native());
         // determin the file type
-        if (entry.is_regular_file()) {
+        if (entry.is_directory()) {
             file_info["file_type"] = static_cast<int>(FileKind::kFolder);
-        } else if (entry.is_directory()) {
+        } else if (entry.is_regular_file()) {
             file_info["file_type"] = static_cast<int>(get_file_kind(entry.path()));
         } else {
             // other,not consider!
