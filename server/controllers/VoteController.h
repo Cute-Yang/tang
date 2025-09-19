@@ -12,8 +12,8 @@ struct ParsedVoteData {
     std::vector<std::string> vote_items;
     // creator
     std::string vote_creator;
-    // create time!
-    std::string vote_create_time;
+    // create time! give the timestamp!!!
+    int64_t vote_create_time;
     //
     std::vector<int> voters;
     int              vote_creator_id;
@@ -28,6 +28,12 @@ class VoteController : public drogon::HttpController<VoteController> {
 public:
     void create_vote(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void remove_vote(const HttpRequestPtr&                         req,
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void vote_for_one(const HttpRequestPtr&                         req,
+                      std::function<void(const HttpResponsePtr&)>&& callback);
 
     METHOD_LIST_BEGIN
     // use METHOD_ADD to add your custom processing function here;
