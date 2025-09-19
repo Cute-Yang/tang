@@ -228,7 +228,8 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
     handle_fs_error(ec, callback);
 
     if (!is_save_dir_exsit) {
-        LOG_ERROR << full_save_dir << " is not exist?" << " we expected utf8 encode file path,maybe not??";
+        LOG_ERROR << full_save_dir << " is not exist?"
+                  << " we expected utf8 encode file path,maybe not??";
         make_response_and_return(StatusCode::kFilePathNotExist, callback);
     }
 
@@ -257,18 +258,18 @@ void WorkspaceController::download_file(const HttpRequestPtr&                   
     // only need a file path!
     // make sure encode with utf8
     std::string file_path = req->getParameter("file_path");
-    //convert it -> fs
+    // convert it -> fs
     std::filesystem::path full_file_path;
 
-    if(!get_full_path(file_path,callback,full_file_path)){
+    if (!get_full_path(file_path, callback, full_file_path)) {
         LOG_ERROR << "File path :" << file_path << " is not exist,maybe not utf8??";
-        make_response_and_return(StatusCode::kFilePathNotExist,callback);
+        make_response_and_return(StatusCode::kFilePathNotExist, callback);
     }
 
-    //just return a file response!
+    // just return a file response!
     auto file_path_u8 = drogon::utils::fromNativePath(full_file_path.native());
-    //filename
+    // filename
     auto file_name_u8 = drogon::utils::fromNativePath(full_file_path.filename());
-    auto resp= HttpResponse::newFileResponse(file_path_u8,file_name_u8);
+    auto resp         = HttpResponse::newFileResponse(file_path_u8, file_name_u8);
     callback(resp);
 }

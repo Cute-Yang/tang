@@ -1,13 +1,10 @@
 #pragma once
 
 #include <drogon/HttpController.h>
-
 using namespace drogon;
-
 class WorkspaceController : public drogon::HttpController<WorkspaceController> {
 public:
     // get file infos
-
     void get_file_infos(const HttpRequestPtr&                         req,
                         std::function<void(const HttpResponsePtr&)>&& callback);
 
@@ -25,20 +22,25 @@ public:
     // include file and dir!
     void delete_file(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
-    
-    //move contains the rename!!!
+
+    // move contains the rename!!!
     void move_file(const HttpRequestPtr&                         req,
-                     std::function<void(const HttpResponsePtr&)>&& callback);
+                   std::function<void(const HttpResponsePtr&)>&& callback);
 
     void upload_file(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
-
+                     
     void download_file(const HttpRequestPtr&                         req,
                        std::function<void(const HttpResponsePtr&)>&& callback);
 
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(WorkspaceController::get_file_infos, "/api/v1/get_file_infos", Post, Get);
-    ADD_METHOD_TO(WorkspaceController::upload_file,"/api/v1/upload_file",Post);
+    ADD_METHOD_TO(WorkspaceController::create_file, "/api/v1/create_file", Post);
+    ADD_METHOD_TO(WorkspaceController::create_dir, "/api/v1/create_dir", Post);
+    ADD_METHOD_TO(WorkspaceController::delete_file, "/api/v1/delete_file", Post);
+    ADD_METHOD_TO(WorkspaceController::move_file, "/api/v1/move_file", Post);
+    ADD_METHOD_TO(WorkspaceController::upload_file, "/api/v1/upload_file", Post);
+    ADD_METHOD_TO(WorkspaceController::download_file, "/api/v1/download_file", Get, Post);
 
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is
