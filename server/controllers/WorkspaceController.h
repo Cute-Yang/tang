@@ -6,19 +6,38 @@ using namespace drogon;
 
 class WorkspaceController : public drogon::HttpController<WorkspaceController> {
 public:
-    // login!
-    void login(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
+    // get file infos
 
-    //sigup
-    void signup(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
+    void get_file_infos(const HttpRequestPtr&                         req,
+                        std::function<void(const HttpResponsePtr&)>&& callback);
 
-    //get file infos
+    // handle the workspace in another func!
+    void get_workspace_infos(const HttpRequestPtr&                         req,
+                             std::function<void(const HttpResponsePtr&)>&& callback);
 
-    void get_file_infos(const HttpRequestPtr& req,std::function<void(const HttpResponsePtr&)>&& callback);
+    // file op
+    void create_file(const HttpRequestPtr&                         req,
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void create_dir(const HttpRequestPtr&                         req,
+                    std::function<void(const HttpResponsePtr&)>&& callback);
+
+    // include file and dir!
+    void delete_file(const HttpRequestPtr&                         req,
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void rename_file(const HttpRequestPtr&                         req,
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void upload_file(const HttpRequestPtr&                         req,
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void download_file(const HttpRequestPtr&                         req,
+                       std::function<void(const HttpResponsePtr&)>&& callback);
 
     METHOD_LIST_BEGIN
-    ADD_METHOD_TO(WorkspaceController::login, "/api/v1/login", Get,Post);
-    ADD_METHOD_TO(WorkspaceController::signup, "api/v1/signup", Get,Post);
+    ADD_METHOD_TO(WorkspaceController::get_file_infos, "/api/v1/get_file_infos", Post, Get);
+
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is
     // /WorkspaceController/{arg2}/{arg1} METHOD_ADD(WorkspaceController::your_method_name,
