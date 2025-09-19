@@ -25,8 +25,9 @@ public:
     // include file and dir!
     void delete_file(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
-
-    void rename_file(const HttpRequestPtr&                         req,
+    
+    //move contains the rename!!!
+    void move_file(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
 
     void upload_file(const HttpRequestPtr&                         req,
@@ -37,6 +38,7 @@ public:
 
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(WorkspaceController::get_file_infos, "/api/v1/get_file_infos", Post, Get);
+    ADD_METHOD_TO(WorkspaceController::upload_file,"/api/v1/upload_file",Post);
 
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is

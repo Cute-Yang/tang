@@ -188,3 +188,87 @@ void WorkspaceController::create_dir(const HttpRequestPtr&                      
 
     make_response_and_return(StatusCode::kSuccess, callback);
 }
+
+void WorkspaceController::move_file(const HttpRequestPtr&                         req,
+                                    std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string           source_file_path = req->getParameter("source_file_path");
+    std::string           target_file_path = req->getParameter("target_file_path");
+    std::filesystem::path source_full_path;
+    std::filesystem::path target_full_path;
+    if (!get_full_path(source_file_path, callback, source_full_path) ||
+        !get_full_path(target_file_path, callback, target_full_path)) {
+        return;
+    }
+
+    std::error_code ec;
+    std::filesystem::rename(source_full_path, target_full_path, ec);
+    handle_fs_error(ec, callback);
+
+    LOG_INFO << "Move file from " << source_full_path << " -> " << target_full_path;
+    make_response_and_return(StatusCode::kSuccess, callback);
+}
+
+
+void WorkspaceController::upload_file(const HttpRequestPtr&                         req,
+                                      std::function<void(const HttpResponsePtr&)>&& callback) {
+    MultiPartParser part_parser;
+    if (part_parser.parse(req) != 0) {
+        LOG_ERROR << "Fail to parse multi part params!";
+        make_response_and_return(StatusCode::kUploaFilesIsEmpty, callback);
+    }
+    auto save_dir = part_parser.getParameters().at("save_dir");
+    LOG_INFO << save_dir;
+    std::filesystem::path full_save_dir;
+    if (!get_full_path(save_dir, callback, full_save_dir)) {
+        return;
+    }
+
+    std::error_code ec;
+    bool            is_save_dir_exsit = std::filesystem::exists(full_save_dir, ec);
+    handle_fs_error(ec, callback);
+
+    if (!is_save_dir_exsit) {
+        LOG_ERROR << full_save_dir << " is not exist?" << " we expected utf8 encode file path,maybe not??";
+        make_response_and_return(StatusCode::kFilePathNotExist, callback);
+    }
+
+    auto save_files = part_parser.getFiles();
+    if (save_files.size() == 0) {
+        LOG_ERROR << "Unexpected file size == 0";
+        make_response_and_return(StatusCode::kUploaFilesIsEmpty, callback);
+    }
+
+    for (size_t i = 0; i < save_files.size(); ++i) {
+        // make sure utf8
+        auto filename = save_files[i].getFileName();
+        auto full_file_path =
+            full_save_dir / std::filesystem::path(drogon::utils::toNativePath(filename));
+        // write the data!
+        // convert it -> string with utf-8 encode!
+        auto utf8_save_file = drogon::utils::fromNativePath(full_file_path.native());
+        save_files[i].saveAs(utf8_save_file);
+    }
+    make_response_and_return(StatusCode::kSuccess, callback);
+}
+
+
+void WorkspaceController::download_file(const HttpRequestPtr&                         req,
+                                        std::function<void(const HttpResponsePtr&)>&& callback) {
+    // only need a file path!
+    // make sure encode with utf8
+    std::string file_path = req->getParameter("file_path");
+    //convert it -> fs
+    std::filesystem::path full_file_path;
+
+    if(!get_full_path(file_path,callback,full_file_path)){
+        LOG_ERROR << "File path :" << file_path << " is not exist,maybe not utf8??";
+        make_response_and_return(StatusCode::kFilePathNotExist,callback);
+    }
+
+    //just return a file response!
+    auto file_path_u8 = drogon::utils::fromNativePath(full_file_path.native());
+    //filename
+    auto file_name_u8 = drogon::utils::fromNativePath(full_file_path.filename());
+    auto resp= HttpResponse::newFileResponse(file_path_u8,file_name_u8);
+    callback(resp);
+}

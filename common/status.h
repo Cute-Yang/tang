@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <string>
 #include <string_view>
 
 namespace tang {
@@ -24,6 +23,7 @@ enum class StatusCode : uint32_t {
     kFileAlreadyExit,
     kFailToCreateDir,
     kFailToRemoveFile,
+    kUploaFilesIsEmpty,
     Count
 };
 
@@ -43,9 +43,12 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "file path is not folder!",
     "file path is not exist!",
     "filesystem runtime error!",
+    "unexpected absolute file path!",
     "fail to create file!",
     "file is already exit!",
-    "fail to create dir!"};
+    "fail to create dir!",
+    "fail to remove file!",
+    "the upload files is empty!"};
 
 inline constexpr std::string_view get_status_str(StatusCode status) {
     size_t index = static_cast<size_t>(status);
@@ -66,7 +69,7 @@ enum class FileKind {
     kPython = 7,
     kCpp    = 8,
     kOthers = 9,
-    kError = 10,
+    kError  = 10,
     count
 };
 
