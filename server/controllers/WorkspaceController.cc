@@ -110,6 +110,46 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
 }
 
 
+void WorkspaceController::delete_file(const HttpRequestPtr&                         req,
+                                      std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string           file_path = req->getParameter("file_path");
+    std::filesystem::path full_path;
+    if (!get_full_path(file_path, callback, full_path)) {
+        return;
+    }
+
+    std::error_code ec;
+    auto            is_exist = std::filesystem::exists(full_path, ec);
+    handle_fs_error(ec, callback);
+    if (!is_exist) {
+        LOG_ERROR << "Can not delete none exist path: " << full_path;
+        make_response_and_return(StatusCode::kFilePathNotExist, callback);
+    }
+    ec.clear();
+
+    auto is_dir = std::filesystem::is_directory(full_path, ec);
+    handle_fs_error(ec, callback);
+    ec.clear();
+    auto ok = false;
+    if (!is_dir) {
+        ok = std::filesystem::remove(full_path, ec);
+    } else {
+        std::filesystem::remove_all(full_path, ec);
+        // if remove dir ok,we can not find it!
+        //  if any failur occur,the dir also exist! ^_^
+        ok = !std::filesystem::exists(full_path, ec);
+    }
+    handle_fs_error(ec, callback);
+
+    if (!ok) {
+        LOG_ERROR << "Fail to remove path:" << full_path;
+        make_response_and_return(StatusCode::kFailToRemoveFile, callback);
+    }
+
+    make_response_from_status_code(StatusCode::kSuccess, callback);
+}
+
+
 // only support create file at directory,not support give a path!
 void WorkspaceController::create_file(const HttpRequestPtr&                         req,
                                       std::function<void(const HttpResponsePtr&)>&& callback) {

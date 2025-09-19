@@ -23,6 +23,7 @@ enum class StatusCode : uint32_t {
     kFailToCreateFile,
     kFileAlreadyExit,
     kFailToCreateDir,
+    kFailToRemoveFile,
     Count
 };
 
