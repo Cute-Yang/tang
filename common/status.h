@@ -24,6 +24,11 @@ enum class StatusCode : uint32_t {
     kFailToCreateDir,
     kFailToRemoveFile,
     kUploaFilesIsEmpty,
+    kJsonParamIsNull,
+    kParseJsonError,
+    kJsonKeyError,
+    kJsonTypeError,
+    kArraySizeNotMatchError,
     Count
 };
 
@@ -48,7 +53,12 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "file is already exit!",
     "fail to create dir!",
     "fail to remove file!",
-    "the upload files is empty!"};
+    "the upload files is empty!",
+    "the json param is null!",
+    "parse json error!",
+    "json key error!",
+    "unexpected json type error!",
+    "the array size not match!"};
 
 inline constexpr std::string_view get_status_str(StatusCode status) {
     size_t index = static_cast<size_t>(status);

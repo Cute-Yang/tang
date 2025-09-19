@@ -3,14 +3,24 @@
 #include <drogon/HttpController.h>
 #include <map>
 
-class VoteData {
-    std::string              vote_topic;
-    std::vector<std::string> vote_topics;
-    std::string              creator;
-    std::string              create_time;
-    std::vector<int>         voters;
-    uint32_t                 vote_id;
-    bool                     is_single_choice;
+// the database should add one column
+//  means wheter the vote is valid!
+struct ParsedVoteData {
+    // topic
+    std::string vote_topic;
+    // items
+    std::vector<std::string> vote_items;
+    // creator
+    std::string vote_creator;
+    // create time!
+    std::string vote_create_time;
+    //
+    std::vector<int> voters;
+    int              vote_creator_id;
+    uint32_t         vote_id;
+    bool             is_single_choice;
+    // maybe not need it!
+    bool is_valid;
 };
 
 using namespace drogon;
@@ -35,6 +45,6 @@ public:
     // (const HttpResponsePtr &)> &&callback, double p1, int p2) const;
 private:
     using vote_key = uint32_t;
-    std::mutex                   vote_mt;
-    std::map<vote_key, VoteData> vote_datas;
+    std::mutex                         vote_mt;
+    std::map<vote_key, ParsedVoteData> vote_datas;
 };
