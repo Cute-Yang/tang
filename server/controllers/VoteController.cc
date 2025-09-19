@@ -55,7 +55,7 @@ bool validate_vote_data(const Json::Value&                                 json_
         make_response_and_return(StatusCode::kJsonTypeError, callback, false);
     }
 
-    if (!json_data[vote_create_time_key.isString]) {
+    if (!json_data[vote_create_time_key].isString()) {
         make_response_and_return(StatusCode::kJsonTypeError, callback, false);
     }
 

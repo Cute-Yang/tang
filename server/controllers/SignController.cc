@@ -87,7 +87,7 @@ void SignController::signup(const HttpRequestPtr&                         req,
     if (user_mapper.count(
             orm::Criteria(VoteUser::Cols::_username, orm::CompareOperator::EQ, user_name)) != 0) {
         LOG_WARN << "user name :" << user_name << " is alreay exist!";
-        make_response_and_return(StatusCode::kUsernameAlreayExit, callback);
+        make_response_and_return(StatusCode::kUsernameAlreadyExist, callback);
     }
 
     // prepare insert data...

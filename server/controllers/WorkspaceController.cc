@@ -28,7 +28,7 @@ bool get_full_path(const std::string&                                 file_path,
     if (file_path.starts_with("/") || file_path.starts_with('\\')) {
         // invalid!
         LOG_ERROR << "Path " << file_path << "  starts with root which is not allowed!";
-        make_response_and_return(StatusCode::kUnexpectedAbasoluteFilePath, callback, false);
+        make_response_and_return(StatusCode::kUnexpectedAbsoluteFilePath, callback, false);
     }
 
     full_path =
@@ -51,7 +51,7 @@ bool raise_when_file_exit(const std::string&                                 fil
     ec.clear();
     if (alreay_exit) {
         LOG_ERROR << full_path << " is already exit!we can not create it!";
-        make_response_and_return(StatusCode::kFileAlreadyExit, callback, false);
+        make_response_and_return(StatusCode::kFileAlreadyExist, callback, false);
     }
     return true;
 }
@@ -214,7 +214,7 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
     MultiPartParser part_parser;
     if (part_parser.parse(req) != 0) {
         LOG_ERROR << "Fail to parse multi part params!";
-        make_response_and_return(StatusCode::kUploaFilesIsEmpty, callback);
+        make_response_and_return(StatusCode::kUploadFilesIsEmpty, callback);
     }
     auto save_dir = part_parser.getParameters().at("save_dir");
     LOG_INFO << save_dir;
@@ -236,7 +236,7 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
     auto save_files = part_parser.getFiles();
     if (save_files.size() == 0) {
         LOG_ERROR << "Unexpected file size == 0";
-        make_response_and_return(StatusCode::kUploaFilesIsEmpty, callback);
+        make_response_and_return(StatusCode::kUploadFilesIsEmpty, callback);
     }
 
     for (size_t i = 0; i < save_files.size(); ++i) {

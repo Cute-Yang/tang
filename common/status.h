@@ -59,7 +59,8 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "parse json error!",
     "json key error!",
     "unexpected json type error!",
-    "the array size not match!"};
+    "the array size not match!",
+    "invalid vote id!"};
 
 inline constexpr std::string_view get_status_str(StatusCode status) {
     size_t index = static_cast<size_t>(status);
