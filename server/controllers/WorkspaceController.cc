@@ -8,7 +8,7 @@
 using namespace tang::common;
 using namespace tang::server::utils;
 
-#define handle_fs_error(ec, ...)                                                              \
+#define handle_fs_error(ec, callback, ...)                                                    \
     if (ec) {                                                                                 \
         LOG_ERROR << "get filesystem error:" << ec.message() << " error_code:" << ec.value(); \
         make_response_and_return(StatusCode::kFileSystemRuntimeError, callback, __VA_ARGS__); \
@@ -47,7 +47,7 @@ bool raise_when_file_exit(const std::string&                                 fil
     }
     std::error_code ec;
     auto            alreay_exit = std::filesystem::exists(file_path);
-    handle_fs_error(ec, false);
+    handle_fs_error(ec, callback, false);
     ec.clear();
     if (alreay_exit) {
         LOG_ERROR << full_path << " is already exit!we can not create it!";
@@ -60,19 +60,14 @@ bool raise_when_file_exit(const std::string&                                 fil
 
 void WorkspaceController::get_file_infos(const HttpRequestPtr&                         req,
                                          std::function<void(const HttpResponsePtr&)>&& callback) {
-    std::string folder_path = req->getParameter("folder_path");
-    if (folder_path.empty()) {
-        make_response_and_return(StatusCode::kFilePathIsEmpty, callback);
+    std::string           folder_path = req->getParameter("folder_path");
+    std::filesystem::path full_folder_path;
+    if (!get_full_path(folder_path, callback, full_folder_path)) {
+        return;
     }
-
-    // convert from utf8 -> native!
-    auto native_folder_path = std::filesystem::path(utils::toNativePath(folder_path));
-    auto full_folder_path   = get_workspace_root() / native_folder_path;
-    // LOG_INFO << full_folder_path;
     std::error_code ec;
-
-    bool is_exit = std::filesystem::exists(full_folder_path, ec);
-    handle_fs_error(ec);
+    bool            is_exit = std::filesystem::exists(full_folder_path, ec);
+    handle_fs_error(ec, callback);
     ec.clear();
     if (!is_exit) {
         LOG_ERROR << full_folder_path << " is not exist" << " " << ec.message();
@@ -80,7 +75,7 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
     }
 
     bool is_dir = std::filesystem::is_directory(full_folder_path, ec);
-    handle_fs_error(ec);
+    handle_fs_error(ec, callback);
     ec.clear();
 
     if (is_dir) {
@@ -137,4 +132,20 @@ void WorkspaceController::create_file(const HttpRequestPtr&                     
 
 
 void WorkspaceController::create_dir(const HttpRequestPtr&                         req,
-                                     std::function<void(const HttpResponsePtr&)>&& callback) {}
+                                     std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string           file_path = req->getParameter("file_path");
+    std::filesystem::path full_path;
+    if (!raise_when_file_exit(file_path, callback, full_path)) {
+        return;
+    }
+    std::error_code ec;
+    auto            ok = std::filesystem::create_directory(full_path);
+    handle_fs_error(ec, callback);
+
+    if (!ok) {
+        LOG_ERROR << "Fail to create dir " << full_path;
+        make_response_and_return(StatusCode::kFailToCreateDir, callback);
+    }
+
+    make_response_and_return(StatusCode::kSuccess, callback);
+}

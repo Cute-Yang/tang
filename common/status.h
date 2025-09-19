@@ -5,23 +5,24 @@
 
 namespace tang {
 namespace common {
-enum class StatusCode {
-    kSuccess                     = 0,
-    kUsernameIsEmpty             = 1,
-    kPasswordIsEmpty             = 2,
-    kInvalidDatabase             = 3,
-    kUsernameNotExist            = 4,
-    kPasswordNotCorrect          = 5,
-    kSqlRuntimeError             = 6,
-    kLogicError                  = 7,
-    kUsernameAlreayExit          = 8,
-    kFilePathIsEmpty             = 9,
-    kFilePathIsNotFolder         = 10,
-    kFilePathNotExist            = 11,
-    kFileSystemRuntimeError      = 12,
-    kUnexpectedAbasoluteFilePath = 13,
-    kFailToCreateFile            = 13,
-    kFileAlreadyExit = 14,
+enum class StatusCode : uint32_t {
+    kSuccess = 0,
+    kUsernameIsEmpty,
+    kPasswordIsEmpty,
+    kInvalidDatabase,
+    kUsernameNotExist,
+    kPasswordNotCorrect,
+    kSqlRuntimeError,
+    kLogicError,
+    kUsernameAlreayExit,
+    kFilePathIsEmpty,
+    kFilePathIsNotFolder,
+    kFilePathNotExist,
+    kFileSystemRuntimeError,
+    kUnexpectedAbasoluteFilePath,
+    kFailToCreateFile,
+    kFileAlreadyExit,
+    kFailToCreateDir,
     Count
 };
 
@@ -42,7 +43,8 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "file path is not exist!",
     "filesystem runtime error!",
     "fail to create file!",
-"file is already exit!"};
+    "file is already exit!",
+    "fail to create dir!"};
 
 inline constexpr std::string_view get_status_str(StatusCode status) {
     size_t index = static_cast<size_t>(status);
