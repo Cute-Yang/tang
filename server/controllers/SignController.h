@@ -10,6 +10,9 @@ public:
 
     // sigup
     void signup(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
+    
+
+    
     METHOD_LIST_BEGIN
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(SignController::get, "/{2}/{1}", Get); // path is /SignController/{arg2}/{arg1}

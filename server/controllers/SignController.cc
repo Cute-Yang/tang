@@ -1,10 +1,10 @@
 #include "SignController.h"
-#include "../models/TestUsers.h"
+#include "../models/TestVoteUser.h"
 #include "common/status.h"
 #include "util.h"
 using namespace tang::common;
 using namespace tang::server::utils;
-using VoteUser = drogon_model::vote::TestUsers;
+using VoteUser = drogon_model::vote::TestVoteUser;
 // Add definition of your processing function here
 
 
@@ -23,14 +23,14 @@ void SignController::login(const HttpRequestPtr&                         req,
         make_response_and_return(StatusCode::kInvalidDatabase, callback);
     }
 
-    orm::Mapper<drogon_model::vote::TestUsers> user_mapper(db_client_ptr);
+    orm::Mapper<VoteUser> user_mapper(db_client_ptr);
     if (user_mapper.count(
-            orm::Criteria(VoteUser::Cols::_username, orm::CompareOperator::EQ, user_name)) == 0) {
+            orm::Criteria(VoteUser::Cols::_user_name, orm::CompareOperator::EQ, user_name)) == 0) {
         make_response_and_return(StatusCode::kUsernameNotExist, callback);
     }
 
     auto result = user_mapper.findOne(
-        orm::Criteria(VoteUser::Cols::_username, orm::CompareOperator::EQ, user_name));
+        orm::Criteria(VoteUser::Cols::_user_name, orm::CompareOperator::EQ, user_name));
     if (result.getValueOfPasswd() != password) {
         make_response_and_return(StatusCode::kPasswordNotCorrect, callback);
     }
@@ -56,11 +56,11 @@ void SignController::login(const HttpRequestPtr&                         req,
 
     // set to activte!
     user_mapper.updateBy(
-        {VoteUser::Cols::_is_active},
+        {VoteUser::Cols::_user_status},
         c1,
         c2,
         orm::Criteria(VoteUser::Cols::_id, orm::CompareOperator::EQ, result.getValueOfId()),
-        1);
+        VoteUserStatus::kActive);
 }
 
 
@@ -85,20 +85,20 @@ void SignController::signup(const HttpRequestPtr&                         req,
     orm::Mapper<VoteUser> user_mapper(db_client_ptr);
 
     if (user_mapper.count(
-            orm::Criteria(VoteUser::Cols::_username, orm::CompareOperator::EQ, user_name)) != 0) {
+            orm::Criteria(VoteUser::Cols::_user_name, orm::CompareOperator::EQ, user_name)) != 0) {
         LOG_WARN << "user name :" << user_name << " is alreay exist!";
         make_response_and_return(StatusCode::kUsernameAlreadyExist, callback);
     }
 
     // prepare insert data...
     VoteUser vote_user;
-    vote_user.setUsername(user_name);
+    vote_user.setUserName(user_name);
     vote_user.setPasswd(password);
     vote_user.setEmail(email);
 
     auto c1 = [callback](VoteUser vote_user) {
         LOG_INFO << "add new user with user_id = " << vote_user.getValueOfId()
-                 << " user_name = " << vote_user.getValueOfUsername();
+                 << " user_name = " << vote_user.getValueOfUserName();
         make_response_and_return(StatusCode::kSuccess, callback);
     };
 

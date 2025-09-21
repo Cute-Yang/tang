@@ -4,6 +4,7 @@
 #include "util.h"
 #include <filesystem>
 #include <fstream>
+#include "ChatClient.h"
 
 using namespace tang::common;
 using namespace tang::server::utils;
@@ -246,8 +247,8 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
             full_save_dir / std::filesystem::path(drogon::utils::toNativePath(filename));
         // write the data!
         // convert it -> string with utf-8 encode!
-        auto utf8_save_file = drogon::utils::fromNativePath(full_file_path.native());
-        save_files[i].saveAs(utf8_save_file);
+        auto save_file_u8 = drogon::utils::fromNativePath(full_file_path.native());
+        save_files[i].saveAs(save_file_u8);
     }
     make_response_and_return(StatusCode::kSuccess, callback);
 }
@@ -272,4 +273,35 @@ void WorkspaceController::download_file(const HttpRequestPtr&                   
     auto file_name_u8 = drogon::utils::fromNativePath(full_file_path.filename());
     auto resp         = HttpResponse::newFileResponse(file_path_u8, file_name_u8);
     callback(resp);
+}
+
+
+// for download,if large file,we will download it by chunk,and save it to the temprary dir!
+void WorkspaceController::get_file_size(const HttpRequestPtr&                         req,
+                                        std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string           file_path = req->getParameter("file_path");
+    std::filesystem::path full_file_path;
+
+    if (!raise_when_file_exit(file_path, callback, full_file_path)) {
+        return;
+    }
+    std::error_code ec;
+    auto            file_size = std::filesystem::file_size(full_file_path, ec);
+    handle_fs_error(ec, callback);
+
+    auto ret         = make_json_from_status_code(StatusCode::kSuccess);
+    ret["file_size"] = file_size;
+
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
+
+void WorkspaceController::test_send_msg(const HttpRequestPtr& req,std::function<void(const HttpResponsePtr&)>&& callback){
+    auto& chat_instance = tang::server::ChatClientCollections::get_instance();
+    std::string_view msg = "The brownfox jumps over the lazydog!";
+    //here the c_string literal can convert to json value implicit!
+    chat_instance.send_message(msg);
+
+    make_response_only(StatusCode::kSuccess,callback);
 }

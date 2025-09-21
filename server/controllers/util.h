@@ -12,8 +12,11 @@ namespace utils {
 // the global database client name,equal to the config...
 // maybe we should read it from the env or config??? not hard code it!
 
-#define make_response_and_return(status, callback,...)    \
-    make_response_from_status_code(status, callback); \
+
+#define make_response_only(status, callback) make_response_from_status_code(status, callback);
+
+#define make_response_and_return(status, callback, ...) \
+    make_response_from_status_code(status, callback);   \
     return __VA_ARGS__;
 
 // implicit convert,fuck cxx!!!

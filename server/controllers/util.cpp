@@ -62,7 +62,7 @@ void to_lower(char* s, size_t len) {
 
 
 common::FileKind get_file_kind(const std::filesystem::path& fp) {
-    //only file_entry has the file...
+    // only file_entry has the file...
     std::error_code ec;
     bool            is_dir = std::filesystem::is_directory(fp, ec);
     if (ec) {
