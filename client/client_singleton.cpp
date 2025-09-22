@@ -18,5 +18,10 @@ CacheUserInfo& ClientSingleton::get_cache_user_info_instance() {
     return instance;
 }
 
+CacheWorkspaceData& ClientSingleton::get_cache_workspace_data_instance() {
+    static CacheWorkspaceData instance;
+    return instance;
+}
+
 }   // namespace client
 }   // namespace tang

@@ -1,10 +1,11 @@
 #include "workspace_view_model.h"
 
+
+using namespace tang::common;
 namespace tang {
 namespace client {
 
-
-constexpr size_t FileTypeCount = static_cast<size_t>(SimpleFileType::count);
+constexpr size_t                          FileTypeCount     = static_cast<size_t>(FileKind::count);
 static std::array<QString, FileTypeCount> file_type_strings = {
     "文件夹", "PDF", "Word", "Excel", "PPT", "txt", "image", "python", "c++", "其他文件"};
 
@@ -31,24 +32,19 @@ std::array<QIcon, FileTypeCount> initialize_file_icons() {
 
 static std::array<QIcon, FileTypeCount> file_type_icons = initialize_file_icons();
 
-RemoteFileInfoViewModel::RemoteFileInfoViewModel(QStringList                headers_,
-                                                 std::shared_ptr<data_type> file_infos_,
-                                                 QObject*                   parent)
+RemoteFileInfoViewModel::RemoteFileInfoViewModel(QStringList               headers_,
+                                                 std::span<data_item_type> file_infos_,
+                                                 QObject*                  parent)
     : header(headers_)
     , file_infos(std::move(file_infos_))
     , QAbstractTableModel(parent) {}
 
-void RemoteFileInfoViewModel::set_file_infos(const std::shared_ptr<data_type>& new_file_infos) {
-    if (new_file_infos != nullptr) {
-        file_infos = new_file_infos;
-    }
+void RemoteFileInfoViewModel::set_file_infos(const std::span<data_item_type>& new_file_infos) {
+    file_infos = new_file_infos;
 }
 
 int RemoteFileInfoViewModel::rowCount(const QModelIndex& parent) const {
-    if (file_infos != nullptr) {
-        return file_infos->count();
-    }
-    return 0;
+    return file_infos.size();
 }
 
 int RemoteFileInfoViewModel::columnCount(const QModelIndex& parent) const {
@@ -60,24 +56,24 @@ int RemoteFileInfoViewModel::columnCount(const QModelIndex& parent) const {
 QVariant RemoteFileInfoViewModel::data(const QModelIndex& index, int role) const {
     int   row      = index.row();
     int   column   = index.column();
-    auto& row_data = file_infos->at(row);
+    auto& row_data = file_infos[row];
     // maybe invalid?
     if (role == Qt::DisplayRole) {
         if (column == 0) {
             // file_name
             return row_data.file_name;
         } else if (column == 1) {
-            //file type
+            // file type
             return file_type_strings[static_cast<size_t>(row_data.file_type)];
         } else if (column == 2) {
-            //file size
+            // file size
             return row_data.file_size;
         } else if (column == 3) {
-            //change time
+            // change time
             return row_data.modify_time;
         }
     } else if (role == Qt::DecorationRole && column == 0) {
-        //display icon at first column!
+        // display icon at first column!
         return file_type_icons[static_cast<size_t>(row_data.file_type)];
     }
     return QVariant();
@@ -91,26 +87,24 @@ QVariant RemoteFileInfoViewModel::headerData(int section, Qt::Orientation orient
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-RemoteFileInfoListViewModel::RemoteFileInfoListViewModel(std::shared_ptr<data_type> file_infos_,
-                                                         QObject*                   parent)
+RemoteFileInfoListViewModel::RemoteFileInfoListViewModel(std::span<data_item_type> file_infos_,
+                                                         QObject*                  parent)
     : QAbstractListModel(parent)
     , file_infos(std::move(file_infos_)) {}
 
 RemoteFileInfoListViewModel::~RemoteFileInfoListViewModel() {}
 
 
-void RemoteFileInfoListViewModel::set_file_infos(const std::shared_ptr<data_type>& file_infos_) {
-    if (file_infos_ != nullptr) {
-        file_infos = file_infos_;
-    }
+void RemoteFileInfoListViewModel::set_file_infos(const std::span<data_item_type>& file_infos_) {
+    file_infos = file_infos_;
 }
 int RemoteFileInfoListViewModel::rowCount(const QModelIndex& index) const {
     Q_UNUSED(index);
-    return file_infos->count();
+    return file_infos.size();
 }
 
 QVariant RemoteFileInfoListViewModel::data(const QModelIndex& index, int role) const {
-    auto& row_data = file_infos->at(index.row());
+    auto& row_data = file_infos[index.row()];
     if (role == Qt::DisplayRole) {
         return row_data.file_name;
     } else if (role == Qt::DecorationRole) {
@@ -124,8 +118,9 @@ QVariant RemoteFileInfoListViewModel::data(const QModelIndex& index, int role) c
 static QIcon workspace_icon = QIcon(":/icons/images/workspace.svg");
 
 
-RemoteWorkspaceInfoModel::RemoteWorkspaceInfoModel(QList<QString> workspace_names_, QObject* parent)
-    : workspace_names(std::move(workspace_names_))
+RemoteWorkspaceInfoModel::RemoteWorkspaceInfoModel(std::span<QString> workspace_names_,
+                                                   QObject*           parent)
+    : workspace_names(workspace_names_)
     , QAbstractListModel(parent) {}
 
 RemoteWorkspaceInfoModel::~RemoteWorkspaceInfoModel() {}
@@ -144,17 +139,10 @@ QVariant RemoteWorkspaceInfoModel::data(const QModelIndex& index, int role) cons
     return QVariant{};
 }
 
-
-void RemoteWorkspaceInfoModel::set_workspace_names(const QString* workspace_names_ptr, size_t len) {
-    if (workspace_names_ptr == nullptr || len == 0) {
-        return;
-    }
-    workspace_names.assign(workspace_names_ptr, workspace_names_ptr + len);
+void RemoteWorkspaceInfoModel::set_workspace_names(std::span<QString> workspace_names_) {
+    workspace_names = workspace_names_;
 }
 
-void RemoteWorkspaceInfoModel::set_workspace_names(const QList<QString>& workspace_names_) {
-    workspace_names.assign(workspace_names_.begin(), workspace_names_.end());
-}
 
 }   // namespace client
 }   // namespace tang

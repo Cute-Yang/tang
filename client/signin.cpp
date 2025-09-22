@@ -67,7 +67,7 @@ void SignIn::password_eye_checked(bool hide) {
 
 
 void SignIn::process_login_response(QNetworkReply* reply) {
-    auto show_widget =find_root_widget(this);
+    auto show_widget = find_root_widget(this);
     if (reply->error() != QNetworkReply::NoError) {
         ElaMessageBar::error(ElaMessageBarType::TopRight,
                              "signin",
@@ -113,14 +113,14 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         return;
     }
     // then set the data!
-    auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
-    cache_user_info.set_user_name(json_data[LoginResponseJsonKeys::user_name_key].toString());
-    cache_user_info.set_email(json_data[LoginResponseJsonKeys::email_key].toString());
-    cache_user_info.set_user_id(
-        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt()));
-    cache_user_info.set_vote_priority(
-        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt()));
-
+    auto& cache_user_info     = ClientSingleton::get_cache_user_info_instance();
+    cache_user_info.user_name = json_data[LoginResponseJsonKeys::user_name_key].toString();
+    cache_user_info.email     = json_data[LoginResponseJsonKeys::email_key].toString();
+    cache_user_info.user_id =
+        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt());
+    cache_user_info.vote_prioirty =
+        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt());
+        
     ElaMessageBar::success(ElaMessageBarType::TopRight,
                            "login",
                            "正在初始化,请稍后...",
@@ -131,7 +131,7 @@ void SignIn::process_login_response(QNetworkReply* reply) {
 }
 
 void SignIn::send_login_http_req() {
-    auto show_widget =find_root_widget(this);
+    auto            show_widget = find_root_widget(this);
     QNetworkRequest reqest(ClientSingleton::get_http_urls_instance().get_login_url());
     reqest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // set the query params!
@@ -144,7 +144,7 @@ void SignIn::send_login_http_req() {
     QByteArray     data    = query.toString(QUrl::FullyEncoded).toUtf8();
     auto&          manager = ClientSingleton::get_network_manager_instance();
     QNetworkReply* reply   = manager.post(reqest, data);
-     ElaMessageBar::information(ElaMessageBarType::TopRight,
+    ElaMessageBar::information(ElaMessageBarType::TopRight,
                                "login",
                                "正在连接服务器,请稍后...",
                                ClientGlobalConfig::message_show_time,
@@ -155,7 +155,7 @@ void SignIn::send_login_http_req() {
 }
 
 void SignIn::on_signin_button_clicked() {
-    //show message on the root!
+    // show message on the root!
     auto show_widget = find_root_widget(this);
     auto user_name   = ui->user_line_edit->text();
     auto password    = ui->password_line_edit->text();
