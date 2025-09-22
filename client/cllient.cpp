@@ -8,10 +8,10 @@ Client::Client()
     : login()
     , client_main_window() {
     login.show();
-    QObject::connect(&login, &Login::success_login, &this->client_main_window, [this] {
+    QObject::connect(login.signin, &SignIn::success_login, &this->client_main_window, [this] {
         // this->login.close();
         // if using sleep,will block the main thread
-        //never block the main block!
+        // never block the main block!
         QTimer::singleShot(2000, [this]() {
             this->login.close();
             this->client_main_window.show();

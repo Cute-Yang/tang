@@ -10,5 +10,12 @@ void switch_password_eye_style(ElaLineEdit* line_edit, QAction* action, bool hid
     line_edit->setEchoMode(echo_mode);
     action->setIcon(icon);
 }
+QWidget* find_root_widget(QWidget* widget) {
+    QWidget* parent = widget;
+    while (parent->parentWidget()) {
+        parent = parent->parentWidget();
+    }
+    return parent;
+}
 }   // namespace client
 }   // namespace tang

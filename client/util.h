@@ -5,5 +5,9 @@
 namespace tang {
 namespace client {
 void switch_password_eye_style(ElaLineEdit* line_edit, QAction* action, bool hide);
+
+QWidget* find_root_widget(QWidget* widget);
+
 }
+
 }   // namespace tang

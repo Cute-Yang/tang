@@ -2,6 +2,7 @@
 
 #include "ElaWidget.h"
 #include "signup_ui.h"
+#include <QNetworkReply>
 
 namespace tang {
 namespace client {
@@ -17,12 +18,13 @@ public:
 
     void initialize_connects();
 
-    void send_sign_up_http_req();
+    void send_signup_http_req();
+
 private slots:
     //the signup button clicked!
-    void on_sign_up_button_clicked();
-    //back 
-    void on_back_button_clicked();
+    void on_signup_button_clicked();
+    //process the http response!
+    void process_signup_response(QNetworkReply* reply);
 };
 }   // namespace client
 }   // namespace tang

@@ -5,8 +5,10 @@
 #include "common/response_keys.h"
 #include "common/status.h"
 #include "util.h"
+#include <QJsonObject>
 #include <QNetworkReply>
 #include <QUrlQuery>
+
 
 
 using namespace tang::common;
@@ -25,7 +27,7 @@ SignUp::SignUp(QWidget* parent)
 
 
     // connects
-    this->initialize_connects()
+    this->initialize_connects();
 }
 
 
@@ -40,8 +42,7 @@ void SignUp::initialize_connects() {
             &QAction::toggled,
             this,
             &SignUp::confirm_password_eye_checked);
-    connect(ui->confirm_button, &ElaToolButton::clicked, this, &SignUp::on_sign_up_button_clicked);
-    connect(ui->back_button, &ElaToolButton::clicked, this, &SignUp::on_back_button_clicked);
+    connect(ui->confirm_button, &ElaToolButton::clicked, this, &SignUp::on_signup_button_clicked);
 }
 
 void SignUp::password_eye_checked(bool hide) {
@@ -52,8 +53,58 @@ void SignUp::confirm_password_eye_checked(bool hide) {
     switch_password_eye_style(
         ui->confirm_password_line_edit, ui->confirm_password_eye_action, hide);
 }
+void SignUp::process_signup_response(QNetworkReply* reply) {
+    auto show_widget = find_root_widget(this);
+    // process the response!
+    if (reply->error() != QNetworkReply::NoError) {
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "signup",
+                             QString("网络异常:") + reply->errorString(),
+                             ClientGlobalConfig::message_show_time,
+                             show_widget);
+        reply->deleteLater();
+        return;
+    }
+    auto resp_data = reply->readAll();
+    reply->deleteLater();
+    QJsonParseError json_error;
+    QJsonDocument   json_doc = QJsonDocument::fromJson(resp_data, &json_error);
+    if (json_error.error != QJsonParseError::NoError) {
+        ElaMessageBar::error(
+            ElaMessageBarType::TopRight,
+            "signup",
+            QString("服务器返回数据格式错误! reason(%1)").arg(json_error.errorString()),
+            ClientGlobalConfig::message_show_time,
+            show_widget);
+        return;
+    }
+    if (!json_doc.isObject()) {
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "signup",
+                             "服务器返回数据格式错误!",
+                             ClientGlobalConfig::message_show_time,
+                             show_widget);
+        return;
+    }
+    auto    json_data = json_doc.object();
+    uint8_t code      = json_data[PublicResponseJsonKeys::status_key].toInt();
+    if (code != static_cast<uint8_t>(StatusCode::kSuccess)) {
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "signup",
+                             QString("注册失败 (reson:%1)")
+                                 .arg(json_data[PublicResponseJsonKeys::message_key].toString()),
+                             ClientGlobalConfig::message_show_time,
+                             show_widget);
+        return;
+    }
+    ElaMessageBar::success(ElaMessageBarType::TopRight,
+                           "signup",
+                           "注册成功,请返回登录!",
+                           ClientGlobalConfig::message_show_time,
+                           show_widget);
+}
 
-void SignUp::send_sign_up_http_req() {
+void SignUp::send_signup_http_req() {
     // send the http req!
     QNetworkRequest reqest(ClientSingleton::get_http_urls_instance().get_signup_url());
     reqest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
@@ -70,70 +121,13 @@ void SignUp::send_sign_up_http_req() {
     QNetworkReply* reply   = manager.post(reqest, data);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
-        // process the response!
-        if (reply->error() != QNetworkReply::NoError) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 QString("网络异常:") + reply->errorString(),
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            reply->deleteLater();
-            return;
-        }
-        auto resp_data = reply->readAll();
-        reply->deleteLater();
-        QJsonParseError json_error;
-        QJsonDocument   json_doc = QJsonDocument::fromJson(resp_data, &json_error);
-        if (json_error.error != QJsonParseError::NoError) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 "服务器返回数据格式错误!",
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        if (!json_doc.isObject()) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 "服务器返回数据格式错误!",
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        auto json_data = json_doc.object();
-        if (!json_data.contains("code") || !json_data["code"].isDouble()) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 "服务器返回数据格式错误!",
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        int code = json_data["code"].toInt();
-        if (code != StatusCode::kSuccess) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 QString("注册失败:") + get_status_code_msg(code),
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        // validate the data!
-        if (!LoginResJsonValidator::validate(json_data)) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "signup",
-                                 "服务器返回数据格式错误!",
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        // then set the data!
-        auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
-        cache_user_info.set_user_name(json_data[LoginResponseJson
+        this->process_signup_response(reply);
+    });
 }
 
 
-void SignUp::on_sign_up_button_clicked() {
+void SignUp::on_signup_button_clicked() {
+    auto show_widget = find_root_widget(this);
     // get the data!
     auto user_name        = ui->user_line_edit->text();
     auto password         = ui->password_line_edit->text();
@@ -144,7 +138,7 @@ void SignUp::on_sign_up_button_clicked() {
                                "signup",
                                "用户名不能为空!",
                                ClientGlobalConfig::message_show_time,
-                               this);
+                               show_widget);
         return;
     }
     if (password.isEmpty()) {
@@ -152,7 +146,7 @@ void SignUp::on_sign_up_button_clicked() {
                                "signup",
                                "密码不能为空!",
                                ClientGlobalConfig::message_show_time,
-                               this);
+                               show_widget);
         return;
     }
     if (confirm_password.isEmpty()) {
@@ -160,7 +154,7 @@ void SignUp::on_sign_up_button_clicked() {
                                "signup",
                                "确认密码不能为空!",
                                ClientGlobalConfig::message_show_time,
-                               this);
+                               show_widget);
         return;
     }
     if (password != confirm_password) {
@@ -168,7 +162,7 @@ void SignUp::on_sign_up_button_clicked() {
                                "signup",
                                "两次输入的密码不一致!",
                                ClientGlobalConfig::message_show_time,
-                               this);
+                               show_widget);
         return;
     }
     // no,here allow email is empty!
@@ -178,11 +172,11 @@ void SignUp::on_sign_up_button_clicked() {
                                "signup",
                                "邮箱为空,将无法找回密码,请谨慎操作!",
                                ClientGlobalConfig::message_show_time,
-                               this);
+                               show_widget);
         // return;
     }
-
-    this->send_sign_up_http_req();
+    this->send_signup_http_req();
 }
+
 }   // namespace client
 }   // namespace tang
