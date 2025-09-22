@@ -3,6 +3,12 @@
 
 namespace tang {
 namespace common {
+struct PublicResponseJsonKeys {
+    static constexpr const char* status_key  = "status";
+    static constexpr const char* message_key = "message";
+};
+
+
 struct LoginResponseJsonKeys {
     static constexpr const char* user_id_key       = "user_id";
     static constexpr const char* email_key         = "email";

@@ -71,7 +71,7 @@ void SignController::login(const HttpRequestPtr&                         req,
     // only capture by value
     auto c1 = [callback, result](const size_t n) {
         // the affect rows,if only query,will get 0,only chage will get > 0
-        if (n != 0) {
+        if (n != 1) {
             // LOG_INFO << "the expected value is 0,but get " << n;
             make_response_and_return(StatusCode::kLogicError, callback);
         }
@@ -138,6 +138,7 @@ void SignController::signup(const HttpRequestPtr&                         req,
         LOG_INFO << "add new user with user_id = " << vote_user.getValueOfId()
                  << " user_name = " << vote_user.getValueOfUserName();
         make_response_and_return(StatusCode::kSuccess, callback);
+        // try to create the workspace for this user!
         try_to_create_workspace(vote_user.getValueOfId());
     };
 

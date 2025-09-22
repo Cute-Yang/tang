@@ -8,6 +8,14 @@ Q_OBJECT
 public:
     LoginSettingUi* ui;
     LoginSetting(QWidget* parent = nullptr);
+    ~LoginSetting();
+
+    void initialize_connects();
+
+private slots:
+    void on_confirm_button_clicked();
 };
+
+
 }
 }

@@ -18,17 +18,28 @@ namespace client {
 // a simple validator for the login response!
 struct LoginResJsonValidator {
     static bool validate(const QJsonObject& json_data) {
-        //validate the keys are all exist!
+        // validate the keys are all exist!
         for (size_t i = 0; i < LoginResponseJsonKeys::keys.size(); ++i) {
             if (!json_data.contains(LoginResponseJsonKeys::keys[i])) {
                 return false;
             }
         }
-        //validate the type is right?
-        if(json_data[LoginResponseJsonKeys::user_name_key].type()!=QJsonValue::String){
+        // validate the type is right?
+        if (!json_data[LoginResponseJsonKeys::user_name_key].isString()) {
             return false;
         }
-        
+
+        if (!json_data[LoginResponseJsonKeys::email_key].isString()) {
+            return false;
+        }
+
+        // fuck,the json in Qt,int is double???
+        if (!json_data[LoginResponseJsonKeys::user_id_key].isDouble()) {
+            return false;
+        }
+        if (!json_data[LoginResponseJsonKeys::vote_priority_key].isDouble()) {
+            return false;
+        }
         return true;
     }
 };
@@ -45,6 +56,9 @@ Login::Login(QWidget* parent)
     this->setFixedSize(QSize(350, 520));
     this->setWindowTitle("login");
     this->setWindowIcon(QIcon(":/icons/images/changjinglu.svg"));
+
+    // initialize all the connects
+    this->initialize_connects();
 }
 
 Login::~Login() {
@@ -112,58 +126,89 @@ void Login::switch_to_signup() {
     stack_container->setCurrentIndex(1);
 }
 
+void Login::process_login_response(QNetworkReply* reply) {
+    auto resp = reply->readAll();
+    // avoid memory leak!
+    reply->deleteLater();
+    // parse it from the json!
+    QJsonParseError parse_error;
+    QJsonDocument   document = QJsonDocument::fromJson(resp, &parse_error);
+    if (parse_error.error != QJsonParseError::NoError) {
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "login",
+                             parse_error.errorString(),
+                             ClientGlobalConfig::message_show_time,
+                             this);
+        return;
+    }
+    QJsonObject json_data = document.object();
+    qDebug() << json_data;
+    // here the default!add a public key conf!
+    auto status = json_data[PublicResponseJsonKeys::status_key].toInt();
+    if (status != static_cast<int>(StatusCode::kSuccess)) {
+        //very nice!
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "login",
+                             QString("登录失败 (reason:%1)")
+                                 .arg(json_data[PublicResponseJsonKeys::message_key].toString()),
+                             ClientGlobalConfig::message_show_time,
+                             this);
+        return;
+    }
+    if (!LoginResJsonValidator::validate(json_data)) {
+        ElaMessageBar::error(ElaMessageBarType::TopRight,
+                             "login",
+                             QString("登录失败 (reason:服务器返回数据异常)"),
+                             ClientGlobalConfig::message_show_time,
+                             this);
+        return;
+    }
+    // then set the data!
+    auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
+    cache_user_info.set_user_name(json_data[LoginResponseJsonKeys::user_name_key].toString());
+    cache_user_info.set_email(json_data[LoginResponseJsonKeys::email_key].toString());
+    cache_user_info.set_user_id(
+        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt()));
+    cache_user_info.set_vote_priority(
+        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt()));
+
+    ElaMessageBar::success(ElaMessageBarType::TopRight,
+                           "login",
+                           "正在初始化,请稍后...",
+                           ClientGlobalConfig::message_show_time,
+                           this);
+    // if success,emit the signal!
+    emit success_login();
+}
+
 void Login::send_login_http_req() {
     QNetworkRequest reqest(ClientSingleton::get_http_urls_instance().get_login_url());
     reqest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // set the query params!
     QUrlQuery query;
-    query.addQueryItem("username", signin->ui->user_line_edit->text());
-    query.addQueryItem("password", signin->ui->password_line_edit->text());
+    auto      user_name = signin->ui->user_line_edit->text();
+    auto      password  = signin->ui->password_line_edit->text();
+    query.addQueryItem("username", user_name);
+    query.addQueryItem("password", password);
 
     QByteArray     data    = query.toString(QUrl::FullyEncoded).toUtf8();
     auto&          manager = ClientSingleton::get_network_manager_instance();
     QNetworkReply* reply   = manager.post(reqest, data);
 
-    connect(reply, &QNetworkReply::finished, this, [this, reply] {
-        auto resp = reply->readAll();
-        reply->deleteLater();
-        // parse it from the json!
-        QJsonParseError parse_error;
-        QJsonDocument   document = QJsonDocument::fromJson(resp, &parse_error);
-        if (parse_error.error != QJsonParseError::NoError) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "login",
-                                 parse_error.errorString(),
-                                 ClientGlobalConfig::message_show_time,
-                                 this);
-            return;
-        }
-        QJsonObject json_data = document.object();
-        qDebug() << json_data;
-        // constexpr
-        auto status = json_data["status"].toInt();
-        if (status != static_cast<int>(StatusCode::kSuccess)) {
-            ElaMessageBar::error(ElaMessageBarType::TopRight,
-                                 "login",
-                                 QString("登录失败 (reason:%1)").arg(get_status_str(status)),
-                                 2700,
-                                 this);
-        }
-        // then set the data!
-        auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
-
-        ElaMessageBar::success(
-            ElaMessageBarType::TopRight, "login", "正在初始化,请稍后...", 2700, this);
-        // if success,emit the signal!
-        emit success_login();
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        this->process_login_response(reply);
     });
 }
+
+
 void Login::on_signin_button_clicked() {
     hide_login_setting();
     this->send_login_http_req();
 }
 
+
 void Login::on_setting_button_clicked() {
+    // set the show pos and size!
     int w = 320;
     int h = 427;
     this->login_setting->setFixedSize(QSize(w, h));

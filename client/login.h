@@ -4,6 +4,7 @@
 #include "signup.h"
 #include <QStackedWidget>
 #include "login_setting.h"
+#include <QNetworkReply>
 
 namespace tang {
 namespace client {
@@ -19,6 +20,10 @@ private:
     void hide_login_setting();
 
     void initialize_connects();
+
+    void send_login_http_req();
+
+    void process_login_response( QNetworkReply* reply);
 
 
 public:
@@ -40,7 +45,6 @@ private slots:
 
     void on_setting_button_clicked();
 
-    void send_login_http_req();
 };
 }
 }

@@ -1,6 +1,9 @@
 #include "util.h"
+#include "common/response_keys.h"
 #include "drogon/utils/Utilities.h"
 
+
+using namespace tang::common;
 namespace tang {
 namespace server {
 namespace utils {
@@ -30,8 +33,8 @@ bool is_ext_found(const std::string_view* exts, size_t n, std::string_view ext) 
 
 Json::Value make_json_from_status_code(common::StatusCode status) {
     Json::Value ret;
-    ret["status"]  = static_cast<int>(status);
-    ret["message"] = tang::common::get_status_str(status).data();
+    ret[PublicResponseJsonKeys::status_key]  = static_cast<int>(status);
+    ret[PublicResponseJsonKeys::message_key] = tang::common::get_status_str(status).data();
     return ret;
 }
 

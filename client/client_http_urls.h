@@ -8,19 +8,21 @@ class ClientHttpUrls {
 private:
     QString host;
     int     port;
-    //store all the url,avoid re format!!
+    // store all the url,avoid re format!!
     QString login_http_url;
+    QString signup_http_url;
 
 
     void format_http_urls();
 
 public:
-    explicit ClientHttpUrls(const QString& host_ = "localhost", int port_=9000);
+    explicit ClientHttpUrls(const QString& host_ = "localhost", int port_ = 9000);
 
-    void set_server_value(const QString& host_,int port_);
-
-    QString&       get_login_url();
-    const QString& get_login_url() const;
+    void set_server_value(const QString& host_, int port_);
+    // heng, only get const ref?
+    const QString& get_login_url();
+    const QString& get_signup_url();
+    // const QString& get_login_url() const;
 };
 }   // namespace client
 }   // namespace tang
