@@ -1,0 +1,16 @@
+#pragma once
+#include <array>
+
+namespace tang {
+namespace common {
+struct LoginResponseJsonKeys {
+    static constexpr const char* user_id_key       = "user_id";
+    static constexpr const char* email_key         = "email";
+    static constexpr const char* user_name_key     = "user_name";
+    static constexpr const char* vote_priority_key = "vote_priority";
+
+    static constexpr std::array<const char*, 4> keys = {
+        user_id_key, email_key, user_name_key, vote_priority_key};
+};
+}   // namespace common
+}   // namespace tang

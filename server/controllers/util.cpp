@@ -120,6 +120,23 @@ std::string get_file_last_time_str(const std::filesystem::directory_entry& p) {
 }
 
 
+[[nodiscard]]
+common::StatusCode get_full_path(const std::string& file_path, std::filesystem::path& full_path) {
+    if (file_path.empty()) {
+        return common::StatusCode::kFilePathIsEmpty;
+    }
+
+    if (file_path.starts_with("/") || file_path.starts_with('\\')) {
+        // invalid!
+        LOG_ERROR << "Path " << file_path << "  starts with root which is not allowed!";
+        return common::StatusCode::kUnexpectedAbsoluteFilePath;
+    }
+
+    full_path =
+        get_workspace_root() / std::filesystem::path(drogon::utils::toNativePath(file_path));
+    return common::StatusCode::kSuccess;
+}
+
 }   // namespace utils
 }   // namespace server
 }   // namespace tang

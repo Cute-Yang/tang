@@ -3,6 +3,7 @@
 #include "drogon/HttpResponse.h"
 #include <filesystem>
 
+
 namespace tang {
 namespace server {
 namespace utils {
@@ -37,6 +38,12 @@ common::FileKind get_file_kind(const std::filesystem::path& fp);
 void to_lower(char* s, size_t len);
 
 std::string get_file_last_time_str(const std::filesystem::directory_entry& p);
+
+
+
+
+[[nodiscard]]
+common::StatusCode get_full_path(const std::string& file_path, std::filesystem::path& full_path);
 
 
 }   // namespace utils

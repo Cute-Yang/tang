@@ -1,10 +1,12 @@
 #include "WorkspaceController.h"
+#include "ChatClient.h"
 #include "common/status.h"
 #include "drogon/utils/Utilities.h"
 #include "util.h"
 #include <filesystem>
 #include <fstream>
-#include "ChatClient.h"
+
+
 
 using namespace tang::common;
 using namespace tang::server::utils;
@@ -16,35 +18,14 @@ using namespace tang::server::utils;
     }
 
 /*
-if return false,means it is a invalid path...
-*/
-[[nodiscard]]
-bool get_full_path(const std::string&                                 file_path,
-                   const std::function<void(const HttpResponsePtr&)>& callback,
-                   std::filesystem::path&                             full_path) {
-    if (file_path.empty()) {
-        make_response_and_return(StatusCode::kFilePathIsEmpty, callback, false);
-    }
-
-    if (file_path.starts_with("/") || file_path.starts_with('\\')) {
-        // invalid!
-        LOG_ERROR << "Path " << file_path << "  starts with root which is not allowed!";
-        make_response_and_return(StatusCode::kUnexpectedAbsoluteFilePath, callback, false);
-    }
-
-    full_path =
-        get_workspace_root() / std::filesystem::path(drogon::utils::toNativePath(file_path));
-    return true;
-}
-/*
 judge wheter the file exist,if exist,just return error!
 */
 [[nodiscard("must handler the return value,and determin the next steps!")]]
 bool raise_when_file_exit(const std::string&                                 file_path,
                           const std::function<void(const HttpResponsePtr&)>& callback,
                           std::filesystem::path&                             full_path) {
-    if (!get_full_path(file_path, callback, full_path)) {
-        return false;
+    if (auto ret = get_full_path(file_path, full_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback, false);
     }
     std::error_code ec;
     auto            alreay_exit = std::filesystem::exists(file_path);
@@ -63,8 +44,8 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
                                          std::function<void(const HttpResponsePtr&)>&& callback) {
     std::string           folder_path = req->getParameter("folder_path");
     std::filesystem::path full_folder_path;
-    if (!get_full_path(folder_path, callback, full_folder_path)) {
-        return;
+    if (auto ret = get_full_path(folder_path, full_folder_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
     }
     std::error_code ec;
     bool            is_exit = std::filesystem::exists(full_folder_path, ec);
@@ -115,7 +96,7 @@ void WorkspaceController::delete_file(const HttpRequestPtr&                     
                                       std::function<void(const HttpResponsePtr&)>&& callback) {
     std::string           file_path = req->getParameter("file_path");
     std::filesystem::path full_path;
-    if (!get_full_path(file_path, callback, full_path)) {
+    if (auto ret = get_full_path(file_path, full_path); ret != StatusCode::kSuccess) {
         return;
     }
 
@@ -196,9 +177,11 @@ void WorkspaceController::move_file(const HttpRequestPtr&                       
     std::string           target_file_path = req->getParameter("target_file_path");
     std::filesystem::path source_full_path;
     std::filesystem::path target_full_path;
-    if (!get_full_path(source_file_path, callback, source_full_path) ||
-        !get_full_path(target_file_path, callback, target_full_path)) {
-        return;
+    if (auto ret = get_full_path(source_file_path, source_full_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
+    }
+    if (auto ret = get_full_path(target_file_path, target_full_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
     }
 
     std::error_code ec;
@@ -220,8 +203,8 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
     auto save_dir = part_parser.getParameters().at("save_dir");
     LOG_INFO << save_dir;
     std::filesystem::path full_save_dir;
-    if (!get_full_path(save_dir, callback, full_save_dir)) {
-        return;
+    if (auto ret = get_full_path(save_dir, full_save_dir); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
     }
 
     std::error_code ec;
@@ -262,9 +245,8 @@ void WorkspaceController::download_file(const HttpRequestPtr&                   
     // convert it -> fs
     std::filesystem::path full_file_path;
 
-    if (!get_full_path(file_path, callback, full_file_path)) {
-        LOG_ERROR << "File path :" << file_path << " is not exist,maybe not utf8??";
-        make_response_and_return(StatusCode::kFilePathNotExist, callback);
+    if (auto ret = get_full_path(file_path, full_file_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
     }
 
     // just return a file response!
@@ -297,11 +279,12 @@ void WorkspaceController::get_file_size(const HttpRequestPtr&                   
 }
 
 
-void WorkspaceController::test_send_msg(const HttpRequestPtr& req,std::function<void(const HttpResponsePtr&)>&& callback){
-    auto& chat_instance = tang::server::ChatClientCollections::get_instance();
-    std::string_view msg = "The brownfox jumps over the lazydog!";
-    //here the c_string literal can convert to json value implicit!
+void WorkspaceController::test_send_msg(const HttpRequestPtr&                         req,
+                                        std::function<void(const HttpResponsePtr&)>&& callback) {
+    auto&            chat_instance = tang::server::ChatClientCollections::get_instance();
+    std::string_view msg           = "The brownfox jumps over the lazydog!";
+    // here the c_string literal can convert to json value implicit!
     chat_instance.send_message(msg);
 
-    make_response_only(StatusCode::kSuccess,callback);
+    make_response_only(StatusCode::kSuccess, callback);
 }

@@ -14,12 +14,12 @@ private:
     SignIn* signin;
     SignUp* signup;
     ElaToolButton* setting_button;
-    //setting page!
     LoginSetting* login_setting;
-
     void setup_ui();
-
     void hide_login_setting();
+
+    void initialize_connects();
+
 
 public:
     Login(QWidget* parent=nullptr);
@@ -32,13 +32,15 @@ private slots:
     void switch_to_signin();
     void switch_to_signup();
 
-    void signin_clicked();
-
+    void on_signin_button_clicked();
+    
     // void signup_clicked();
 
     // void new_signup_clicked();
 
-    void setting_button_clicked();
+    void on_setting_button_clicked();
+
+    void send_login_http_req();
 };
 }
 }

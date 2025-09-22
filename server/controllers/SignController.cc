@@ -1,11 +1,34 @@
 #include "SignController.h"
 #include "../models/TestVoteUser.h"
+#include "common/response_keys.h"
 #include "common/status.h"
 #include "util.h"
+
+
 using namespace tang::common;
 using namespace tang::server::utils;
 using VoteUser = drogon_model::vote::TestVoteUser;
 // Add definition of your processing function here
+
+
+void try_to_create_workspace(uint32_t user_id) {
+    // try to create a workspace dir!
+    std::filesystem::path full_workspace_path;
+    if (auto ret = get_full_path(std::to_string(user_id), full_workspace_path);
+        ret != StatusCode::kSuccess) {
+        LOG_ERROR << "Fail to get workspace path";
+        return;
+    }
+    try {
+        if (!std::filesystem::exists(full_workspace_path)) {
+            if (std::filesystem::create_directories(full_workspace_path)) {
+                LOG_INFO << "Successfully create the workspace path:" << full_workspace_path;
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& ex) {
+        LOG_ERROR << "Fail to create workspace by error:" << ex.what();
+    }
+}
 
 
 void SignController::login(const HttpRequestPtr&                         req,
@@ -35,20 +58,35 @@ void SignController::login(const HttpRequestPtr&                         req,
         make_response_and_return(StatusCode::kPasswordNotCorrect, callback);
     }
 
+    // only allow once device login!
+    auto current_status = result.getValueOfUserStatus();
+    if (current_status == static_cast<uint8_t>(VoteUserStatus::kActive)) {
+        LOG_WARN << "The user:" << result.getValueOfUserName() << " is already online";
+        make_response_and_return(StatusCode::kUserisAlreadyOnline, callback);
+    } else if (current_status == static_cast<uint8_t>(VoteUserStatus::kInvalid)) {
+        make_response_and_return(StatusCode::kUserisInvalid, callback);
+    }
+
     // caputure by value,and not move,because the callback is a left value!
     // only capture by value
     auto c1 = [callback, result](const size_t n) {
         // the affect rows,if only query,will get 0,only chage will get > 0
         if (n != 0) {
-            LOG_INFO << "the expected value is 1,but get " << n;
+            // LOG_INFO << "the expected value is 0,but get " << n;
             make_response_and_return(StatusCode::kLogicError, callback);
         }
+
         Json::Value ret = make_json_from_status_code(StatusCode::kSuccess);
-        ret["user_id"]  = result.getValueOfId();
-        ret["email"]    = result.getValueOfEmail();
-        auto resp       = HttpResponse::newHttpJsonResponse(ret);
+        // the return datas!
+        ret[LoginResponseJsonKeys::user_id_key]       = result.getValueOfId();
+        ret[LoginResponseJsonKeys::email_key]         = result.getValueOfEmail();
+        ret[LoginResponseJsonKeys::user_name_key]     = result.getValueOfUserName();
+        ret[LoginResponseJsonKeys::vote_priority_key] = result.getValueOfVotePriority();
+        auto resp                                     = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
     };
+
+
     auto c2 = [callback](const orm::DrogonDbException& ex) {
         LOG_ERROR << "sql error:" << ex.base().what();
         make_response_from_status_code(StatusCode::kSqlRuntimeError, callback);
@@ -100,6 +138,7 @@ void SignController::signup(const HttpRequestPtr&                         req,
         LOG_INFO << "add new user with user_id = " << vote_user.getValueOfId()
                  << " user_name = " << vote_user.getValueOfUserName();
         make_response_and_return(StatusCode::kSuccess, callback);
+        try_to_create_workspace(vote_user.getValueOfId());
     };
 
     auto c2 = [callback](const orm::DrogonDbException& ex) {

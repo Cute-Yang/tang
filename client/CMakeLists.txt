@@ -5,7 +5,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(QT_SDK_DIR "" CACHE PATH "Qt sdk dir" FORCE)
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets )
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
 find_package(
     Qt${QT_VERSION_MAJOR} REQUIRED 
     COMPONENTS 
@@ -13,6 +13,7 @@ find_package(
         PdfWidgets
         Pdf
         Charts
+        Network
 )
 find_package(ElaWidgetTools REQUIRED)
 # find all the files...
@@ -57,6 +58,7 @@ target_link_libraries(
     PUBLIC Qt${QT_VERSION_MAJOR}::Widgets
     PUBLIC Qt${QT_VERSION_MAJOR}::PdfWidgets
     PUBLIC Qt${QT_VERSION_MAJOR}::Charts
+    PUBLIC Qt${QT_VERSION_MAJOR}::Network
 )
 
 function(add_client_test file_path)

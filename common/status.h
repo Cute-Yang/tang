@@ -1,26 +1,9 @@
 #pragma once
-#include <algorithm>
 #include <array>
 #include <string_view>
 
 namespace tang {
 namespace common {
-
-template<class Enum, Enum... Values> struct is_contiguous_enum_from_zeron_impl {
-    static constexpr bool value = []() {
-        constexpr std::size_t n      = sizeof...(Values);
-        std::array<Enum, n>   sorted = {Values...};
-        std::sort(sorted.begin(), sorted.end());
-        for (size_t i = 0; i < n; ++i) {
-            if (i != static_cast<size_t>(sorted[i])) {
-                return false;
-            }
-        }
-        return true;
-    };
-};
-
-
 
 enum class StatusCode : uint32_t {
     kSuccess                      = 0,
@@ -59,7 +42,9 @@ enum class StatusCode : uint32_t {
     kFailRemoveVote               = 33,
     kWebSocketKeyIsAlreadyExist   = 34,
     kWebSocketConnectionIsNullptr = 35,
-    kWebSocketKeyNotExsit=36,
+    kWebSocketKeyNotExsit         = 36,
+    kUserisAlreadyOnline          = 37,
+    kUserisInvalid        = 38,
     Count
 };
 
@@ -102,14 +87,20 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "fail to remove vote!",
     "the websocket key is already exist,we only allow one person for one device now!!!",
     "the websocket connection is nullptr!!!",
-"the websocket conn key is not exist!"};
+    "the websocket conn key is not exist!",
+    "the user is already online!",
+    "the user is invalid!"};
 
-inline constexpr std::string_view get_status_str(StatusCode status) {
-    size_t index = static_cast<size_t>(status);
+inline constexpr std::string_view get_status_str(size_t index) {
     if (index >= status_count) {
         return std::string_view{};
     }
     return status_strs[index];
+}
+
+inline constexpr std::string_view get_status_str(StatusCode status) {
+    size_t index = static_cast<size_t>(status);
+    return get_status_str(index);
 }
 
 enum class FileKind : uint32_t {
