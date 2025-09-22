@@ -36,6 +36,9 @@ public:
     void get_file_size(const HttpRequestPtr&                         req,
                        std::function<void(const HttpResponsePtr&)>&& callback);
 
+    void get_workspace_names(const HttpRequestPtr&                         req,
+                             std::function<void(const HttpResponsePtr&)>&& callback);
+
     void test_send_msg(const HttpRequestPtr&                         req,
                        std::function<void(const HttpResponsePtr&)>&& resp);
 
@@ -49,6 +52,8 @@ public:
     ADD_METHOD_TO(WorkspaceController::upload_file, "/api/v1/upload_file", Post);
     ADD_METHOD_TO(WorkspaceController::download_file, "/api/v1/download_file", Get, Post);
     ADD_METHOD_TO(WorkspaceController::get_file_size, "/api/v1/get_file_size", Get, Post);
+    ADD_METHOD_TO(WorkspaceController::get_workspace_names, "/api/v1/get_workspace_names", Get,
+                  Post);
 
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is

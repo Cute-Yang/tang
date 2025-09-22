@@ -22,12 +22,29 @@ void CacheWorkspaceData::set_file_infos(const QString&                workspace_
 }
 
 
-void CacheWorkspaceData::set_workspace_names(std::vector<QString>&& names) {
-    workspace_names = std::move(names);
+void CacheWorkspaceData::set_workspaces(std::vector<QString>&& names) {
+    workspaces = std::move(names);
 }
 
-void CacheWorkspaceData::set_workspace_names(const std::vector<QString>& names) {
-    workspace_names = names;
+void CacheWorkspaceData::set_workspaces(const std::vector<QString>& names) {
+    workspaces = names;
+}
+
+std::span<QString> CacheWorkspaceData::get_workspaces() {
+    return std::span<QString>(workspaces.data(), workspaces.size());
+}
+
+
+void CacheWorkspaceData::set_workspace_show_names(std::vector<QString>&& names) {
+    workspace_show_names = std::move(names);
+}
+
+void CacheWorkspaceData::set_workspace_show_names(const std::vector<QString>& names) {
+    workspace_show_names = names;
+}
+
+std::span<QString> CacheWorkspaceData::get_workspace_show_names() {
+    return std::span<QString>(workspace_show_names.data(), workspace_show_names.size());
 }
 
 

@@ -52,7 +52,7 @@ void add_test() {
     // views!
     auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
     workspace_data_cache.set_file_infos("唐远志", std::move(file_infos_data));
-    workspace_data_cache.set_workspace_names(std::move(test_workspaces));
+    workspace_data_cache.set_workspace_show_names(std::move(test_workspaces));
 }
 
 
@@ -68,9 +68,10 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     // set models
     workspace_model = new RemoteWorkspaceInfoModel({}, ui->workspace_content_list_view);
     workspace_model->set_workspace_names(
-        ClientSingleton::get_cache_workspace_data_instance().get_workspace_names());
-    qDebug() << "workspace count:"
-             << ClientSingleton::get_cache_workspace_data_instance().get_workspace_names().size(); 
+        ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names());
+    qDebug()
+        << "workspace count:"
+        << ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names().size();
     ui->workspace_view->setModel(workspace_model);
 
     QStringList headers = {"名称", "类型", "大小", "修改时间"};
@@ -108,6 +109,11 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaListView::clicked,
             this,
             &RemoteWorkspacePage::click_workspace_list_item);
+
+    connect(ui->flush_workspace_name_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_flush_workspace_name_button_clicked);
 }
 
 
@@ -138,5 +144,21 @@ void RemoteWorkspacePage::click_workspace_list_item(const QModelIndex& index) {
     ElaMessageBar::information(ElaMessageBarType::TopRight, "switch", message, 2700, this);
 }
 
+
+void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
+    if (!ui->show_all_workspaces->getIsToggled()) {
+        ElaMessageBar::information(
+            ElaMessageBarType::TopRight, "提示", "仅显示自己的工作区", 2700, this);
+        return;
+    }
+    // just for test!
+    auto& workspace_data_cache           = ClientSingleton::get_cache_workspace_data_instance();
+    std::vector<QString> test_workspaces = {
+        "犬夜叉", "戈薇", "桔梗", "弥勒", "珊瑚", "七宝", "奈落", "琥珀", "翡翠"};
+    workspace_data_cache.set_workspace_show_names(std::move(test_workspaces));
+    workspace_model->set_workspace_names(workspace_data_cache.get_workspace_show_names());
+    workspace_model->layoutChanged();
+    ElaMessageBar::success(ElaMessageBarType::TopRight, "刷新", "刷新工作区成功!", 2700, this);
+};
 }   // namespace client
 }   // namespace tang

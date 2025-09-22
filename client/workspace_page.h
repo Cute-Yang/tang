@@ -29,6 +29,9 @@ public slots:
     void click_workspace_item(const QModelIndex& index);
 
     void click_workspace_list_item(const QModelIndex& index);
+
+    void on_flush_workspace_name_button_clicked();
+    
     
 };
 

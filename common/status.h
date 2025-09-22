@@ -159,6 +159,7 @@ enum class VotePriority : uint8_t {
 //     FileKind    file_kind;
 // };
 
+constexpr std::string_view public_workspace_name = "公共空间";
 
 }   // namespace common
 }   // namespace tang

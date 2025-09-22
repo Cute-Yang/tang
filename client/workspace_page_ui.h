@@ -1,17 +1,15 @@
 #pragma once
 #include "ElaLineEdit.h"
 #include "ElaListView.h"
-#include "ElaMenu.h"
 #include "ElaScrollPage.h"
 #include "ElaTableView.h"
-#include "ElaToolBar.h"
 #include "ElaToolButton.h"
 #include "QStackedWidget"
 #include <QHeaderView>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <qsize.h>
+#include "ElaToggleSwitch.h"
 
 
 namespace tang {
@@ -51,7 +49,9 @@ public:
     ElaToolButton* back_button;
     ElaToolButton* forward_button;
     ElaToolButton* parent_folder_button;
-    ElaToolButton* flush_button;
+    ElaToolButton* flush_workspace_name_button;
+    //whether show all workspaces!
+    ElaToggleSwitch* show_all_workspaces;
 
     ElaLineEdit*   directory_line_edit;
     ElaLineEdit*   search_line_edit;
@@ -59,6 +59,7 @@ public:
 
     ElaToolButton* view_tiling_button;
     ElaToolButton* view_detai_button;
+    ElaToolButton* flush_workspace_content_button;
 
     ElaListView*    workspace_view;
     ElaListView*    workspace_content_list_view;

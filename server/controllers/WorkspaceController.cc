@@ -1,4 +1,5 @@
 #include "WorkspaceController.h"
+#include "../models/TestVoteUser.h"
 #include "ChatClient.h"
 #include "common/status.h"
 #include "drogon/utils/Utilities.h"
@@ -8,8 +9,10 @@
 
 
 
+
 using namespace tang::common;
 using namespace tang::server::utils;
+using VoteUser = drogon_model::vote::TestVoteUser;
 
 #define handle_fs_error(ec, callback, ...)                                                    \
     if (ec) {                                                                                 \
@@ -287,4 +290,39 @@ void WorkspaceController::test_send_msg(const HttpRequestPtr&                   
     chat_instance.send_message(msg);
 
     make_response_only(StatusCode::kSuccess, callback);
+}
+
+void WorkspaceController::get_workspace_names(
+    const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) {
+    auto db_client_ptr = drogon::app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        LOG_ERROR << "get db client fail!";
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+    orm::Mapper<VoteUser> user_mapper(db_client_ptr);
+    auto                  db_result = user_mapper.findAll();
+    if (db_result.size() == 0) {
+        LOG_ERROR << "no user in db!";
+        make_response_and_return(StatusCode::kSuccess, callback);
+    }
+    // then make from it!
+    auto ret = make_json_from_status_code(StatusCode::kSuccess);
+    // add the publc
+    Json::Value workspace_show_names(Json::arrayValue);
+    Json::Value workspaces(Json::arrayValue);
+
+    workspace_show_names.append(public_workspace_name.data());
+    workspaces.append(public_workspace_name.data());
+
+    for (size_t i = 0; i < db_result.size(); ++i) {
+        auto user_name = db_result[i].getValueOfUserName();
+        workspace_show_names.append(user_name);
+
+        auto user_id = db_result[i].getValueOfId();
+        workspaces.append(std::to_string(user_id));
+    }
+    ret["workspace_show_names"] = workspace_show_names;
+    ret["workspaces"]           = workspaces;
+    auto resp                   = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
 }

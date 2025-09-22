@@ -1,5 +1,8 @@
 #include "workspace_page_ui.h"
+#include "ElaMenu.h"
+#include "ElaToolBar.h"
 #include <ElaScrollPage.h>
+
 
 
 namespace tang {
@@ -145,15 +148,19 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     parent_folder_button->setToolTip("上级目录");
     navigation_layout->addWidget(parent_folder_button);
 
-
-    flush_button = new ElaToolButton(page);
+    flush_workspace_name_button = new ElaToolButton(page);
     // flush_button->setElaIcon(ElaIconType::FaceFlushed);
-    flush_button->setIcon(QIcon(":icons/images/flush.svg"));
-    flush_button->setToolTip("刷新");
-    flush_button->setIconSize(other_icon_size);
-    navigation_layout->addWidget(flush_button);
+    flush_workspace_name_button->setIcon(QIcon(":icons/images/flush.svg"));
+    flush_workspace_name_button->setToolTip("刷新工作区");
+    flush_workspace_name_button->setIconSize(other_icon_size);
+    navigation_layout->addWidget(flush_workspace_name_button);
+    navigation_layout->addSpacing(12);
 
-    // navigation_layout->addStretch();
+    show_all_workspaces = new ElaToggleSwitch(page);
+    show_all_workspaces->setIsToggled(false);
+    show_all_workspaces->setToolTip("显示所有工作区");
+    navigation_layout->addWidget(show_all_workspaces);
+    navigation_layout->addSpacing(36);
 
     // line edit!
     directory_line_edit = new ElaLineEdit(page);
@@ -186,6 +193,12 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     view_detai_button->setIconSize(other_icon_size);
     view_detai_button->setToolTip("详情");
     navigation_layout->addWidget(view_detai_button);
+
+    flush_workspace_content_button = new ElaToolButton(page);
+    flush_workspace_content_button->setToolTip("刷新文件");
+    flush_workspace_content_button->setIcon(QIcon(":icons/images/flush.svg"));
+    flush_workspace_content_button->setIconSize(other_icon_size);
+    navigation_layout->addWidget(flush_workspace_content_button);
 
     // content
     QSplitter* workspace_spliter = new QSplitter(page);
