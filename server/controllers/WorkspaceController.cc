@@ -1,6 +1,7 @@
 #include "WorkspaceController.h"
 #include "../models/TestVoteUser.h"
 #include "ChatClient.h"
+#include "common/response_keys.h"
 #include "common/status.h"
 #include "drogon/utils/Utilities.h"
 #include "util.h"
@@ -73,24 +74,28 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
     Json::Value file_infos = Json::Value(Json::arrayValue);
     for (auto& entry : std::filesystem::directory_iterator(full_folder_path)) {
         Json::Value file_info;
-        file_info["file_size"]       = entry.file_size();
-        file_info["last_write_time"] = get_file_last_time_str(entry);
+        file_info[WorkspaceContentResponse::file_size_key]       = entry.file_size();
+        file_info[WorkspaceContentResponse::last_write_time_key] = get_file_last_time_str(entry);
         // only get the name!
-        file_info["file_name"] = utils::fromNativePath(entry.path().filename().native());
+        file_info[WorkspaceContentResponse::file_name_key] =
+            utils::fromNativePath(entry.path().filename().native());
         // determin the file type
         if (entry.is_directory()) {
-            file_info["file_type"] = static_cast<int>(FileKind::kFolder);
+            file_info[WorkspaceContentResponse::file_type_key] =
+                static_cast<int>(FileKind::kFolder);
         } else if (entry.is_regular_file()) {
-            file_info["file_type"] = static_cast<int>(get_file_kind(entry.path()));
+            file_info[WorkspaceContentResponse::file_type_key] =
+                static_cast<int>(get_file_kind(entry.path()));
         } else {
             // other,not consider!
-            file_info["file_type"] = static_cast<int>(FileKind::kOthers);
+            file_info[WorkspaceContentResponse::file_type_key] =
+                static_cast<int>(FileKind::kOthers);
             LOG_WARN << "unknown file...";
         }
         file_infos.append(file_info);
     }
-    ret["file_infos"] = file_infos;
-    auto resp         = HttpResponse::newHttpJsonResponse(ret);
+    ret[WorkspaceContentResponse::file_infos_key] = file_infos;
+    auto resp                                     = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }
 

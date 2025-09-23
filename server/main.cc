@@ -9,7 +9,7 @@ int main() {
     std::string config_json_file = "D:/work/tang/server/config.json";
 
     tang::server::utils::get_db_client_name() = "default";
-    tang::server::utils::get_workspace_root() = "D:/test_workspace";
+    tang::server::utils::get_workspace_root() = "D:/";
 
 
     if (!std::filesystem::exists(config_json_file)) {

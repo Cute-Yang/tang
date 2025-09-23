@@ -35,5 +35,18 @@ std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
     }
     return document;
 }
+
+std::pair<size_t, size_t> remove_path_sep(const QString& folder_path) {
+    auto l = 0;
+    auto r = folder_path.size() - 1;
+    while (folder_path[l] == '/' || folder_path[l] == '\\') {
+        ++l;
+    }
+    while (folder_path[r] == '/' || folder_path[r] == '\\') {
+        --r;
+    }
+    return {l, r};
+}
+
 }   // namespace client
 }   // namespace tang

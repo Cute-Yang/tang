@@ -81,10 +81,12 @@ common::FileKind get_file_kind(const std::filesystem::path& fp) {
     }
     if (is_file) {
         // to utf-8
-        auto ext = drogon::utils::fromNativePath(fp.extension().native());
+        auto ext_str = drogon::utils::fromNativePath(fp.extension().native());
         // convert it -> lower!
-        to_lower(ext.data(), ext.size());
-        common::FileKind file_kind;
+        to_lower(ext_str.data(), ext_str.size());
+        std::string_view ext(ext_str.starts_with('.') ? ext_str.data() + 1 : ext_str.data(),
+                             ext_str.data() + ext_str.size());
+        common::FileKind file_kind = common::FileKind::kOthers;
         if (is_ext_found(pdf_exts.data(), pdf_exts.size(), ext)) {
             file_kind = common::FileKind::kPdf;
         } else if (is_ext_found(word_exts.data(), word_exts.size(), ext)) {
@@ -98,6 +100,7 @@ common::FileKind get_file_kind(const std::filesystem::path& fp) {
         } else if (is_ext_found(cpp_exts.data(), cpp_exts.size(), ext)) {
             file_kind = common::FileKind::kCpp;
         }
+        return file_kind;
     }
     return common::FileKind::kOthers;
 }

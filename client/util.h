@@ -19,6 +19,8 @@ QWidget* find_root_widget(QWidget* widget);
 
 std::optional<QJsonDocument> get_json_document(QNetworkReply* reply);
 
+std::pair<size_t,size_t> remove_path_sep(const QString& file_path);
+
 }
 
 }   // namespace tang

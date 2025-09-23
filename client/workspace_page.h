@@ -21,9 +21,14 @@ private:
     RemoteFileInfoViewModel*     file_info_table_model;
     RemoteFileInfoListViewModel* file_info_list_model;
 
+    // process workspace names
     void send_get_workspace_req();
-    
     void process_workspace_response(QNetworkReply* reply);
+
+    // process workspace content
+    void send_get_workspace_content_req();
+    void process_workspace_content_response(QNetworkReply* reply);
+
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
@@ -37,8 +42,6 @@ public slots:
     void on_flush_workspace_name_button_clicked();
 
     void on_flush_workspace_content_button_clicked();
-    
-    
 };
 
 }   // namespace client
