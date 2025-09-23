@@ -16,14 +16,15 @@ private:
     QString vote_item_col_name;
     QString vote_count_col_name;
     QString vote_count_percent_col_name;
-    int total_count;
+    int     total_count;
 
     void compute_total_count();
 
 public:
-    VoteResultViewModel(const QString& vote_item_col_name_  = "item",
-                        const QString& vote_count_col_name_ = "count",
-                        const QString& vote_count_percent_col_name_= "percent", QObject* parent = nullptr);
+    VoteResultViewModel(const QString& vote_item_col_name_          = "item",
+                        const QString& vote_count_col_name_         = "count",
+                        const QString& vote_count_percent_col_name_ = "percent",
+                        QObject*       parent                       = nullptr);
     ~VoteResultViewModel();
 
     void set_vote_items(const QList<QString>& vote_items_);

@@ -18,5 +18,11 @@ struct LoginResponseJsonKeys {
     static constexpr std::array<const char*, 4> keys = {
         user_id_key, email_key, user_name_key, vote_priority_key};
 };
+
+struct WorkspaceResJsonKeys {
+    static constexpr const char*                workspaces_key           = "workspaces";
+    static constexpr const char*                workspace_show_names_key = "workspace_show_names";
+    static constexpr std::array<const char*, 2> keys = {workspaces_key, workspace_show_names_key};
+};
 }   // namespace common
 }   // namespace tang

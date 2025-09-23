@@ -19,6 +19,8 @@ void ClientHttpUrls::format_http_urls() {
     login_http_url = QString("http://%1:%2/api/v1/login").arg(host).arg(port);
     // signup url!
     signup_http_url = QString("http://%1:%2/api/v1/signup").arg(host).arg(port);
+    // workspace url!
+    workspace_http_url = QString("http://%1:%2/api/v1/get_workspace_names").arg(host).arg(port);
 }
 
 
@@ -30,6 +32,9 @@ const QString& ClientHttpUrls::get_signup_url() {
     return signup_http_url;
 }
 
+const QString& ClientHttpUrls::get_workspace_url() {
+    return workspace_http_url;
+}
 
 }   // namespace client
 }   // namespace tang

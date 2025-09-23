@@ -11,6 +11,7 @@ private:
     // store all the url,avoid re format!!
     QString login_http_url;
     QString signup_http_url;
+    QString workspace_http_url;
 
 
     void format_http_urls();
@@ -22,6 +23,7 @@ public:
     // heng, only get const ref?
     const QString& get_login_url();
     const QString& get_signup_url();
+    const QString& get_workspace_url();
     // const QString& get_login_url() const;
 };
 }   // namespace client

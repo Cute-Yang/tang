@@ -17,5 +17,23 @@ QWidget* find_root_widget(QWidget* widget) {
     }
     return parent;
 }
+
+std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
+    if (reply->error() != QNetworkReply::NoError) {
+
+        reply->deleteLater();
+        return {};
+    }
+    auto resp = reply->readAll();
+    // avoid memory leak!
+    reply->deleteLater();
+    // parse it from the json!
+    QJsonParseError parse_error;
+    QJsonDocument   document = QJsonDocument::fromJson(resp, &parse_error);
+    if (parse_error.error != QJsonParseError::NoError) {
+        return {};
+    }
+    return document;
+}
 }   // namespace client
 }   // namespace tang

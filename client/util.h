@@ -3,6 +3,8 @@
 #include <QAction>
 #include "common/status.h"
 #include <QJsonDocument>
+#include <QNetworkReply>
+
 namespace tang {
 namespace client {
     struct RemoteFileInfo {
@@ -14,6 +16,8 @@ namespace client {
 void switch_password_eye_style(ElaLineEdit* line_edit, QAction* action, bool hide);
 
 QWidget* find_root_widget(QWidget* widget);
+
+std::optional<QJsonDocument> get_json_document(QNetworkReply* reply);
 
 }
 

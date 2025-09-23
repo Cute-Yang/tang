@@ -68,30 +68,18 @@ void SignIn::password_eye_checked(bool hide) {
 
 void SignIn::process_login_response(QNetworkReply* reply) {
     auto show_widget = find_root_widget(this);
-    if (reply->error() != QNetworkReply::NoError) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "signin",
-                             QString("网络异常:") + reply->errorString(),
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
-        reply->deleteLater();
-        return;
-    }
-    auto resp = reply->readAll();
-    // avoid memory leak!
-    reply->deleteLater();
-    // parse it from the json!
-    QJsonParseError parse_error;
-    QJsonDocument   document = QJsonDocument::fromJson(resp, &parse_error);
-    if (parse_error.error != QJsonParseError::NoError) {
+    auto document    = get_json_document(reply);
+    if (!document) {
         ElaMessageBar::error(ElaMessageBarType::TopRight,
                              "login",
-                             parse_error.errorString(),
+                             "网络异常/返回格式错误!",
                              ClientGlobalConfig::message_show_time,
                              show_widget);
         return;
     }
-    QJsonObject json_data = document.object();
+
+    auto& document_value = document.value();
+    QJsonObject json_data = document_value.object();
     // here the default!add a public key conf!
     auto status = json_data[PublicResponseJsonKeys::status_key].toInt();
     if (status != static_cast<int>(StatusCode::kSuccess)) {
@@ -120,7 +108,7 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         static_cast<uint8_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt());
     cache_user_info.vote_prioirty =
         static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt());
-        
+
     ElaMessageBar::success(ElaMessageBarType::TopRight,
                            "login",
                            "正在初始化,请稍后...",
