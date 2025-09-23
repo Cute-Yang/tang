@@ -33,6 +33,11 @@ struct CacheWorkspaceData {
     void               set_workspace_show_names(std::vector<QString>&& names);
     void               set_workspace_show_names(const std::vector<QString>& names);
     std::span<QString> get_workspace_show_names();
+
+    size_t size();
+
+    QString& get_workspace(size_t i );
+    QString& get_workspace_show_name(size_t i);
 };
 
 }   // namespace client

@@ -27,6 +27,7 @@ public:
 
     void set_file_infos(const std::span<data_item_type>& file_infos_);
 
+
     int rowCount(const QModelIndex& index) const override;
 
     QVariant data(const QModelIndex& index, int role) const override;
@@ -45,14 +46,13 @@ public:
     ~RemoteFileInfoViewModel() {}
     void set_file_infos(const std::span<data_item_type>& file_infos_);
 
+    RemoteFileInfo& get_file_info(size_t i);
+        
 
 protected:
-    int rowCount(const QModelIndex& parent) const override;
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-
-
+    int      rowCount(const QModelIndex& parent) const override;
+    int      columnCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role) const override;
-
     QVariant headerData(int section, Qt::Orientation orientation,
                         int role = Qt::DisplayRole) const override;
 };
@@ -62,7 +62,7 @@ protected:
 class RemoteWorkspaceInfoModel : public QAbstractListModel {
     Q_OBJECT
 private:
-    //only keep a view is all we need!
+    // only keep a view is all we need!
     std::span<QString> workspace_names;
 
 public:

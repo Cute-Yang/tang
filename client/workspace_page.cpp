@@ -115,12 +115,16 @@ void add_test() {
     // are views!
     auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
     workspace_data_cache.set_file_infos("唐远志", std::move(file_infos_data));
-    workspace_data_cache.set_workspace_show_names(std::move(test_workspaces));
+    workspace_data_cache.set_workspace_show_names(test_workspaces);
+    workspace_data_cache.set_workspaces(test_workspaces);
 }
 
 RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
-    , ui(new RemoteWorkspacePageUi()) {
+    , ui(new RemoteWorkspacePageUi())
+    , path_helper()
+    , show_widget(find_root_widget(this)) {
+    // reverse capacity
     ui->setup_ui(this);
     this->setTitleVisible(false);
     // this is not enabled!
@@ -154,6 +158,21 @@ RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
 }
 
+void RemoteWorkspacePage::show_message(const QString& message, bool error) {
+    if (error) {
+        ElaMessageBar::warning(ElaMessageBarType::TopRight,
+                               "workspace",
+                               message,
+                               ClientGlobalConfig::message_show_time,
+                               show_widget);
+    } else {
+        ElaMessageBar::success(ElaMessageBarType::TopRight,
+                               "workspace",
+                               message,
+                               ClientGlobalConfig::message_show_time,
+                               show_widget);
+    }
+}
 void RemoteWorkspacePage::initialize_connects() {
     connect(ui->workspace_content_table_view, &ElaTableView::tableViewShow, this, [this]() {
         ui->workspace_content_table_view->setColumnWidth(0, 36);
@@ -166,7 +185,7 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(ui->workspace_content_table_view,
             &ElaTableView::clicked,
             this,
-            &RemoteWorkspacePage::click_workspace_item);
+            &RemoteWorkspacePage::click_workspace_table_content_item);
     connect(ui->workspace_view,
             &ElaListView::clicked,
             this,
@@ -181,32 +200,25 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaToolButton::clicked,
             this,
             &RemoteWorkspacePage::on_flush_workspace_content_button_clicked);
-}
-
-
-void RemoteWorkspacePage::click_workspace_list_item(const QModelIndex& index) {
-    if (!index.isValid()) {
-        return;
-    }
-    int     row     = index.row();
-    QString message = QString("切换工作空间为 %1").arg(row);
-    ElaMessageBar::information(ElaMessageBarType::TopRight, "switch", message, 2700, this);
+    connect(ui->view_tiling_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_view_tiling_button_clicked);
+    connect(ui->view_detail_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_view_detail_button_clicked);
 }
 
 
 void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
     if (!ui->show_all_workspaces->getIsToggled()) {
-        ElaMessageBar::information(ElaMessageBarType::TopRight,
-                                   "flush",
-                                   "仅显示自己的工作区",
-                                   ClientGlobalConfig::message_show_time,
-                                   this);
+        show_message("仅显示私人workspace", false);
         auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
         workspace_data_cache.set_workspaces({public_workspace_name.data(), "9"});
         workspace_data_cache.set_workspace_show_names({public_workspace_name.data(), "周琳"});
         workspace_model->set_workspace_names(workspace_data_cache.get_workspace_show_names());
         workspace_model->layoutChanged();
-        // after login
         return;
     }
     this->send_get_workspace_req();
@@ -223,37 +235,26 @@ void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
 
 
 void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
-    auto show_widget = find_root_widget(this);
-    auto document    = get_json_document(reply);
+    auto document = get_json_document(reply);
     if (!document) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             "网络异常!",
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
-        return;
-    }
-    auto&       document_value = document.value();
-    QJsonObject json_data      = document_value.object();
-    if (!WorkspaceResJsonValidator::validate(json_data)) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             "返回格式错误!",
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message("网络异常😮😮😮...");
         return;
     }
 
+    auto&       document_value = document.value();
+    QJsonObject json_data      = document_value.object();
     if (json_data[PublicResponseJsonKeys::status_key].toInt() !=
         static_cast<int>(StatusCode::kSuccess)) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             QString("获取失败 (reason:%1)")
-                                 .arg(json_data[PublicResponseJsonKeys::message_key].toString()),
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message(QString("获取失败 ψ(._. )> (reason:%1)")
+                         .arg(json_data[PublicResponseJsonKeys::message_key].toString()));
+
         return;
     }
+    if (!WorkspaceResJsonValidator::validate(json_data)) {
+        show_message("返回格式错误😫😫😫...");
+        return;
+    }
+
 
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  workspaces_json      = json_data[WorkspaceResJsonKeys::workspaces_key].toArray();
@@ -261,11 +262,7 @@ void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
     auto workspace_show_names_json =
         json_data[WorkspaceResJsonKeys::workspace_show_names_key].toArray();
     if (workspaces_json.size() != workspace_show_names_json.size()) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "login",
-                             "返回格式错误!",
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message("返回数据错误😫😫😫...");
         return;
     }
 
@@ -280,27 +277,18 @@ void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
         workspace_show_names[i] = workspace_show_names_json[i].toString();
     }
     // then set new span!
-    ElaMessageBar::success(ElaMessageBarType::TopRight,
-                           "flush",
-                           "成功获取所有工作区!",
-                           ClientGlobalConfig::message_show_time,
-                           this);
+    show_message("成功获取workspace ヾ(≧▽≦*)o...", false);
     workspace_model->set_workspace_names(cache_workspace_data.get_workspace_show_names());
     workspace_model->layoutChanged();
 }
 
 void RemoteWorkspacePage::send_get_workspace_req() {
-    auto            show_widget = find_root_widget(this);
     QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_workspace_url());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // no need any params!
     auto&          manager = ClientSingleton::get_network_manager_instance();
     QNetworkReply* reply   = manager.get(request);
-    ElaMessageBar::success(ElaMessageBarType::TopRight,
-                           "flush",
-                           "正在从服务器获取资源,请稍后...",
-                           ClientGlobalConfig::message_show_time,
-                           show_widget);
+    show_message("正在查询服务器😴😴😴...", false);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         this->process_workspace_response(reply);
     });
@@ -309,46 +297,29 @@ void RemoteWorkspacePage::send_get_workspace_req() {
 void RemoteWorkspacePage::on_flush_workspace_content_button_clicked() {
     QString workspace_path = ui->directory_line_edit->text();
     if (workspace_path.isEmpty()) {
-        ElaMessageBar::warning(ElaMessageBarType::TopRight,
-                               "flush",
-                               "请输入工作区路径!",
-                               ClientGlobalConfig::message_show_time,
-                               find_root_widget(this));
+        show_message("workspace为空🤣🤣🤣...");
         return;
     }
     this->send_get_workspace_content_req();
 }
 
 void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* reply) {
-    auto show_widget = find_root_widget(this);
-    auto document    = get_json_document(reply);
+    auto document = get_json_document(reply);
     if (!document) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             "网络异常!",
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message("网络异常😒😒😒...");
         return;
     }
     auto&       document_value = document.value();
     QJsonObject json_data      = document_value.object();
     if (json_data[PublicResponseJsonKeys::status_key].toInt() !=
         static_cast<int>(StatusCode::kSuccess)) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             QString("获取失败 (reason:%1)")
-                                 .arg(json_data[PublicResponseJsonKeys::message_key].toString()),
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message(QString("获取失败😂😂😂 (reason:%1)")
+                         .arg(json_data[PublicResponseJsonKeys::message_key].toString()));
         return;
     }
 
     if (!WorkspaceContentResJsonValidator::validate(json_data)) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
-                             "flush",
-                             "返回格式错误!",
-                             ClientGlobalConfig::message_show_time,
-                             show_widget);
+        show_message("返回数据验证失败😒😒😒...");
         return;
     }
 
@@ -370,76 +341,88 @@ void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
             file_info_json[WorkspaceContentResponse::last_write_time_key].toString();
     }
 
-    auto file_path = ui->directory_line_edit->text();
-    cache_workspace_data.set_file_infos(file_path, std::move(file_infos));
-    auto file_infos_view = cache_workspace_data.get_file_infos(file_path);
+    auto folder_path = path_helper.get_workspace_path();
+    // append to cache!
+    cache_workspace_data.set_file_infos(folder_path, std::move(file_infos));
+    auto file_infos_view = cache_workspace_data.get_file_infos(folder_path);
     this->file_info_table_model->set_file_infos(file_infos_view);
     this->file_info_list_model->set_file_infos(file_infos_view);
     this->file_info_table_model->layoutChanged();
     this->file_info_list_model->layoutChanged();
-    ElaMessageBar::success(ElaMessageBarType::TopRight,
-                           "flush",
-                           "成功获取工作区内容!",
-                           ClientGlobalConfig::message_show_time,
-                           show_widget);
+    show_message("获取workspace成功😊😊😊");
 }
 
 void RemoteWorkspacePage::send_get_workspace_content_req() {
-    auto            show_widget = find_root_widget(this);
     QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_workspace_content_url());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // no need any params!
     auto&     manager = ClientSingleton::get_network_manager_instance();
     QUrlQuery query;
-    auto      folder_path = ui->directory_line_edit->text();
+    auto      folder_path = path_helper.get_workspace_path();
     auto [l, r]           = remove_path_sep(folder_path);
     if (!(l == 0 && r == folder_path.size() - 1)) {
         folder_path = folder_path.mid(l, r - l + 1);
         // then set to ui
         ui->directory_line_edit->setText(folder_path);
     }
-
-    qDebug() << folder_path;
     query.addQueryItem("folder_path", folder_path);
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
-    ElaMessageBar::success(ElaMessageBarType::TopRight,
-                           "flush",
-                           "正在从服务器获取资源,请稍后...",
-                           ClientGlobalConfig::message_show_time,
-                           show_widget);
+    show_message("正在查询服务器😴😴😴...", false);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         this->process_workspace_content_response(reply);
     });
 }
 
-
-
-
 void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index) {
     if (!index.isValid()) {
         return;
     }
-    auto  show_widget          = find_root_widget(this);
     int   row                  = index.row();
     int   col                  = index.column();
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  workspaces           = cache_workspace_data.get_workspaces();
     if (row < 0 || row >= workspaces.size()) {
+        // out of index!
         return;
     }
     auto workspace_show_names = cache_workspace_data.get_workspace_show_names();
 
-    auto workspace = workspaces[row];
-    ui->directory_line_edit->setText(workspace);
-    ElaMessageBar::success(ElaMessageBarType::TopRight,
-                           "switch",
-                           QString("切换工作区 %1").arg(workspace_show_names[row]),
-                           ClientGlobalConfig::message_show_time,
-                           show_widget);
+    auto workspace      = workspaces[row];
+    auto workspace_name = workspace_show_names[row];
+    show_message(QString("切换工作区 %1 (●'◡'●)").arg(workspace_name), false);
+    path_helper.clear();
+    path_helper.set_workspace(workspace);
+    path_helper.set_workspace_show_name(workspace_name);
+    ui->directory_line_edit->setText(path_helper.get_workspace_show_path());
+}
+
+void RemoteWorkspacePage::on_view_detail_button_clicked() {
+    ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_table_view);
+}
+
+void RemoteWorkspacePage::on_view_tiling_button_clicked() {
+    ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_list_view);
 }
 
 
+void RemoteWorkspacePage::click_workspace_table_content_item(const QModelIndex& index) {
+    if (!index.isValid()) {
+        return;
+    }
+    int row = index.row();
+    int col = index.column();
+    if (col == 0) {
+        // if folder
+        auto& file_info = file_info_table_model->get_file_info(row);
+        if (file_info.file_type == FileKind::kFolder) {
+            this->path_helper.append(file_info.file_name);
+            // then update!
+            this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
+            this->send_get_workspace_content_req();
+        }
+    }
+}
 
 }   // namespace client
 }   // namespace tang

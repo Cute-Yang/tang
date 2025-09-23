@@ -187,12 +187,12 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     navigation_layout->addWidget(view_tiling_button);
 
 
-    view_detai_button = new ElaToolButton(page);
-    // view_detai_button->setElaIcon(ElaIconType::Democrat);
-    view_detai_button->setIcon(QIcon(":icons/images/detail.svg"));
-    view_detai_button->setIconSize(other_icon_size);
-    view_detai_button->setToolTip("详情");
-    navigation_layout->addWidget(view_detai_button);
+    view_detail_button = new ElaToolButton(page);
+    // view_detail_button->setElaIcon(ElaIconType::Democrat);
+    view_detail_button->setIcon(QIcon(":icons/images/detail.svg"));
+    view_detail_button->setIconSize(other_icon_size);
+    view_detail_button->setToolTip("详情");
+    navigation_layout->addWidget(view_detail_button);
 
     flush_workspace_content_button = new ElaToolButton(page);
     flush_workspace_content_button->setToolTip("刷新文件");

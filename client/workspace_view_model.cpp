@@ -51,6 +51,10 @@ int RemoteFileInfoViewModel::columnCount(const QModelIndex& parent) const {
     return header.count();
 }
 
+RemoteFileInfo& RemoteFileInfoViewModel::get_file_info(size_t i){
+    return this->file_infos[i];   
+}
+
 
 QVariant RemoteFileInfoViewModel::data(const QModelIndex& index, int role) const {
     int   row      = index.row();

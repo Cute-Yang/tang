@@ -58,7 +58,7 @@ public:
     ElaToolButton* search_button;
 
     ElaToolButton* view_tiling_button;
-    ElaToolButton* view_detai_button;
+    ElaToolButton* view_detail_button;
     ElaToolButton* flush_workspace_content_button;
 
     ElaListView*    workspace_view;
