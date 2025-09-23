@@ -28,6 +28,7 @@ struct CacheWorkspaceData {
     void               set_workspaces(std::vector<QString>&& names);
     void               set_workspaces(const std::vector<QString>& names);
     std::span<QString> get_workspaces();
+    
 
     void               set_workspace_show_names(std::vector<QString>&& names);
     void               set_workspace_show_names(const std::vector<QString>& names);

@@ -11,7 +11,6 @@
 
 namespace tang {
 namespace client {
-
 class RemoteWorkspacePage : public ElaScrollPage {
     Q_OBJECT
 private:

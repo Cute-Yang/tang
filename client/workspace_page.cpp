@@ -170,7 +170,7 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(ui->workspace_view,
             &ElaListView::clicked,
             this,
-            &RemoteWorkspacePage::click_workspace_list_item);
+            &RemoteWorkspacePage::click_workspace_item);
 
     connect(ui->flush_workspace_name_button,
             &ElaToolButton::clicked,
@@ -183,17 +183,6 @@ void RemoteWorkspacePage::initialize_connects() {
             &RemoteWorkspacePage::on_flush_workspace_content_button_clicked);
 }
 
-void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index) {
-    if (!index.isValid()) {
-        return;
-    }
-    int row = index.row();
-    int col = index.column();
-    qDebug() << "row:" << row << " col:" << col;
-    // here need to give format arg position
-    QString message = QString("click at row = %1 col = %2").arg(row).arg(col);
-    ElaMessageBar::information(ElaMessageBarType::TopRight, "点击workspace", message, 2700, this);
-}
 
 void RemoteWorkspacePage::click_workspace_list_item(const QModelIndex& index) {
     if (!index.isValid()) {
@@ -425,6 +414,30 @@ void RemoteWorkspacePage::send_get_workspace_content_req() {
 }
 
 
+
+
+void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index) {
+    if (!index.isValid()) {
+        return;
+    }
+    auto  show_widget          = find_root_widget(this);
+    int   row                  = index.row();
+    int   col                  = index.column();
+    auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
+    auto  workspaces           = cache_workspace_data.get_workspaces();
+    if (row < 0 || row >= workspaces.size()) {
+        return;
+    }
+    auto workspace_show_names = cache_workspace_data.get_workspace_show_names();
+
+    auto workspace = workspaces[row];
+    ui->directory_line_edit->setText(workspace);
+    ElaMessageBar::success(ElaMessageBarType::TopRight,
+                           "switch",
+                           QString("切换工作区 %1").arg(workspace_show_names[row]),
+                           ClientGlobalConfig::message_show_time,
+                           show_widget);
+}
 
 
 
