@@ -49,6 +49,16 @@ private:
             workspace_show_name.clear();
             workspace_items.clear();
          }
+
+         size_t item_size(){
+            return workspace_items.size();
+         }
+
+         void pop_back_safe() {
+            if(workspace_items.size() > 0){
+                workspace_items.pop_back();
+            }
+         }
     };
     RemoteWorkspacePageUi* ui;
     // support the datas
@@ -64,8 +74,9 @@ private:
     void process_workspace_response(QNetworkReply* reply);
 
     // process workspace content
-    void send_get_workspace_content_req();
-    void process_workspace_content_response(QNetworkReply* reply);
+    void get_workspace_content_impl(bool refresh);
+    void send_get_workspace_content_req(const QString& workspace_path);
+    bool process_workspace_content_response(QNetworkReply* reply);
 
     void show_message(const QString& message, bool error = true);
 
@@ -92,6 +103,10 @@ public slots:
     void on_flush_workspace_content_button_clicked();
     void on_view_tiling_button_clicked();
     void on_view_detail_button_clicked();
+
+    void on_back_button_clicked();
+    
+    // void on_forward_button_clicked();
 };
 
 }   // namespace client

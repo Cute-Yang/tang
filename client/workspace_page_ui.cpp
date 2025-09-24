@@ -1,8 +1,8 @@
 #include "workspace_page_ui.h"
 #include "ElaMenu.h"
 #include "ElaToolBar.h"
+#include "client_global_config.h"
 #include <ElaScrollPage.h>
-
 
 
 namespace tang {
@@ -154,14 +154,12 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     flush_workspace_name_button->setToolTip("刷新工作区");
     flush_workspace_name_button->setIconSize(other_icon_size);
     navigation_layout->addWidget(flush_workspace_name_button);
-    navigation_layout->addSpacing(12);
+    // navigation_layout->addSpacing(8);
 
     show_all_workspaces = new ElaToggleSwitch(page);
     show_all_workspaces->setIsToggled(false);
     show_all_workspaces->setToolTip("显示所有工作区");
     navigation_layout->addWidget(show_all_workspaces);
-    navigation_layout->addSpacing(36);
-
     // line edit!
     directory_line_edit = new ElaLineEdit(page);
     directory_line_edit->setDisabled(true);
@@ -211,7 +209,8 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     workspace_view = new ElaListView(page);
     workspace_view->setMinimumWidth(100);
     workspace_view->setMaximumWidth(160);
-    workspace_view->setIconSize(QSize(36, 36));
+    workspace_view->setIconSize(
+        QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
     workspace_view->setSpacing(8);
     workspace_spliter->addWidget(workspace_view);
 
@@ -225,7 +224,8 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     workspace_spliter->addWidget(stacked_workspace_content_widget);
 
     workspace_content_list_view = new ElaListView(page);
-    workspace_content_list_view->setIconSize(QSize(36, 36));
+    workspace_content_list_view->setIconSize(
+        QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
     workspace_content_list_view->setResizeMode(ElaListView::Adjust);
     workspace_content_list_view->setWrapping(true);
     workspace_content_list_view->setSpacing(5);
@@ -234,11 +234,12 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     workspace_content_table_view = new ElaTableView(page);
     workspace_content_table_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     workspace_content_table_view->setAlternatingRowColors(true);
-    workspace_content_table_view->setIconSize(QSize(21, 21));
+    workspace_content_table_view->setIconSize(
+        QSize(ClientGlobalConfig::small_icon_size, ClientGlobalConfig::small_icon_size));
     workspace_content_table_view->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     workspace_content_table_view->verticalHeader()->setHidden(true);
-    // workspace_content_table_view->horizontalHeader()->setSectionResizeMode(
-    //     QHeaderView::Interactive);
+    workspace_content_table_view->horizontalHeader()->setSectionResizeMode(
+        QHeaderView::Interactive);
     workspace_content_table_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     workspace_content_table_view->horizontalHeader()->setMinimumSectionSize(60);
     workspace_content_table_view->verticalHeader()->setMinimumSectionSize(48);

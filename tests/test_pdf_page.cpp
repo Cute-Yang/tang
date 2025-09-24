@@ -1,13 +1,12 @@
-#include "pdf_page.h"
+#include "display_pdf_file.h"
 #include "QApplication"
 #include "ElaApplication.h"
-#include <qapplication.h>
 
 int main(int argc,char* argv[]){
     QApplication app(argc,argv);
     eApp->init();
     // TangPdfWidget w;
-    tang::client::SeaPdf w;
+    tang::client::DisplayPdf w;
     w.show();
     return app.exec();
 }

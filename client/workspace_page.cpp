@@ -141,7 +141,7 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
         << ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names().size();
     ui->workspace_view->setModel(workspace_model);
 
-    const QStringList headers = {"名称", "类型", "大小", "修改时间"};
+    const QStringList headers = {"icon", "名称", "类型", "大小", "修改时间"};
     file_info_table_model =
         new RemoteFileInfoViewModel(headers, {}, ui->workspace_content_table_view);
     file_info_table_model->set_file_infos(
@@ -176,11 +176,17 @@ void RemoteWorkspacePage::show_message(const QString& message, bool error) {
 }
 void RemoteWorkspacePage::initialize_connects() {
     connect(ui->workspace_content_table_view, &ElaTableView::tableViewShow, this, [this]() {
-        ui->workspace_content_table_view->setColumnWidth(0, 36);
-        ui->workspace_content_table_view->setColumnWidth(1, 150);
-        ui->workspace_content_table_view->setColumnWidth(2, 40);
-        ui->workspace_content_table_view->setColumnWidth(3, 80);
-        ui->workspace_content_table_view->setColumnWidth(4, 160);
+        size_t width = this->ui->workspace_content_table_view->width();
+        size_t w0    = static_cast<size_t>(width * 0.1);
+        size_t w1    = static_cast<size_t>(width * 0.35);
+        size_t w2    = static_cast<size_t>(width * 0.15);
+        size_t w3    = static_cast<size_t>(width * 0.15);
+        size_t w4    = static_cast<size_t>(width * 0.25);
+        ui->workspace_content_table_view->setColumnWidth(0, w0);
+        ui->workspace_content_table_view->setColumnWidth(1, w1);
+        ui->workspace_content_table_view->setColumnWidth(2, w2);
+        ui->workspace_content_table_view->setColumnWidth(3, w3);
+        ui->workspace_content_table_view->setColumnWidth(4, w4);
     });
 
 
@@ -216,6 +222,11 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaToolButton::clicked,
             this,
             &RemoteWorkspacePage::on_view_detail_button_clicked);
+
+    connect(ui->back_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_back_button_clicked);
 }
 
 void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
@@ -301,14 +312,14 @@ void RemoteWorkspacePage::on_flush_workspace_content_button_clicked() {
         show_message("workspace为空🤣🤣🤣...");
         return;
     }
-    this->send_get_workspace_content_req();
+    this->get_workspace_content_impl(true);
 }
 
-void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* reply) {
+bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* reply) {
     auto document = get_json_document(reply);
     if (!document) {
         show_message("网络异常😒😒😒...");
-        return;
+        return false;
     }
     auto&       document_value = document.value();
     QJsonObject json_data      = document_value.object();
@@ -316,12 +327,12 @@ void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
         static_cast<int>(StatusCode::kSuccess)) {
         show_message(QString("获取失败😂😂😂 (reason:%1)")
                          .arg(json_data[PublicResponseJsonKeys::message_key].toString()));
-        return;
+        return false;
     }
 
     if (!WorkspaceContentResJsonValidator::validate(json_data)) {
         show_message("返回数据验证失败😒😒😒...");
-        return;
+        return false;
     }
 
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
@@ -349,16 +360,28 @@ void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
     this->set_workspace_content_data(file_infos_view);
     show_message("获取workspace成功😊😊😊", false);
     // here need to design!
-    this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
+    return true;
 }
 
-void RemoteWorkspacePage::send_get_workspace_content_req() {
+void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
+    auto& workspace_cache = ClientSingleton::get_cache_workspace_data_instance();
+    auto  folder_path     = this->path_helper.get_workspace_path();
+    auto  file_infos      = workspace_cache.get_file_infos(folder_path);
+    if (refresh || file_infos.empty()) {
+        this->send_get_workspace_content_req(folder_path);
+    } else {
+        show_message("从缓存获取(you can refresh) 😊😊😊");
+        ui->directory_line_edit->setText(folder_path);
+        this->set_workspace_content_data(file_infos);
+    }
+}
+
+void RemoteWorkspacePage::send_get_workspace_content_req(const QString& folder_path) {
     QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_workspace_content_url());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // no need any params!
     auto&     manager = ClientSingleton::get_network_manager_instance();
     QUrlQuery query;
-    auto      folder_path = path_helper.get_workspace_path();
     // auto [l, r]           = remove_path_sep(folder_path);
     // if (!(l == 0 && r == folder_path.size() - 1)) {
     //     folder_path = folder_path.mid(l, r - l + 1);
@@ -370,7 +393,11 @@ void RemoteWorkspacePage::send_get_workspace_content_req() {
     QNetworkReply* reply      = manager.post(request, query_data);
     show_message("正在查询服务器😴😴😴...", false);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
-        this->process_workspace_content_response(reply);
+        if (this->process_workspace_content_response(reply)) {
+            this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
+        } else {
+            this->path_helper.pop_back_safe();
+        }
     });
 }
 
@@ -396,7 +423,7 @@ void RemoteWorkspacePage::on_workspace_item_clicked(const QModelIndex& index) {
     path_helper.set_workspace_show_name(workspace_name);
     ui->directory_line_edit->setText(path_helper.get_workspace_show_path());
     this->set_workspace_content_data({});
-    this->send_get_workspace_content_req();
+    this->get_workspace_content_impl(false);
 }
 
 void RemoteWorkspacePage::on_view_detail_button_clicked() {
@@ -416,8 +443,7 @@ void RemoteWorkspacePage::set_workspace_content_data(std::span<RemoteFileInfo> f
 
 void RemoteWorkspacePage::enter_folder_impl(const QString& folder_name) {
     this->path_helper.append(folder_name);
-    // then update!
-    this->send_get_workspace_content_req();
+    this->get_workspace_content_impl(false);
 }
 
 
@@ -427,12 +453,11 @@ void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIn
     }
     int row = index.row();
     int col = index.column();
-    if (col == 0) {
-        // if folder
-        auto& file_info = file_info_table_model->get_file_info(row);
-        if (file_info.file_type == FileKind::kFolder) {
-            this->enter_folder_impl(file_info.file_name);
-        }
+
+    // if folder
+    auto& file_info = file_info_table_model->get_file_info(row);
+    if (file_info.file_type == FileKind::kFolder) {
+        this->enter_folder_impl(file_info.file_name);
     }
 }
 
@@ -447,5 +472,10 @@ void RemoteWorkspacePage::on_workspace_list_content_item_clicked(const QModelInd
     }
 }
 
+
+void RemoteWorkspacePage::on_back_button_clicked() {
+    this->path_helper.pop_back_safe();
+    this->get_workspace_content_impl(false);
+}
 }   // namespace client
 }   // namespace tang

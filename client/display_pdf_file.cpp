@@ -1,17 +1,18 @@
-#include "pdf_page.h"
+#include "display_pdf_file.h"
 #include "ElaMessageBar.h"
-#include "pdf_ui.h"
-// #include "search_result_delegate.h"
+#include "client_global_config.h"
 #include "zoom_limit.h"
 #include <QDebug>
 #include <QPdfBookmarkModel>
 #include <QPdfPageNavigator>
 
+
+
 namespace tang {
 namespace client {
-SeaPdf::SeaPdf(QWidget* parent)
+DisplayPdf::DisplayPdf(QWidget* parent)
     : ElaWidget(parent)
-    , ui(new SeaPdfUi())
+    , ui(new DisplayPdfUi())
     , search_model(new QPdfSearchModel(parent))
     , document(new QPdfDocument(parent))
     , previous_search_text() {
@@ -20,27 +21,22 @@ SeaPdf::SeaPdf(QWidget* parent)
     // this->moveToCenter();
     this->resize(QSize(900, 400));
     this->init_connects();
-
-    // setAutoFillBackground(true);    // 这句要加上, 否则可能显示不出背景图.
-    // QPalette palette = this->palette();
-    // //palette.setColor(QPalette::Window, Qt::red);  // 设置背景色
-    // //palette.setBrush(this->backgroundRole(), Qt::black);// 设置背景色
-    // palette.setBrush(QPalette::Window,
-    //         QBrush(QPixmap(":icons/images/small_green_flower.png").scaled(    // 缩放背景图.
-    //             this->size(),
-    //             Qt::IgnoreAspectRatio,
-    //             Qt::SmoothTransformation)));    // 使用平滑的缩放方式
-    // this->setPalette(palette);
-    this->setWindowOpacity(0.975);    
+    this->setWindowOpacity(0.975);
 }
 
+DisplayPdf::~DisplayPdf() {
+    delete ui;
+}
 
-void SeaPdf::init_connects() {
-    connect(ui->zoom_in_button, &ElaToolButton::clicked, this, &SeaPdf::zoom_in_clicked);
-    connect(ui->zoom_out_button, &ElaToolButton::clicked, this, &SeaPdf::zoom_out_clicked);
-
+void DisplayPdf::init_connects() {
+    connect(
+        ui->zoom_in_button, &ElaToolButton::clicked, this, &DisplayPdf::on_zoom_in_button_clicked);
+    connect(ui->zoom_out_button,
+            &ElaToolButton::clicked,
+            this,
+            &DisplayPdf::on_zoom_out_button_clicked);
     // skip to page if select!
-    connect(ui->current_page, &ElaSpinBox::valueChanged, this, &SeaPdf::page_selected);
+    connect(ui->current_page, &ElaSpinBox::valueChanged, this, &DisplayPdf::page_selected);
 
     auto nav = ui->pdf_show_page->pageNavigator();
     // set the page if changed!
@@ -72,16 +68,19 @@ void SeaPdf::init_connects() {
     QPdfBookmarkModel* bookmark_model = new QPdfBookmarkModel(this);
     bookmark_model->setDocument(document);
     ui->bookmark_view->setModel(bookmark_model);
-    connect(ui->bookmark_view, &QAbstractItemView::activated, this, &SeaPdf::bookmark_selected);
+    connect(ui->bookmark_view, &QAbstractItemView::activated, this, &DisplayPdf::bookmark_selected);
 
     ui->thumbnail_view->setModel(document->pageModel());
     ui->pdf_show_page->setSearchModel(search_model);
     search_model->setDocument(document);
 
     // search
-    connect(ui->search_button, &ElaToolButton::clicked, this, &SeaPdf::search_button_clicked);
     connect(
-        ui->continous_switch, &ElaToggleSwitch::toggled, this, &SeaPdf::continous_switch_checked);
+        ui->search_button, &ElaToolButton::clicked, this, &DisplayPdf::on_search_button_clicked);
+    connect(ui->continous_switch,
+            &ElaToggleSwitch::toggled,
+            this,
+            &DisplayPdf::on_continous_switch_checked);
 
 
     ui->search_result_view->setModel(search_model);
@@ -90,11 +89,12 @@ void SeaPdf::init_connects() {
     connect(ui->search_result_view->selectionModel(),
             &QItemSelectionModel::currentChanged,
             this,
-            &SeaPdf::search_result_selected);
+            &DisplayPdf::search_result_selected);
 
 
     // jump by thumbnail!
-    connect(ui->thumbnail_view, &QListView::activated, this, &SeaPdf::thumbnail_view_activated);
+    connect(
+        ui->thumbnail_view, &QListView::activated, this, &DisplayPdf::on_thumbnail_view_activated);
 
     ui->pdf_show_page->setDocument(document);
     // default is multi page
@@ -107,51 +107,67 @@ void SeaPdf::init_connects() {
             &ZoomSelector::set_zoom_factor);
 
     // open the file
-    connect(ui->open_file_button, &ElaToolButton::clicked, this, &SeaPdf::open_file_clicked);
+    connect(ui->open_file_button,
+            &ElaToolButton::clicked,
+            this,
+            &DisplayPdf::on_open_file_button_clicked);
 
-    connect(
-        ui->enable_thumbnail, &ElaToggleSwitch::toggled, this, &SeaPdf::enable_thumbnail_checked);
+    connect(ui->enable_thumbnail,
+            &ElaToggleSwitch::toggled,
+            this,
+            &DisplayPdf::on_enable_thumbnail_checked);
 
-    connect(ui->zoom_slider, &ElaSlider::valueChanged, this, &SeaPdf::zoom_slider_changed);
+    connect(ui->zoom_slider, &ElaSlider::valueChanged, this, &DisplayPdf::on_zoom_slider_changed);
 }
 
 
-double SeaPdf::claim_zoom_factor(double factor) {
-    QString show_message;
+void DisplayPdf::show_message(const QString& message, bool error) {
+    if (error) {
+        ElaMessageBar::warning(ElaMessageBarType::TopRight,
+                               "DisplayPdf",
+                               message,
+                               ClientGlobalConfig::error_show_time,
+                               this);
+    } else {
+        ElaMessageBar::information(ElaMessageBarType::TopRight,
+                                   "DisplayPdf",
+                                   message,
+                                   ClientGlobalConfig::message_show_time,
+                                   this);
+    }
+}
 
+double DisplayPdf::claim_zoom_factor(double factor) {
     if (factor > max_zoom_factor) {
         factor                       = max_zoom_factor;
         constexpr int max_factor_i32 = static_cast<int>(max_zoom_factor * 100);
-        show_message                 = QString("已经达到最大缩放率啦 (%1%)").arg(max_factor_i32);
-        ElaMessageBar::warning(ElaMessageBarType::TopRight, "zoom out", show_message, 2700, this);
+        show_message(QString("已经达到最大缩放率啦 (%1%) 😂😂😂...").arg(max_factor_i32), false);
     } else if (factor < min_zoom_factor) {
         constexpr int min_factor_i32 = static_cast<int>(min_zoom_factor * 100);
         factor                       = min_zoom_factor;
-        show_message                 = QString("已经达到最小缩放率啦 (%1%)").arg(min_factor_i32);
-        ElaMessageBar::warning(ElaMessageBarType::TopRight, "zoom in", show_message, 2700, this);
+        show_message(QString("已经达到最小缩放率啦 (%1%) 😮😮😮...").arg(min_factor_i32));
     }
     return factor;
 }
 
-double SeaPdf::compute_zoom_factor(bool zoom_in) {
+double DisplayPdf::compute_zoom_factor(bool zoom_in) {
     constexpr double base_k = 1.107;
     const double     k      = zoom_in ? 1.0 / base_k : base_k;
     double           factor = ui->pdf_show_page->zoomFactor() * k;
-    factor = this->claim_zoom_factor(factor);
+    factor                  = this->claim_zoom_factor(factor);
     this->claim_zoom_factor(factor);
-    // qDebug() << "get zoom factor -> " << factor;
     return factor;
 }
 
-void SeaPdf::zoom_in_clicked() {
+void DisplayPdf::on_zoom_in_button_clicked() {
     ui->pdf_show_page->setZoomFactor(compute_zoom_factor(true));
 }
 
-void SeaPdf::zoom_out_clicked() {
+void DisplayPdf::on_zoom_out_button_clicked() {
     ui->pdf_show_page->setZoomFactor(compute_zoom_factor(false));
 }
 
-void SeaPdf::bookmark_selected(const QModelIndex& index) {
+void DisplayPdf::bookmark_selected(const QModelIndex& index) {
     if (!index.isValid()) {
         ElaMessageBar::error(
             ElaMessageBarType::TopRight, "select bookmark", "invalid bookmark index", 2700, this);
@@ -163,83 +179,72 @@ void SeaPdf::bookmark_selected(const QModelIndex& index) {
 }
 
 
-
 // attention,the page is start from 0
-void SeaPdf::page_selected(int page) {
+void DisplayPdf::page_selected(int page) {
     // qDebug() << "current page is " << page;
     int total_page = document->pageCount();
     if (page <= 0 || page > total_page) {
-        ElaMessageBar::warning(ElaMessageBarType::TopRight,
-                               "page select",
-                               QString("无效的页 %1").arg(page),
-                               2700,
-                               this);
+        show_message(QString("页数:%1 不正确 🤣🤣🤣...").arg(page));
     }
     if (page == 1) {
-        ElaMessageBar::information(
-            ElaMessageBarType::TopRight, "page select", "已经是第一页啦", 2700, this);
+        show_message("已经是第一页了 😂😂", false);
     } else if (page == total_page) {
-        ElaMessageBar::information(
-            ElaMessageBarType::TopRight, "page select", "已经是最后一页啦", 2700, this);
+        show_message("已经是最后一页了 😂😂😂", false);
     }
     page_jump(page - 1);
 }
 
 
 // to previous
-void SeaPdf::previous_page_triggered() {
+void DisplayPdf::on_previous_page_triggered() {
     auto nav  = ui->pdf_show_page->pageNavigator();
     int  page = nav->currentPage();
     if (page == 0) {
-        // already the first!
-        ElaMessageBar::warning(
-            ElaMessageBarType::TopRight, "skip page", "已经是第一页啦", 2700, this);
+        show_message("已经是第一页了 😂😂", false);
     } else {
         page--;
     }
     nav->jump(page, {}, nav->currentZoom());
 }
 
-void SeaPdf::next_page_triggered() {
+void DisplayPdf::on_next_page_triggered() {
     auto nav  = ui->pdf_show_page->pageNavigator();
     int  page = nav->currentPage();
     if (page == document->pageCount() - 1) {
-        // already the first!
-        ElaMessageBar::warning(
-            ElaMessageBarType::TopRight, "skip page", "已经是最后一页啦", 2700, this);
+        show_message("已经是最后一页了 😂😂😂", false);
+
     } else {
         page++;
     }
     nav->jump(page, {}, nav->currentZoom());
 }
 
-void SeaPdf::thumbnail_view_activated(const QModelIndex& index) {
+void DisplayPdf::on_thumbnail_view_activated(const QModelIndex& index) {
     // auto nav = ui->pdf_show_page->pageNavigator();
     // nav->jump(index.row(), {}, nav->currentZoom());
     page_jump(index.row());
 }
 
 
-void SeaPdf::back_clicked() {
+void DisplayPdf::on_back_button_clicked() {
     ui->pdf_show_page->pageNavigator()->back();
 }
 
-void SeaPdf::forward_clicked() {
+void DisplayPdf::on_forward_button_clicked() {
     ui->pdf_show_page->pageNavigator()->forward();
 }
 
 
-void SeaPdf::find_previous_clicked() {
+void DisplayPdf::on_find_previous_button_clicked() {
     int prev = ui->search_result_view->currentIndex().row() - 1;
     if (prev < 0) {
-        prev = search_model->rowCount({}) - 1;
+        return;
     }
-    if (prev >= 0) {
-        ui->search_result_view->setCurrentIndex(search_model->index(prev));
-    }
+
+    ui->search_result_view->setCurrentIndex(search_model->index(prev));
 }
 
-void SeaPdf::find_next_clicked() {
+void DisplayPdf::on_find_next_button_clicked() {
     int next = ui->search_result_view->currentIndex().row() + 1;
     if (next >= search_model->rowCount({})) {
         next = 0;
@@ -248,7 +253,7 @@ void SeaPdf::find_next_clicked() {
 }
 
 // jump if select the result
-void SeaPdf::search_result_selected(const QModelIndex& current, const QModelIndex& previous) {
+void DisplayPdf::search_result_selected(const QModelIndex& current, const QModelIndex& previous) {
     Q_UNUSED(previous);
     if (!current.isValid()) {
         return;
@@ -261,20 +266,16 @@ void SeaPdf::search_result_selected(const QModelIndex& current, const QModelInde
     ui->pdf_show_page->setCurrentSearchResultIndex(current.row());
 }
 
-void SeaPdf::continous_switch_checked(bool checked) {
+void DisplayPdf::on_continous_switch_checked(bool checked) {
     // qDebug() << checked ;
     ui->pdf_show_page->setPageMode(checked ? QPdfView::PageMode::MultiPage
                                            : QPdfView::PageMode::SinglePage);
 }
 
-void SeaPdf::search_button_clicked() {
+void DisplayPdf::on_search_button_clicked() {
     QString search_text = ui->search_line_edit->text();
     if (search_text == previous_search_text) {
-        ElaMessageBar::warning(ElaMessageBarType::TopRight,
-                               "search",
-                               "the search content is not changed!",
-                               2700,
-                               this);
+        show_message("搜索内容没有任何变化 🤣🤣🤣");
         return;
     }
     if (search_text.isEmpty()) {
@@ -287,11 +288,10 @@ void SeaPdf::search_button_clicked() {
 }
 
 
-void SeaPdf::open_file_clicked() {
+void DisplayPdf::on_open_file_button_clicked() {
     QString file_name = QFileDialog::getOpenFileName(this, "打开PDF文件", "", "PDF Files (*.pdf)");
     if (file_name.isEmpty()) {
-        ElaMessageBar::warning(
-            ElaMessageBarType::TopRight, "open file", "not choose any file!", 2700, this);
+        show_message("未选择文件 😮😮😮...");
         return;
     }
     /*clear
@@ -306,40 +306,32 @@ void SeaPdf::open_file_clicked() {
     ui->bookmark_view->reset();
     ui->thumbnail_view->reset();
     ui->search_result_view->reset();
-
     auto status = document->load(file_name);
     if (status == QPdfDocument::Error::None) {
-        ElaMessageBar::success(ElaMessageBarType::TopRight,
-                               "load file",
-                               "successfully load the pdf document!",
-                               2700,
-                               this);
+        show_message("成功打开pdf文件 😊😊😊...", false);
         // set the page
         page_jump(0);
         int total_page = document->pageCount();
         ui->total_page->setText(QString("/   %1").arg(total_page));
         ui->current_page->setRange(1, total_page);
     } else {
-        ElaMessageBar::error(
-            ElaMessageBarType::TopRight, "load file", "can not load the pdf document!", 2700, this);
+        show_message("打开pdf文件失败 ψ(._. )>");
     }
 }
 
-void SeaPdf::page_jump(int jump_to, const QPointF& loc) {
+void DisplayPdf::page_jump(int jump_to, const QPointF& loc) {
     auto nav = ui->pdf_show_page->pageNavigator();
     nav->jump(jump_to, loc, nav->currentZoom());
 }
 
-
-void SeaPdf::enable_thumbnail_checked(bool checked) {
+void DisplayPdf::on_enable_thumbnail_checked(bool checked) {
     auto index = ui->switch_tabs->indexOf(ui->thumbnail_container);
     ui->switch_tabs->setTabEnabled(index, checked);
 }
 
-
-void SeaPdf::zoom_slider_changed(int value) {
+void DisplayPdf::on_zoom_slider_changed(int value) {
     double zoom_factor = static_cast<double>(value) / 100.0;
-    zoom_factor = this->claim_zoom_factor(zoom_factor);
+    zoom_factor        = this->claim_zoom_factor(zoom_factor);
     // zoom_factor = compute_zoom_factor()
     ui->pdf_show_page->setZoomFactor(zoom_factor);
 }

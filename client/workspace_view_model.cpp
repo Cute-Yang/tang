@@ -62,16 +62,16 @@ QVariant RemoteFileInfoViewModel::data(const QModelIndex& index, int role) const
     auto& row_data = file_infos[row];
     // maybe invalid?
     if (role == Qt::DisplayRole) {
-        if (column == 0) {
+        if (column == 1) {
             // file_name
             return row_data.file_name;
-        } else if (column == 1) {
+        } else if (column == 2) {
             // file type
             return file_type_strings[static_cast<size_t>(row_data.file_type)];
-        } else if (column == 2) {
+        } else if (column == 3) {
             // file size
             return row_data.file_size;
-        } else if (column == 3) {
+        } else if (column == 4) {
             // change time
             return row_data.modify_time;
         }
