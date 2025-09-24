@@ -164,6 +164,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     // line edit!
     directory_line_edit = new ElaLineEdit(page);
+    directory_line_edit->setDisabled(true);
     navigation_layout->addWidget(directory_line_edit);
 
     navigation_layout->addSpacing(8);

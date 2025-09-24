@@ -51,8 +51,8 @@ int RemoteFileInfoViewModel::columnCount(const QModelIndex& parent) const {
     return header.count();
 }
 
-RemoteFileInfo& RemoteFileInfoViewModel::get_file_info(size_t i){
-    return this->file_infos[i];   
+RemoteFileInfo& RemoteFileInfoViewModel::get_file_info(size_t i) {
+    return this->file_infos[i];
 }
 
 
@@ -101,6 +101,12 @@ RemoteFileInfoListViewModel::~RemoteFileInfoListViewModel() {}
 void RemoteFileInfoListViewModel::set_file_infos(const std::span<data_item_type>& file_infos_) {
     file_infos = file_infos_;
 }
+
+RemoteFileInfo& RemoteFileInfoListViewModel::get_file_info(size_t i) {
+    return file_infos[i];
+}
+
+
 int RemoteFileInfoListViewModel::rowCount(const QModelIndex& index) const {
     Q_UNUSED(index);
     return file_infos.size();
@@ -131,6 +137,7 @@ RemoteWorkspaceInfoModel::~RemoteWorkspaceInfoModel() {}
 int RemoteWorkspaceInfoModel::rowCount(const QModelIndex& index) const {
     return workspace_names.size();
 }
+
 
 QVariant RemoteWorkspaceInfoModel::data(const QModelIndex& index, int role) const {
     int row = index.row();

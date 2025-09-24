@@ -26,6 +26,7 @@ public:
     ~RemoteFileInfoListViewModel();
 
     void set_file_infos(const std::span<data_item_type>& file_infos_);
+    RemoteFileInfo& get_file_info(size_t i);
 
 
     int rowCount(const QModelIndex& index) const override;
@@ -47,7 +48,7 @@ public:
     void set_file_infos(const std::span<data_item_type>& file_infos_);
 
     RemoteFileInfo& get_file_info(size_t i);
-        
+
 
 protected:
     int      rowCount(const QModelIndex& parent) const override;
@@ -71,6 +72,7 @@ public:
     ~RemoteWorkspaceInfoModel();
 
     int rowCount(const QModelIndex& index) const override;
+
 
     QVariant data(const QModelIndex& index, int role) const override;
 

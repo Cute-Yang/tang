@@ -33,9 +33,11 @@ private:
         }
         QString get_workspace_path() {
             if (workspace_items.size() == 0) {
-                return QString("/%1").arg(workspace);
+                return QString("%1").arg(workspace);
             }
-            return QString("/%1/%2").arg(workspace).arg(workspace_items.join('/'));
+            // attention,do not add this!
+            // our path is relative
+            return QString("%1/%2").arg(workspace).arg(workspace_items.join('/'));
         }
 
         void append(const QString& item) { workspace_items.push_back(item); }
@@ -46,7 +48,7 @@ private:
             workspace.clear();
             workspace_show_name.clear();
             workspace_items.clear();
-        }
+         }
     };
     RemoteWorkspacePageUi* ui;
     // support the datas
@@ -67,17 +69,24 @@ private:
 
     void show_message(const QString& message, bool error = true);
 
+    void enter_folder_impl(const QString& folder_name);
+
+    void set_workspace_content_data(std::span<RemoteFileInfo> file_infos);
+    
+    void set_workspace_data(std::span<QString> workspaces);
+
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
     void initialize_connects();
+    
 
 public slots:
-    void click_workspace_item(const QModelIndex& index);
-    // row!
-    void click_workspace_table_content_item(const QModelIndex& index);
-    // row and col!
-    // void click_workspace_list_content_item(const QModelIndex& index);
+    //workspace
+    void on_workspace_item_clicked(const QModelIndex& index);
+    //workspace content!
+    void on_workspace_table_content_item_clicked(const QModelIndex& index);
+    void on_workspace_list_content_item_clicked(const QModelIndex& index);
 
     void on_flush_workspace_name_button_clicked();
     void on_flush_workspace_content_button_clicked();

@@ -83,7 +83,8 @@ struct WorkspaceContentResJsonValidator {
 };
 // jsut for test!!!
 void add_test() {
-    std::vector<QString> test_workspaces = {"唐远志", "lazydog", "Arics", "jack", "Moris", "Moon"};
+    std::vector<QString> test_workspaces = {
+        "唐远志", "lazydog", "Arics", "jack", "Moris", "Moon", "work"};
     // take care the life circle!
     std::vector<RemoteFileInfo> file_infos_data = {
         {"images", 4096, FileKind::kFolder, "2023-04-05 12:32:51"},
@@ -140,7 +141,7 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
         << ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names().size();
     ui->workspace_view->setModel(workspace_model);
 
-    QStringList headers = {"名称", "类型", "大小", "修改时间"};
+    const QStringList headers = {"名称", "类型", "大小", "修改时间"};
     file_info_table_model =
         new RemoteFileInfoViewModel(headers, {}, ui->workspace_content_table_view);
     file_info_table_model->set_file_infos(
@@ -163,7 +164,7 @@ void RemoteWorkspacePage::show_message(const QString& message, bool error) {
         ElaMessageBar::warning(ElaMessageBarType::TopRight,
                                "workspace",
                                message,
-                               ClientGlobalConfig::message_show_time,
+                               ClientGlobalConfig::error_show_time,
                                show_widget);
     } else {
         ElaMessageBar::success(ElaMessageBarType::TopRight,
@@ -182,14 +183,21 @@ void RemoteWorkspacePage::initialize_connects() {
         ui->workspace_content_table_view->setColumnWidth(4, 160);
     });
 
-    connect(ui->workspace_content_table_view,
-            &ElaTableView::clicked,
-            this,
-            &RemoteWorkspacePage::click_workspace_table_content_item);
+
     connect(ui->workspace_view,
             &ElaListView::clicked,
             this,
-            &RemoteWorkspacePage::click_workspace_item);
+            &RemoteWorkspacePage::on_workspace_item_clicked);
+
+    connect(ui->workspace_content_table_view,
+            &ElaTableView::doubleClicked,
+            this,
+            &RemoteWorkspacePage::on_workspace_table_content_item_clicked);
+
+    connect(ui->workspace_content_list_view,
+            &ElaListView::doubleClicked,
+            this,
+            &RemoteWorkspacePage::on_workspace_list_content_item_clicked);
 
     connect(ui->flush_workspace_name_button,
             &ElaToolButton::clicked,
@@ -210,6 +218,10 @@ void RemoteWorkspacePage::initialize_connects() {
             &RemoteWorkspacePage::on_view_detail_button_clicked);
 }
 
+void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
+    this->workspace_model->set_workspace_names(workspace);
+    this->workspace_model->layoutChanged();
+}
 
 void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
     if (!ui->show_all_workspaces->getIsToggled()) {
@@ -217,20 +229,10 @@ void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
         auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
         workspace_data_cache.set_workspaces({public_workspace_name.data(), "9"});
         workspace_data_cache.set_workspace_show_names({public_workspace_name.data(), "周琳"});
-        workspace_model->set_workspace_names(workspace_data_cache.get_workspace_show_names());
-        workspace_model->layoutChanged();
+        this->set_workspace_data(workspace_data_cache.get_workspace_show_names());
         return;
     }
     this->send_get_workspace_req();
-
-    // just for test!
-    // auto& workspace_data_cache           =
-    // ClientSingleton::get_cache_workspace_data_instance(); std::vector<QString>
-    // test_workspaces = {
-    //     "犬夜叉", "戈薇", "桔梗", "弥勒", "珊瑚", "七宝", "奈落", "琥珀", "翡翠"};
-    // workspace_data_cache.set_workspace_show_names(std::move(test_workspaces));
-    // workspace_model->set_workspace_names(workspace_data_cache.get_workspace_show_names());
-    // workspace_model->layoutChanged();
 };
 
 
@@ -278,8 +280,7 @@ void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
     }
     // then set new span!
     show_message("成功获取workspace ヾ(≧▽≦*)o...", false);
-    workspace_model->set_workspace_names(cache_workspace_data.get_workspace_show_names());
-    workspace_model->layoutChanged();
+    this->set_workspace_data(cache_workspace_data.get_workspace_show_names());
 }
 
 void RemoteWorkspacePage::send_get_workspace_req() {
@@ -345,11 +346,10 @@ void RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
     // append to cache!
     cache_workspace_data.set_file_infos(folder_path, std::move(file_infos));
     auto file_infos_view = cache_workspace_data.get_file_infos(folder_path);
-    this->file_info_table_model->set_file_infos(file_infos_view);
-    this->file_info_list_model->set_file_infos(file_infos_view);
-    this->file_info_table_model->layoutChanged();
-    this->file_info_list_model->layoutChanged();
-    show_message("获取workspace成功😊😊😊");
+    this->set_workspace_content_data(file_infos_view);
+    show_message("获取workspace成功😊😊😊", false);
+    // here need to design!
+    this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
 }
 
 void RemoteWorkspacePage::send_get_workspace_content_req() {
@@ -359,12 +359,12 @@ void RemoteWorkspacePage::send_get_workspace_content_req() {
     auto&     manager = ClientSingleton::get_network_manager_instance();
     QUrlQuery query;
     auto      folder_path = path_helper.get_workspace_path();
-    auto [l, r]           = remove_path_sep(folder_path);
-    if (!(l == 0 && r == folder_path.size() - 1)) {
-        folder_path = folder_path.mid(l, r - l + 1);
-        // then set to ui
-        ui->directory_line_edit->setText(folder_path);
-    }
+    // auto [l, r]           = remove_path_sep(folder_path);
+    // if (!(l == 0 && r == folder_path.size() - 1)) {
+    //     folder_path = folder_path.mid(l, r - l + 1);
+    //     // then set to ui
+    //     ui->directory_line_edit->setText(folder_path);
+    // }
     query.addQueryItem("folder_path", folder_path);
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
@@ -374,7 +374,7 @@ void RemoteWorkspacePage::send_get_workspace_content_req() {
     });
 }
 
-void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index) {
+void RemoteWorkspacePage::on_workspace_item_clicked(const QModelIndex& index) {
     if (!index.isValid()) {
         return;
     }
@@ -395,6 +395,8 @@ void RemoteWorkspacePage::click_workspace_item(const QModelIndex& index) {
     path_helper.set_workspace(workspace);
     path_helper.set_workspace_show_name(workspace_name);
     ui->directory_line_edit->setText(path_helper.get_workspace_show_path());
+    this->set_workspace_content_data({});
+    this->send_get_workspace_content_req();
 }
 
 void RemoteWorkspacePage::on_view_detail_button_clicked() {
@@ -405,8 +407,21 @@ void RemoteWorkspacePage::on_view_tiling_button_clicked() {
     ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_list_view);
 }
 
+void RemoteWorkspacePage::set_workspace_content_data(std::span<RemoteFileInfo> file_infos) {
+    this->file_info_list_model->set_file_infos(file_infos);
+    this->file_info_list_model->layoutChanged();
+    this->file_info_table_model->set_file_infos(file_infos);
+    this->file_info_table_model->layoutChanged();
+}
 
-void RemoteWorkspacePage::click_workspace_table_content_item(const QModelIndex& index) {
+void RemoteWorkspacePage::enter_folder_impl(const QString& folder_name) {
+    this->path_helper.append(folder_name);
+    // then update!
+    this->send_get_workspace_content_req();
+}
+
+
+void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIndex& index) {
     if (!index.isValid()) {
         return;
     }
@@ -416,11 +431,19 @@ void RemoteWorkspacePage::click_workspace_table_content_item(const QModelIndex& 
         // if folder
         auto& file_info = file_info_table_model->get_file_info(row);
         if (file_info.file_type == FileKind::kFolder) {
-            this->path_helper.append(file_info.file_name);
-            // then update!
-            this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
-            this->send_get_workspace_content_req();
+            this->enter_folder_impl(file_info.file_name);
         }
+    }
+}
+
+void RemoteWorkspacePage::on_workspace_list_content_item_clicked(const QModelIndex& index) {
+    if (!index.isValid()) {
+        return;
+    }
+    int   row       = index.row();
+    auto& file_info = file_info_list_model->get_file_info(row);
+    if (file_info.file_type == FileKind::kFolder) {
+        this->enter_folder_impl(file_info.file_name);
     }
 }
 
