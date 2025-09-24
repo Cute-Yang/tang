@@ -5,8 +5,10 @@
 #include <QStackedWidget>
 
 // we should save the model!
+#include "display_pdf_file.h"
 #include "workspace_view_model.h"
 #include <QNetworkReply>
+
 
 
 namespace tang {
@@ -48,23 +50,22 @@ private:
             workspace.clear();
             workspace_show_name.clear();
             workspace_items.clear();
-         }
+        }
 
-         size_t item_size(){
-            return workspace_items.size();
-         }
+        size_t item_size() { return workspace_items.size(); }
 
-         void pop_back_safe() {
-            if(workspace_items.size() > 0){
+        void pop_back_safe() {
+            if (workspace_items.size() > 0) {
                 workspace_items.pop_back();
             }
-         }
+        }
     };
     RemoteWorkspacePageUi* ui;
     // support the datas
     RemoteWorkspaceInfoModel*    workspace_model;
     RemoteFileInfoViewModel*     file_info_table_model;
     RemoteFileInfoListViewModel* file_info_list_model;
+    DisplayPdf*                  display_pdf;
     WorkspacePathHelper          path_helper;
 
     // the widget to show message with universal style!
@@ -83,19 +84,19 @@ private:
     void enter_folder_impl(const QString& folder_name);
 
     void set_workspace_content_data(std::span<RemoteFileInfo> file_infos);
-    
+
     void set_workspace_data(std::span<QString> workspaces);
 
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
     void initialize_connects();
-    
+
 
 public slots:
-    //workspace
+    // workspace
     void on_workspace_item_clicked(const QModelIndex& index);
-    //workspace content!
+    // workspace content!
     void on_workspace_table_content_item_clicked(const QModelIndex& index);
     void on_workspace_list_content_item_clicked(const QModelIndex& index);
 
@@ -105,7 +106,7 @@ public slots:
     void on_view_detail_button_clicked();
 
     void on_back_button_clicked();
-    
+
     // void on_forward_button_clicked();
 };
 

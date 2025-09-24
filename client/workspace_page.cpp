@@ -17,8 +17,9 @@
 #include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QUrlQuery>
+#include <fstream>
 #include <QVBoxLayout>
-
+#include <QBuffer>
 
 using namespace tang::common;
 namespace tang {
@@ -124,6 +125,7 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
     , ui(new RemoteWorkspacePageUi())
     , path_helper()
+    , display_pdf(new DisplayPdf())
     , show_widget(find_root_widget(this)) {
     // reverse capacity
     ui->setup_ui(this);
@@ -157,6 +159,7 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
 
 RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
+    delete display_pdf;
 }
 
 void RemoteWorkspacePage::show_message(const QString& message, bool error) {
@@ -458,6 +461,24 @@ void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIn
     auto& file_info = file_info_table_model->get_file_info(row);
     if (file_info.file_type == FileKind::kFolder) {
         this->enter_folder_impl(file_info.file_name);
+    }else if(file_info.file_type == FileKind::kPdf){
+        //try to open it!
+        QString file_path = "C:/Users/10995/Documents/learning/048Qt+6+C++开发指南.pdf";
+        std::ifstream reader(file_path.toStdWString());
+        reader.seekg(0,std::ios_base::end);
+        auto size = reader.tellg();
+        QByteArray datas;
+        show_message(QString("file size %1").arg(size),false);
+        datas.resize(size);
+        reader.seekg(0,std::ios_base::beg);
+        reader.read(datas.data(),size);
+        QBuffer buffer(this);
+        buffer.setBuffer(&datas);
+        display_pdf->show();
+        display_pdf->load_pdf(file_path);
+        
+    }else{
+        
     }
 }
 

@@ -287,13 +287,7 @@ void DisplayPdf::on_search_button_clicked() {
     previous_search_text = search_text;
 }
 
-
-void DisplayPdf::on_open_file_button_clicked() {
-    QString file_name = QFileDialog::getOpenFileName(this, "打开PDF文件", "", "PDF Files (*.pdf)");
-    if (file_name.isEmpty()) {
-        show_message("未选择文件 😮😮😮...");
-        return;
-    }
+void DisplayPdf::clear() {
     /*clear
     /this is very important,if not reset the data,will get assert error when setting some style
     /int qt,the assert error is
@@ -306,8 +300,14 @@ void DisplayPdf::on_open_file_button_clicked() {
     ui->bookmark_view->reset();
     ui->thumbnail_view->reset();
     ui->search_result_view->reset();
-    auto status = document->load(file_name);
-    if (status == QPdfDocument::Error::None) {
+    ui->total_page->setText(QString("/   %1").arg(0));
+    ui->current_page->setRange(0, 0);
+    this->document->close();
+}
+
+void DisplayPdf::process_after_load() {
+    auto error = document->error();
+    if (error == QPdfDocument::Error::None) {
         show_message("成功打开pdf文件 😊😊😊...", false);
         // set the page
         page_jump(0);
@@ -317,6 +317,29 @@ void DisplayPdf::on_open_file_button_clicked() {
     } else {
         show_message("打开pdf文件失败 ψ(._. )>");
     }
+}
+
+void DisplayPdf::load_pdf(const QString& file_path) {
+    this->clear();
+    document->load(file_path);
+    process_after_load();
+}
+
+void DisplayPdf::load_pdf(QIODevice* device) {
+    this->clear();
+    document->load(device);
+    process_after_load();
+}
+
+void DisplayPdf::on_open_file_button_clicked() {
+    this->clear();
+
+    QString file_name = QFileDialog::getOpenFileName(this, "打开PDF文件", "", "PDF Files (*.pdf)");
+    if (file_name.isEmpty()) {
+        show_message("未选择文件 😮😮😮...");
+        return;
+    }
+    this->load_pdf(file_name);
 }
 
 void DisplayPdf::page_jump(int jump_to, const QPointF& loc) {

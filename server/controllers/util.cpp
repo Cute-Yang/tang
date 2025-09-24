@@ -7,7 +7,7 @@ using namespace tang::common;
 namespace tang {
 namespace server {
 namespace utils {
-constexpr std::array<std::string_view, 1> pdf_exts   = {"ext"};
+constexpr std::array<std::string_view, 1> pdf_exts   = {"pdf"};
 constexpr std::array<std::string_view, 4> word_exts  = {"docx", "doc", "docm", "dotx"};
 constexpr std::array<std::string_view, 6> excel_exts = {
     "xlsx", "xlsm", "xltx", "xltm", "xls", "csv"};

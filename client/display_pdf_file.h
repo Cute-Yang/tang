@@ -1,3 +1,4 @@
+#pragma once
 #include "ElaWidget.h"
 #include "display_pdf_ui.h"
 #include <QFileDialog>
@@ -20,9 +21,14 @@ private:
     // claim and show some message!
     double claim_zoom_factor(double zoom_factor);
     void   init_connects();
-    void page_jump(int page_index, const QPointF& loc = {});
+    void   page_jump(int page_index, const QPointF& loc = {});
+    void   show_message(const QString& message, bool error = true);
+    void   clear();
+    void   process_after_load();
 
-    void show_message(const QString& message,bool error=true);
+public:
+    void load_pdf(const QString& file_path);
+    void load_pdf(QIODevice* device);
 
 public:
     DisplayPdf(QWidget* parent = nullptr);
