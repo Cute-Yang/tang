@@ -120,6 +120,44 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     view_button->setMenu(view_menu);
     tool_bar->addWidget(view_button);
 
+
+    QWidget*     up_download_widget = new QWidget(page);
+    QHBoxLayout* up_download_layout = new QHBoxLayout(up_download_widget);
+    up_download_layout->addStretch();
+
+    // upload
+
+    upload_file_text = new ElaText(page);
+    upload_file_text->setText("文件上传进度:");
+    auto font = upload_file_text->font();
+    // font.setBold(true);
+    font.setPointSize(10);
+    upload_file_text->setFont(font);
+    up_download_layout->addWidget(upload_file_text);
+    up_download_layout->addSpacing(4);
+    upload_file_progress_bar = new ElaProgressBar(page);
+    upload_file_progress_bar->setRange(0, 100);
+    upload_file_progress_bar->setValue(0);
+    upload_file_progress_bar->setMaximumWidth(150);
+    up_download_layout->addWidget(upload_file_progress_bar);
+    up_download_layout->addSpacing(12);
+
+    // download
+    download_file_text = new ElaText(page);
+    download_file_text->setText("文件下载进度:");
+    // font.setBold(true);
+    font.setPointSize(10);
+    download_file_text->setFont(font);
+    up_download_layout->addWidget(download_file_text);
+    up_download_layout->addSpacing(4);
+    download_file_progress_bar = new ElaProgressBar(page);
+    download_file_progress_bar->setRange(0, 100);
+    download_file_progress_bar->setValue(0);
+    download_file_progress_bar->setMaximumWidth(150);
+    up_download_layout->addWidget(download_file_progress_bar);
+
+    tool_bar->addWidget(up_download_widget);
+
     // other content
     QWidget* navigation_widget = new QWidget(page);
     navigation_widget->setMaximumHeight(36);

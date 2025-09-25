@@ -16,9 +16,11 @@
 #include <QStackedWidget>
 #include <QStandardItem>
 #include <QStandardItemModel>
+#include <QStandardPaths>
 #include <QStyledItemDelegate>
 #include <QUrlQuery>
 #include <QVBoxLayout>
+
 
 using namespace tang::common;
 namespace tang {
@@ -223,6 +225,7 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaToolButton::clicked,
             this,
             &RemoteWorkspacePage::on_flush_workspace_content_button_clicked);
+
     connect(ui->view_tiling_button,
             &ElaToolButton::clicked,
             this,
@@ -473,7 +476,8 @@ void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIn
     if (file_info.file_type == FileKind::kFolder) {
         this->enter_folder_impl(file_info.file_name);
     } else if (file_info.file_type == FileKind::kPdf) {
-        this->display_pdf_from_buffer_impl(file_info.file_name);
+        // this->display_pdf_from_file_impl(file_info.file_name);
+        this->display_pdf_impl(file_info.file_name, file_info.file_size);
     } else {
     }
 }
@@ -499,41 +503,115 @@ void RemoteWorkspacePage::on_adjust_content_view_button_clicked() {
     this->adjust_workspace_content_view();
 }
 
-//the urlencode will replace the '+' -> ' ',fuck!
-void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name) {
-    // download
+
+QNetworkReply* RemoteWorkspacePage::send_download_file_req(const QString& file_name) {
     auto& manager = ClientSingleton::get_network_manager_instance();
     QUrl  url(ClientSingleton::get_http_urls_instance().get_download_file_url(), QUrl::StrictMode);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-    QUrlQuery query;
-    QString   folder_path        = this->path_helper.get_workspace_path();
-    QString   download_file_path = QString("%1/%2").arg(folder_path, file_name);
-    // use json send the params!
-
+    QString     folder_path        = this->path_helper.get_workspace_path();
+    QString     download_file_path = QString("%1/%2").arg(folder_path, file_name);
     QJsonObject json_data;
     json_data["file_path"] = download_file_path;
     QJsonDocument  json_doc(json_data);
     QByteArray     json_bytes = json_doc.toJson(QJsonDocument::Compact);
-    QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, json_bytes);
-
+    return reply;
+}
+// the urlencode will replace the '+' -> ' ',fuck!
+void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name) {
+    auto reply = this->send_download_file_req(file_name);
+    // qDebug() << "Call display_pdf_from_buffer_impl func in " << QThread::currentThreadId();
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         if (reply->error() != QNetworkReply::NoError) {
             reply->deleteLater();
             this->show_message("文件下载失败😫😫😫...");
             return;
         }
+
         auto data_bytes = reply->readAll();
         qDebug() << data_bytes.size();
         reply->deleteLater();
+        // long time fund
         QBuffer buffer(&data_bytes);
         buffer.open(QIODevice::ReadOnly);
         buffer.seek(0);
-        this->show_message("正在渲染远程PDF文件😊😊😊");
+        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊");
         this->pdf_displayer->show();
         this->pdf_displayer->load_pdf(&buffer);
+        // qDebug() << "Call finished func in " << QThread::currentThreadId();
+    });
+
+    connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 s1, qint64 s2) {
+        this->ui->download_file_progress_bar->setRange(0, s2);
+        this->ui->download_file_progress_bar->setValue(s1);
+        // qDebug() << "Call download progress func in " << QThread::currentThreadId();
     });
 }
+
+void RemoteWorkspacePage::display_pdf_from_file_impl(const QString& file_name) {
+    this->show_message("保存缓存文件...😂😂😂");
+    auto& cache_dir = ClientSingleton::get_cache_file_dir();
+    if (cache_dir.isEmpty()) {
+        show_message("缓存目录无效 😮😮😮...");
+        return;
+    }
+    QString file_path = QString("%1/%2").arg(cache_dir, file_name);
+    if (QFile::exists(file_path)) {
+        QFile::remove(file_path);
+    }
+
+    QFile* writer = new QFile(file_path);
+    if (!writer->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        show_message("无法打开缓存文件... 😫😫😫");
+        return;
+    }
+
+    // then cache it!
+    auto reply = this->send_download_file_req(file_name);
+    // write by chunk!
+    connect(reply, &QNetworkReply::readyRead, this, [writer, reply, this]() {
+        // then write file here!
+        constexpr size_t                    write_buffer_size = 4 * 1024;
+        std::array<char, write_buffer_size> buffer;
+        while (reply->read(buffer.data(), buffer.size()) > 0) {
+            writer->write(buffer.data(), buffer.size());
+        }
+        // qDebug() << "Call write func in " << QThread::currentThreadId();
+    });
+
+    connect(reply, &QNetworkReply::finished, this, [writer, reply, file_path, this]() {
+        if (reply->error() != QNetworkReply::NoError) {
+            reply->deleteLater();
+            this->show_message("文件下载失败😫😫😫...");
+            return;
+        }
+        writer->flush();
+        writer->close();
+        writer->deleteLater();
+
+        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊");
+        this->pdf_displayer->load_pdf(file_path);
+        this->pdf_displayer->show();
+    });
+
+
+    connect(
+        reply, &QNetworkReply::downloadProgress, this, [this](qint64 recv_len, qint64 total_len) {
+            int percent = static_cast<int32_t>(static_cast<double>(recv_len) / total_len * 100.0);
+            this->ui->download_file_progress_bar->setValue(percent);
+            // qDebug() << "Call download progress func in " << QThread::currentThreadId();
+        });
+}
+
+void RemoteWorkspacePage::display_pdf_impl(const QString& file_name, size_t file_size) {
+    constexpr size_t max_buffer_size = 128 * 1024 * 1024;   // 128M
+    if (file_size <= max_buffer_size) {
+        this->display_pdf_from_buffer_impl(file_name);
+    } else {
+        this->display_pdf_from_file_impl(file_name);
+    }
+}
+
 }   // namespace client
 }   // namespace tang

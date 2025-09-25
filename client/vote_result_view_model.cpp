@@ -17,6 +17,7 @@ VoteResultViewModel::VoteResultViewModel(const QString& vote_item_col_name_,
     , vote_count_percent_col_name(vote_count_percent_col_name_)
     , total_count(0) {}
 
+
 // RAII
 VoteResultViewModel::~VoteResultViewModel() {}
 

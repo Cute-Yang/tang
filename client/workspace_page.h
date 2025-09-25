@@ -70,6 +70,9 @@ private:
 
     // the widget to show message with universal style!
     QWidget* show_widget;
+
+
+    //some helper functions...
     // process workspace names
     void send_get_workspace_req();
     void process_workspace_response(QNetworkReply* reply);
@@ -78,19 +81,16 @@ private:
     void get_workspace_content_impl(bool refresh);
     void send_get_workspace_content_req(const QString& workspace_path);
     bool process_workspace_content_response(QNetworkReply* reply);
-
     void show_message(const QString& message, bool error = true);
-
     void enter_folder_impl(const QString& folder_name);
-
     void set_workspace_content_data(std::span<RemoteFileInfo> file_infos);
-
     void set_workspace_data(std::span<QString> workspaces);
+    QNetworkReply* send_download_file_req(const QString& file_name);
 
     // display pdf file!
     void display_pdf_from_buffer_impl(const QString& file_name);
-    // void display_pdf_from_file_impl(const QString& file_name);
-    // void display_pdf(QString& file_name,size_t file_size);
+    void display_pdf_from_file_impl(const QString& file_name);
+    void display_pdf_impl(const QString& file_name,size_t file_size);
 
     // adjust table content view!
     void adjust_workspace_content_view();

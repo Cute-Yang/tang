@@ -9,7 +9,9 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <QWidget>
+#include "ElaProgressBar.h"
 #include "ElaToggleSwitch.h"
+#include "ElaText.h"
 
 
 namespace tang {
@@ -67,6 +69,12 @@ public:
     ElaListView*    workspace_content_list_view;
     ElaTableView*   workspace_content_table_view;
     QStackedWidget* stacked_workspace_content_widget;
+
+    ElaText* upload_file_text;
+    ElaProgressBar* upload_file_progress_bar;
+    
+    ElaText* download_file_text;
+    ElaProgressBar* download_file_progress_bar;
 
     // the layout for the Page is title -> custom widget -> central widget!
     void setup_ui(ElaScrollPage* page);

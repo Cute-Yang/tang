@@ -4,9 +4,9 @@ namespace tang {
 namespace client {
 // you can add some config to this!
 struct ClientGlobalConfig {
-    // the message show time!
-    static constexpr size_t message_show_time = 1800;
-    static constexpr size_t error_show_time   = 2700;
+    // the message show time! ms
+    static constexpr size_t message_show_time = 200;
+    static constexpr size_t error_show_time   = 400;
     
     static constexpr size_t button_icon_size = 16;
     static constexpr size_t mini_icon_size   = 21;
