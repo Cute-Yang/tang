@@ -22,6 +22,9 @@ void ClientHttpUrls::format_http_urls() {
     // workspace url!
     workspace_http_url = QString("http://%1:%2/api/v1/get_workspace_names").arg(host).arg(port);
     workspace_content_http_url = QString("http://%1:%2/api/v1/get_file_infos").arg(host).arg(port);
+
+    // download file!
+    download_file_http_url = QString("http://%1:%2/api/v1/download_file").arg(host).arg(port);
 }
 
 
@@ -39,6 +42,10 @@ const QString& ClientHttpUrls::get_workspace_url() {
 
 const QString& ClientHttpUrls::get_workspace_content_url() {
     return workspace_content_http_url;
+}
+
+const QString& ClientHttpUrls::get_download_file_url() {
+    return download_file_http_url;
 }
 
 }   // namespace client

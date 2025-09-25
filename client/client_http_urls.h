@@ -13,6 +13,7 @@ private:
     QString signup_http_url;
     QString workspace_http_url;
     QString workspace_content_http_url;
+    QString download_file_http_url;
 
 
     void format_http_urls();
@@ -26,6 +27,7 @@ public:
     const QString& get_signup_url();
     const QString& get_workspace_url();
     const QString& get_workspace_content_url();
+    const QString& get_download_file_url();
 };
 }   // namespace client
 }   // namespace tang

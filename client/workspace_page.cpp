@@ -6,6 +6,7 @@
 #include "util.h"
 #include "workspace_page_ui.h"
 #include "workspace_view_model.h"
+#include <QBuffer>
 #include <QFont>
 #include <QHeaderView>
 #include <QJsonArray>
@@ -17,9 +18,7 @@
 #include <QStandardItemModel>
 #include <QStyledItemDelegate>
 #include <QUrlQuery>
-#include <fstream>
 #include <QVBoxLayout>
-#include <QBuffer>
 
 using namespace tang::common;
 namespace tang {
@@ -125,7 +124,7 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
     , ui(new RemoteWorkspacePageUi())
     , path_helper()
-    , display_pdf(new DisplayPdf())
+    , pdf_displayer(new DisplayPdf())
     , show_widget(find_root_widget(this)) {
     // reverse capacity
     ui->setup_ui(this);
@@ -157,9 +156,10 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     this->initialize_connects();
 }
 
+// should use the std::unique_ptr to manage them!
 RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
-    delete display_pdf;
+    delete pdf_displayer;
 }
 
 void RemoteWorkspacePage::show_message(const QString& message, bool error) {
@@ -177,20 +177,26 @@ void RemoteWorkspacePage::show_message(const QString& message, bool error) {
                                show_widget);
     }
 }
+
+void RemoteWorkspacePage::adjust_workspace_content_view() {
+    size_t width = this->ui->workspace_content_table_view->width();
+    // the percent of each column is 0.1,0.35,0.15,0.15,0.25
+    size_t w0 = static_cast<size_t>(width * 0.1);
+    size_t w1 = static_cast<size_t>(width * 0.35);
+    size_t w2 = static_cast<size_t>(width * 0.15);
+    size_t w3 = static_cast<size_t>(width * 0.15);
+    size_t w4 = static_cast<size_t>(width * 0.25);
+    ui->workspace_content_table_view->setColumnWidth(0, w0);
+    ui->workspace_content_table_view->setColumnWidth(1, w1);
+    ui->workspace_content_table_view->setColumnWidth(2, w2);
+    ui->workspace_content_table_view->setColumnWidth(3, w3);
+    ui->workspace_content_table_view->setColumnWidth(4, w4);
+}
 void RemoteWorkspacePage::initialize_connects() {
-    connect(ui->workspace_content_table_view, &ElaTableView::tableViewShow, this, [this]() {
-        size_t width = this->ui->workspace_content_table_view->width();
-        size_t w0    = static_cast<size_t>(width * 0.1);
-        size_t w1    = static_cast<size_t>(width * 0.35);
-        size_t w2    = static_cast<size_t>(width * 0.15);
-        size_t w3    = static_cast<size_t>(width * 0.15);
-        size_t w4    = static_cast<size_t>(width * 0.25);
-        ui->workspace_content_table_view->setColumnWidth(0, w0);
-        ui->workspace_content_table_view->setColumnWidth(1, w1);
-        ui->workspace_content_table_view->setColumnWidth(2, w2);
-        ui->workspace_content_table_view->setColumnWidth(3, w3);
-        ui->workspace_content_table_view->setColumnWidth(4, w4);
-    });
+    connect(ui->workspace_content_table_view,
+            &ElaTableView::tableViewShow,
+            this,
+            &RemoteWorkspacePage::adjust_workspace_content_view);
 
 
     connect(ui->workspace_view,
@@ -230,6 +236,11 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaToolButton::clicked,
             this,
             &RemoteWorkspacePage::on_back_button_clicked);
+
+    connect(ui->adjust_content_view_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_adjust_content_view_button_clicked);
 }
 
 void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
@@ -461,24 +472,9 @@ void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIn
     auto& file_info = file_info_table_model->get_file_info(row);
     if (file_info.file_type == FileKind::kFolder) {
         this->enter_folder_impl(file_info.file_name);
-    }else if(file_info.file_type == FileKind::kPdf){
-        //try to open it!
-        QString file_path = "C:/Users/10995/Documents/learning/048Qt+6+C++开发指南.pdf";
-        std::ifstream reader(file_path.toStdWString());
-        reader.seekg(0,std::ios_base::end);
-        auto size = reader.tellg();
-        QByteArray datas;
-        show_message(QString("file size %1").arg(size),false);
-        datas.resize(size);
-        reader.seekg(0,std::ios_base::beg);
-        reader.read(datas.data(),size);
-        QBuffer buffer(this);
-        buffer.setBuffer(&datas);
-        display_pdf->show();
-        display_pdf->load_pdf(file_path);
-        
-    }else{
-        
+    } else if (file_info.file_type == FileKind::kPdf) {
+        this->display_pdf_from_buffer_impl(file_info.file_name);
+    } else {
     }
 }
 
@@ -497,6 +493,47 @@ void RemoteWorkspacePage::on_workspace_list_content_item_clicked(const QModelInd
 void RemoteWorkspacePage::on_back_button_clicked() {
     this->path_helper.pop_back_safe();
     this->get_workspace_content_impl(false);
+}
+
+void RemoteWorkspacePage::on_adjust_content_view_button_clicked() {
+    this->adjust_workspace_content_view();
+}
+
+//the urlencode will replace the '+' -> ' ',fuck!
+void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name) {
+    // download
+    auto& manager = ClientSingleton::get_network_manager_instance();
+    QUrl  url(ClientSingleton::get_http_urls_instance().get_download_file_url(), QUrl::StrictMode);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QUrlQuery query;
+    QString   folder_path        = this->path_helper.get_workspace_path();
+    QString   download_file_path = QString("%1/%2").arg(folder_path, file_name);
+    // use json send the params!
+
+    QJsonObject json_data;
+    json_data["file_path"] = download_file_path;
+    QJsonDocument  json_doc(json_data);
+    QByteArray     json_bytes = json_doc.toJson(QJsonDocument::Compact);
+    QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
+    QNetworkReply* reply      = manager.post(request, json_bytes);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        if (reply->error() != QNetworkReply::NoError) {
+            reply->deleteLater();
+            this->show_message("文件下载失败😫😫😫...");
+            return;
+        }
+        auto data_bytes = reply->readAll();
+        qDebug() << data_bytes.size();
+        reply->deleteLater();
+        QBuffer buffer(&data_bytes);
+        buffer.open(QIODevice::ReadOnly);
+        buffer.seek(0);
+        this->show_message("正在渲染远程PDF文件😊😊😊");
+        this->pdf_displayer->show();
+        this->pdf_displayer->load_pdf(&buffer);
+    });
 }
 }   // namespace client
 }   // namespace tang

@@ -249,20 +249,41 @@ void WorkspaceController::download_file(const HttpRequestPtr&                   
                                         std::function<void(const HttpResponsePtr&)>&& callback) {
     // only need a file path!
     // make sure encode with utf8
-    std::string file_path = req->getParameter("file_path");
+    // std::string file_path = req->getParameter("file_path");
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+    if (!json_data->isMember("file_path")) {
+        make_response_and_return(StatusCode::kJsonKeyError, callback);
+    }
+    if (!(*json_data)["file_path"].isString()) {
+        make_response_and_return(StatusCode::kJsonTypeError, callback);
+    }
+    std::string file_path = (*json_data)["file_path"].asString();
     // convert it -> fs
     std::filesystem::path full_file_path;
 
     if (auto ret = get_full_path(file_path, full_file_path); ret != StatusCode::kSuccess) {
         make_response_and_return(ret, callback);
     }
+    LOG_INFO << full_file_path;
+    std::error_code ec;
+    bool            is_exsit = std::filesystem::exists(full_file_path, ec);
+    handle_fs_error(ec, callback);
+
+    if (!is_exsit) {
+        LOG_INFO << "We can not find file:" << full_file_path;
+        make_response_and_return(StatusCode::kFilePathNotExist, callback);
+    }
 
     // just return a file response!
     auto file_path_u8 = drogon::utils::fromNativePath(full_file_path.native());
     // filename
-    auto file_name_u8 = drogon::utils::fromNativePath(full_file_path.filename());
+    auto file_name_u8 = drogon::utils::fromNativePath(full_file_path.filename().native());
     auto resp         = HttpResponse::newFileResponse(file_path_u8, file_name_u8);
     callback(resp);
+    // make_response_and_return(StatusCode::kSuccess, callback);
 }
 
 

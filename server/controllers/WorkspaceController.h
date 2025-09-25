@@ -50,7 +50,7 @@ public:
     ADD_METHOD_TO(WorkspaceController::delete_file, "/api/v1/delete_file", Post);
     ADD_METHOD_TO(WorkspaceController::move_file, "/api/v1/move_file", Post);
     ADD_METHOD_TO(WorkspaceController::upload_file, "/api/v1/upload_file", Post);
-    ADD_METHOD_TO(WorkspaceController::download_file, "/api/v1/download_file", Get, Post);
+    ADD_METHOD_TO(WorkspaceController::download_file, "/api/v1/download_file", Post);
     ADD_METHOD_TO(WorkspaceController::get_file_size, "/api/v1/get_file_size", Get, Post);
     ADD_METHOD_TO(WorkspaceController::get_workspace_names, "/api/v1/get_workspace_names", Get,
                   Post);

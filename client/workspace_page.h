@@ -65,7 +65,7 @@ private:
     RemoteWorkspaceInfoModel*    workspace_model;
     RemoteFileInfoViewModel*     file_info_table_model;
     RemoteFileInfoListViewModel* file_info_list_model;
-    DisplayPdf*                  display_pdf;
+    DisplayPdf*                  pdf_displayer;
     WorkspacePathHelper          path_helper;
 
     // the widget to show message with universal style!
@@ -87,6 +87,15 @@ private:
 
     void set_workspace_data(std::span<QString> workspaces);
 
+    // display pdf file!
+    void display_pdf_from_buffer_impl(const QString& file_name);
+    // void display_pdf_from_file_impl(const QString& file_name);
+    // void display_pdf(QString& file_name,size_t file_size);
+
+    // adjust table content view!
+    void adjust_workspace_content_view();
+
+
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
@@ -104,8 +113,9 @@ public slots:
     void on_flush_workspace_content_button_clicked();
     void on_view_tiling_button_clicked();
     void on_view_detail_button_clicked();
-
     void on_back_button_clicked();
+
+    void on_adjust_content_view_button_clicked();
 
     // void on_forward_button_clicked();
 };

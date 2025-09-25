@@ -57,6 +57,8 @@ public:
     ElaLineEdit*   search_line_edit;
     ElaToolButton* search_button;
 
+    ElaToolButton* adjust_content_view_button;
+
     ElaToolButton* view_tiling_button;
     ElaToolButton* view_detail_button;
     ElaToolButton* flush_workspace_content_button;

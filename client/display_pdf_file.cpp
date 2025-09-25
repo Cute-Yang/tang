@@ -306,7 +306,10 @@ void DisplayPdf::clear() {
 }
 
 void DisplayPdf::process_after_load() {
+    qDebug() << "the loading status is " << document->status();
+    
     auto error = document->error();
+    qDebug() << "the loading error is " << error;
     if (error == QPdfDocument::Error::None) {
         show_message("成功打开pdf文件 😊😊😊...", false);
         // set the page
