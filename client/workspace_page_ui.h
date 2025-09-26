@@ -14,8 +14,10 @@
 #include "ElaText.h"
 
 
+
 namespace tang {
 namespace client {
+
 // here we should set the central widget and custom widget!
 class RemoteWorkspacePageUi {
 public:

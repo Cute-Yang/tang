@@ -3,11 +3,15 @@
 #include "ElaScrollPage.h"
 #include "workspace_page_ui.h"
 #include <QStackedWidget>
-
 // we should save the model!
 #include "display_pdf_file.h"
+#include "long_time_http_task.h"
 #include "workspace_view_model.h"
+#include <QFile>
+#include <QJsonObject>
 #include <QNetworkReply>
+#include <QThread>
+
 
 
 
@@ -69,28 +73,30 @@ private:
     WorkspacePathHelper          path_helper;
 
     // the widget to show message with universal style!
-    QWidget* show_widget;
+    QWidget*          show_widget;
+    QThread*          long_time_http_runner;
+    LongtimeHttpTask* long_time_http_worker;
 
 
-    //some helper functions...
-    // process workspace names
+    // some helper functions...
+    //  process workspace names
     void send_get_workspace_req();
     void process_workspace_response(QNetworkReply* reply);
 
     // process workspace content
-    void get_workspace_content_impl(bool refresh);
-    void send_get_workspace_content_req(const QString& workspace_path);
-    bool process_workspace_content_response(QNetworkReply* reply);
-    void show_message(const QString& message, bool error = true);
-    void enter_folder_impl(const QString& folder_name);
-    void set_workspace_content_data(std::span<RemoteFileInfo> file_infos);
-    void set_workspace_data(std::span<QString> workspaces);
+    void           get_workspace_content_impl(bool refresh);
+    void           send_get_workspace_content_req(const QString& workspace_path);
+    bool           process_workspace_content_response(QNetworkReply* reply);
+    void           show_message(const QString& message, bool error = true);
+    void           enter_folder_impl(const QString& folder_name);
+    void           set_workspace_content_data(std::span<RemoteFileInfo> file_infos);
+    void           set_workspace_data(std::span<QString> workspaces);
     QNetworkReply* send_download_file_req(const QString& file_name);
 
     // display pdf file!
     void display_pdf_from_buffer_impl(const QString& file_name);
     void display_pdf_from_file_impl(const QString& file_name);
-    void display_pdf_impl(const QString& file_name,size_t file_size);
+    void display_pdf_impl(const QString& file_name, size_t file_size);
 
     // adjust table content view!
     void adjust_workspace_content_view();
@@ -108,7 +114,6 @@ public slots:
     // workspace content!
     void on_workspace_table_content_item_clicked(const QModelIndex& index);
     void on_workspace_list_content_item_clicked(const QModelIndex& index);
-
     void on_flush_workspace_name_button_clicked();
     void on_flush_workspace_content_button_clicked();
     void on_view_tiling_button_clicked();
@@ -118,6 +123,8 @@ public slots:
     void on_adjust_content_view_button_clicked();
 
     // void on_forward_button_clicked();
+signals:
+    void start_download_large_file(const QString& file_path,const QString& download_file_path);
 };
 
 }   // namespace client

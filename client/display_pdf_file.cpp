@@ -15,7 +15,8 @@ DisplayPdf::DisplayPdf(QWidget* parent)
     , ui(new DisplayPdfUi())
     , search_model(new QPdfSearchModel(parent))
     , document(new QPdfDocument(parent))
-    , previous_search_text() {
+    , previous_search_text()
+    , error(QPdfDocument::Error::None) {
     ui->setup_ui(this);
     this->setWindowTitle("sea");
     // this->moveToCenter();
@@ -70,7 +71,8 @@ void DisplayPdf::init_connects() {
     ui->bookmark_view->setModel(bookmark_model);
     connect(ui->bookmark_view, &QAbstractItemView::activated, this, &DisplayPdf::bookmark_selected);
 
-    ui->thumbnail_view->setModel(document->pageModel());
+    //solve it by remove it to another thread!
+    // ui->thumbnail_view->setModel(document->pageModel());
     ui->pdf_show_page->setSearchModel(search_model);
     search_model->setDocument(document);
 
@@ -123,13 +125,13 @@ void DisplayPdf::init_connects() {
 
 void DisplayPdf::show_message(const QString& message, bool error) {
     if (error) {
-        ElaMessageBar::warning(ElaMessageBarType::TopRight,
+        ElaMessageBar::warning(ElaMessageBarType::TopLeft,
                                "DisplayPdf",
                                message,
                                ClientGlobalConfig::error_show_time,
                                this);
     } else {
-        ElaMessageBar::information(ElaMessageBarType::TopRight,
+        ElaMessageBar::information(ElaMessageBarType::TopLeft,
                                    "DisplayPdf",
                                    message,
                                    ClientGlobalConfig::message_show_time,
@@ -298,7 +300,7 @@ void DisplayPdf::clear() {
     }
     */
     ui->bookmark_view->reset();
-    ui->thumbnail_view->reset();
+    // ui->thumbnail_view->reset();
     ui->search_result_view->reset();
     ui->total_page->setText(QString("/   %1").arg(0));
     ui->current_page->setRange(0, 0);
@@ -306,11 +308,7 @@ void DisplayPdf::clear() {
 }
 
 void DisplayPdf::process_after_load() {
-    qDebug() << "the loading status is " << document->status();
-    
-    auto error = document->error();
-    qDebug() << "the loading error is " << error;
-    if (error == QPdfDocument::Error::None) {
+    if (document->error() == QPdfDocument::Error::None) {
         show_message("成功打开pdf文件 😊😊😊...", false);
         // set the page
         page_jump(0);
@@ -319,10 +317,12 @@ void DisplayPdf::process_after_load() {
         ui->current_page->setRange(1, total_page);
     } else {
         show_message("打开pdf文件失败 ψ(._. )>");
+        document->close();
     }
 }
 
 void DisplayPdf::load_pdf(const QString& file_path) {
+    // invoke this if last success!
     this->clear();
     document->load(file_path);
     process_after_load();

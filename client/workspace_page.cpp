@@ -8,6 +8,8 @@
 #include "workspace_view_model.h"
 #include <QBuffer>
 #include <QFont>
+#include <QFuture>
+#include <QFutureWatcher>
 #include <QHeaderView>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -20,6 +22,7 @@
 #include <QStyledItemDelegate>
 #include <QUrlQuery>
 #include <QVBoxLayout>
+#include <QtConcurrent/QtConcurrent>
 
 
 using namespace tang::common;
@@ -122,12 +125,15 @@ void add_test() {
     workspace_data_cache.set_workspaces(test_workspaces);
 }
 
+
 RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
     , ui(new RemoteWorkspacePageUi())
     , path_helper()
     , pdf_displayer(new DisplayPdf())
-    , show_widget(find_root_widget(this)) {
+    , show_widget(find_root_widget(this))
+    , long_time_http_runner(new QThread(this))
+    , long_time_http_worker(new LongtimeHttpTask()) {
     // reverse capacity
     ui->setup_ui(this);
     this->setTitleVisible(false);
@@ -139,9 +145,6 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     workspace_model = new RemoteWorkspaceInfoModel({}, ui->workspace_content_list_view);
     workspace_model->set_workspace_names(
         ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names());
-    qDebug()
-        << "workspace count:"
-        << ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names().size();
     ui->workspace_view->setModel(workspace_model);
 
     const QStringList headers = {"icon", "名称", "类型", "大小", "修改时间"};
@@ -156,6 +159,10 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
         ClientSingleton::get_cache_workspace_data_instance().get_file_infos("唐远志"));
     ui->workspace_content_list_view->setModel(file_info_list_model);
     this->initialize_connects();
+
+    // move long time task to worker!
+    long_time_http_worker->moveToThread(long_time_http_runner);
+    long_time_http_runner->start();
 }
 
 // should use the std::unique_ptr to manage them!
@@ -166,13 +173,13 @@ RemoteWorkspacePage::~RemoteWorkspacePage() {
 
 void RemoteWorkspacePage::show_message(const QString& message, bool error) {
     if (error) {
-        ElaMessageBar::warning(ElaMessageBarType::TopRight,
+        ElaMessageBar::warning(ElaMessageBarType::TopLeft,
                                "workspace",
                                message,
                                ClientGlobalConfig::error_show_time,
                                show_widget);
     } else {
-        ElaMessageBar::success(ElaMessageBarType::TopRight,
+        ElaMessageBar::success(ElaMessageBarType::TopLeft,
                                "workspace",
                                message,
                                ClientGlobalConfig::message_show_time,
@@ -195,12 +202,15 @@ void RemoteWorkspacePage::adjust_workspace_content_view() {
     ui->workspace_content_table_view->setColumnWidth(4, w4);
 }
 void RemoteWorkspacePage::initialize_connects() {
+    connect(long_time_http_runner,
+            &QThread::finished,
+            long_time_http_worker,
+            &LongtimeHttpTask::deleteLater);
+
     connect(ui->workspace_content_table_view,
             &ElaTableView::tableViewShow,
             this,
             &RemoteWorkspacePage::adjust_workspace_content_view);
-
-
     connect(ui->workspace_view,
             &ElaListView::clicked,
             this,
@@ -244,6 +254,22 @@ void RemoteWorkspacePage::initialize_connects() {
             &ElaToolButton::clicked,
             this,
             &RemoteWorkspacePage::on_adjust_content_view_button_clicked);
+
+    connect(long_time_http_worker,
+            &LongtimeHttpTask::finish_download_file,
+            this,
+            [this](bool success, const QString& message, const QString& save_path) {
+                this->show_message(message, !success);
+                qDebug() << message;
+                if (success) {
+                    this->pdf_displayer->load_pdf(save_path);
+                    show_and_raise(this->pdf_displayer);
+                }
+            });
+    connect(this,
+            &RemoteWorkspacePage::start_download_large_file,
+            long_time_http_worker,
+            &LongtimeHttpTask::download_large_file);
 }
 
 void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
@@ -284,7 +310,6 @@ void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
         show_message("返回格式错误😫😫😫...");
         return;
     }
-
 
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  workspaces_json      = json_data[WorkspaceResJsonKeys::workspaces_key].toArray();
@@ -476,7 +501,6 @@ void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIn
     if (file_info.file_type == FileKind::kFolder) {
         this->enter_folder_impl(file_info.file_name);
     } else if (file_info.file_type == FileKind::kPdf) {
-        // this->display_pdf_from_file_impl(file_info.file_name);
         this->display_pdf_impl(file_info.file_name, file_info.file_size);
     } else {
     }
@@ -521,25 +545,21 @@ QNetworkReply* RemoteWorkspacePage::send_download_file_req(const QString& file_n
 // the urlencode will replace the '+' -> ' ',fuck!
 void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name) {
     auto reply = this->send_download_file_req(file_name);
-    // qDebug() << "Call display_pdf_from_buffer_impl func in " << QThread::currentThreadId();
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         if (reply->error() != QNetworkReply::NoError) {
             reply->deleteLater();
             this->show_message("文件下载失败😫😫😫...");
             return;
         }
-
         auto data_bytes = reply->readAll();
-        qDebug() << data_bytes.size();
         reply->deleteLater();
-        // long time fund
         QBuffer buffer(&data_bytes);
         buffer.open(QIODevice::ReadOnly);
+        // this is important,must seek to start!
         buffer.seek(0);
         this->show_message("下载完成,正在渲染远程PDF文件😊😊😊");
-        this->pdf_displayer->show();
         this->pdf_displayer->load_pdf(&buffer);
-        // qDebug() << "Call finished func in " << QThread::currentThreadId();
+        show_and_raise(this->pdf_displayer);
     });
 
     connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 s1, qint64 s2) {
@@ -551,57 +571,11 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
 
 void RemoteWorkspacePage::display_pdf_from_file_impl(const QString& file_name) {
     this->show_message("保存缓存文件...😂😂😂");
-    auto& cache_dir = ClientSingleton::get_cache_file_dir();
-    if (cache_dir.isEmpty()) {
-        show_message("缓存目录无效 😮😮😮...");
-        return;
-    }
-    QString file_path = QString("%1/%2").arg(cache_dir, file_name);
-    if (QFile::exists(file_path)) {
-        QFile::remove(file_path);
-    }
-
-    QFile* writer = new QFile(file_path);
-    if (!writer->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-        show_message("无法打开缓存文件... 😫😫😫");
-        return;
-    }
-
-    // then cache it!
-    auto reply = this->send_download_file_req(file_name);
-    // write by chunk!
-    connect(reply, &QNetworkReply::readyRead, this, [writer, reply, this]() {
-        // then write file here!
-        constexpr size_t                    write_buffer_size = 4 * 1024;
-        std::array<char, write_buffer_size> buffer;
-        while (reply->read(buffer.data(), buffer.size()) > 0) {
-            writer->write(buffer.data(), buffer.size());
-        }
-        // qDebug() << "Call write func in " << QThread::currentThreadId();
-    });
-
-    connect(reply, &QNetworkReply::finished, this, [writer, reply, file_path, this]() {
-        if (reply->error() != QNetworkReply::NoError) {
-            reply->deleteLater();
-            this->show_message("文件下载失败😫😫😫...");
-            return;
-        }
-        writer->flush();
-        writer->close();
-        writer->deleteLater();
-
-        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊");
-        this->pdf_displayer->load_pdf(file_path);
-        this->pdf_displayer->show();
-    });
-
-
-    connect(
-        reply, &QNetworkReply::downloadProgress, this, [this](qint64 recv_len, qint64 total_len) {
-            int percent = static_cast<int32_t>(static_cast<double>(recv_len) / total_len * 100.0);
-            this->ui->download_file_progress_bar->setValue(percent);
-            // qDebug() << "Call download progress func in " << QThread::currentThreadId();
-        });
+    auto&   cache_dir          = ClientSingleton::get_cache_file_dir();
+    QString save_file_path     = QString("%1/%2").arg(cache_dir, file_name);
+    QString folder_path        = this->path_helper.get_workspace_path();
+    QString download_file_path = QString("%1/%2").arg(folder_path, file_name);
+    emit    start_download_large_file(save_file_path, download_file_path);
 }
 
 void RemoteWorkspacePage::display_pdf_impl(const QString& file_name, size_t file_size) {

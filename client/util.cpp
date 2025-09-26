@@ -48,5 +48,11 @@ std::pair<size_t, size_t> remove_path_sep(const QString& folder_path) {
     return {l, r};
 }
 
+void show_and_raise(QWidget* widget){
+    widget->show();
+    widget->raise();
+    widget->activateWindow();
+}
+
 }   // namespace client
 }   // namespace tang
