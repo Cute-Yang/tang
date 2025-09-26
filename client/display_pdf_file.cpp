@@ -15,8 +15,7 @@ DisplayPdf::DisplayPdf(QWidget* parent)
     , ui(new DisplayPdfUi())
     , search_model(new QPdfSearchModel(parent))
     , document(new QPdfDocument(parent))
-    , previous_search_text()
-    , error(QPdfDocument::Error::None) {
+    , previous_search_text() {
     ui->setup_ui(this);
     this->setWindowTitle("sea");
     // this->moveToCenter();
@@ -71,8 +70,8 @@ void DisplayPdf::init_connects() {
     ui->bookmark_view->setModel(bookmark_model);
     connect(ui->bookmark_view, &QAbstractItemView::activated, this, &DisplayPdf::bookmark_selected);
 
-    //solve it by remove it to another thread!
-    // ui->thumbnail_view->setModel(document->pageModel());
+    // solve it by remove it to another thread!
+    //  ui->thumbnail_view->setModel(document->pageModel());
     ui->pdf_show_page->setSearchModel(search_model);
     search_model->setDocument(document);
 

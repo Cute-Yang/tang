@@ -25,6 +25,9 @@ void ClientHttpUrls::format_http_urls() {
 
     // download file!
     download_file_http_url = QString("http://%1:%2/api/v1/download_file").arg(host).arg(port);
+
+    //upload file
+    upload_file_http_url = QString("http://%1:%2/api/v1/upload_file").arg(host).arg(port);
 }
 
 
@@ -46,6 +49,9 @@ const QString& ClientHttpUrls::get_workspace_content_url() {
 
 const QString& ClientHttpUrls::get_download_file_url() {
     return download_file_http_url;
+}
+const QString& ClientHttpUrls::get_upload_file_url(){
+    return upload_file_http_url;
 }
 
 }   // namespace client

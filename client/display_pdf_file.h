@@ -25,9 +25,6 @@ private:
     void   show_message(const QString& message, bool error = true);
     void   clear();
     void   process_after_load();
-
-    QPdfDocument::Error error;
-
 public:
     void load_pdf(const QString& file_path);
     void load_pdf(QIODevice* device);

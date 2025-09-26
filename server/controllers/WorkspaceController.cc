@@ -9,8 +9,6 @@
 #include <fstream>
 
 
-
-
 using namespace tang::common;
 using namespace tang::server::utils;
 using VoteUser = drogon_model::vote::TestVoteUser;
@@ -209,7 +207,7 @@ void WorkspaceController::upload_file(const HttpRequestPtr&                     
         make_response_and_return(StatusCode::kUploadFilesIsEmpty, callback);
     }
     auto save_dir = part_parser.getParameters().at("save_dir");
-    LOG_INFO << save_dir;
+    // LOG_INFO << save_dir;
     std::filesystem::path full_save_dir;
     if (auto ret = get_full_path(save_dir, full_save_dir); ret != StatusCode::kSuccess) {
         make_response_and_return(ret, callback);

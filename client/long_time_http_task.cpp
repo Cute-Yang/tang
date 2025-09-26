@@ -2,8 +2,12 @@
 #include "long_time_http_task.h"
 #include "client_singleton.h"
 #include <QFile>
+#include <QFileInfo>
+#include <QHttpMultiPart>
 #include <QJsonObject>
 #include <QThread>
+
+
 
 
 namespace tang {
@@ -48,7 +52,7 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
     // auto reply = this->send_download_file_req(file_name);
     // write by chunk!
     connect(reply, &QNetworkReply::readyRead, this, [writer, reply, this]() {
-        // then write file here!
+        // allocate buffer with 16 * 1024!
         constexpr size_t                    write_buffer_size = 16 * 1024;
         std::array<char, write_buffer_size> buffer;
         while (true) {
@@ -61,6 +65,7 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
         }
     });
 
+    // when finished!
     connect(reply, &QNetworkReply::finished, this, [writer, reply, save_file_path, this]() {
         if (reply->error() != QNetworkReply::NoError) {
             reply->deleteLater();
@@ -72,6 +77,49 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
         writer->deleteLater();
         emit finish_download_file(true, QString("下载成功😊😊😊..."), save_file_path);
     });
+
+    // report the progress!
+    connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 n_recv, qint64 n_total) {
+        int  percent = static_cast<int>(n_recv * 100.0 / n_total);
+        emit download_percent(percent);
+    });
 }
+
+void LongtimeHttpTask::upload_file(const QString& src_file_path, const QString& save_dir) {
+    QHttpMultiPart* multi_part = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+    // add params!
+    QFile* file = new QFile(src_file_path);
+    if (!file->open(QIODevice::ReadOnly)) {
+        delete file;
+        emit finish_upload_file(false, QString("无法打开文件😫😫😫"));
+        return;
+    }
+
+    QHttpPart text_part;
+    text_part.setHeader(QNetworkRequest::ContentDispositionHeader,
+                        QString("form-data; name=\"save_dir\""));
+    multi_part->append(text_part);
+
+    // support multi file then
+    QHttpPart file_part;
+    file_part.setHeader(QNetworkRequest::ContentDispositionHeader,
+                        QVariant("form-data; name=\"upload_file\"; filename=\"" +
+                                 QFileInfo(*file).fileName() + "\""));
+    file_part.setBodyDevice(file);   // 将文件流交给 filePart
+    file->setParent(multi_part);     // 确保 file 的生命周期由 multiPart 管理
+    multi_part->append(file_part);
+
+    QUrl            url(ClientSingleton::get_http_urls_instance().get_download_file_url());
+    QNetworkRequest request(url);
+    QNetworkReply*  reply = manager->post(request, multi_part);
+
+    connect(reply, &QNetworkReply::finished, this, [reply, this]() {
+        if (reply->error() != QNetworkReply::NoError) {
+            emit finish_upload_file(false, reply->errorString());
+        }
+        emit finish_upload_file(true, "上传成功😁😁😁...");
+    });
+}
+
 }   // namespace client
 }   // namespace tang
