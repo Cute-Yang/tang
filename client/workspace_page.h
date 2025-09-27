@@ -12,6 +12,7 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QThread>
+#include "workspace_right_menu.h"
 
 
 namespace tang {
@@ -77,6 +78,7 @@ private:
     LongtimeHttpTask* long_time_http_worker;
 
     NewDir* new_dir_dialog;
+    WorkspaceRightMenu* right_menu;
 
 
     // some helper functions...
@@ -134,10 +136,14 @@ public slots:
 
     void on_new_dir_ok_button_clicked();
 
+    void display_right_menu(const QPoint& pos);
+
+
     // void on_forward_button_clicked();
 signals:
     void start_download_large_file(const QString& src_file_path, const QString& save_file_path);
     void start_upload_files(const QStringList& upload_files, const QString& save_dir);
+
 };
 
 }   // namespace client

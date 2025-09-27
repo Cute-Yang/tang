@@ -145,9 +145,12 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     , show_widget(find_root_widget(this))
     , long_time_http_runner(new QThread(this))
     , long_time_http_worker(new LongtimeHttpTask())
-    , new_dir_dialog(new NewDir()) {
+    , new_dir_dialog(new NewDir())
+    , right_menu(new WorkspaceRightMenu()) {
     // reverse capacity
     ui->setup_ui(this);
+    ui->workspace_content_list_view->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->workspace_content_table_view->setContextMenuPolicy(Qt::CustomContextMenu);
     this->setTitleVisible(false);
     // this is not enabled!
     // this->setWindowTitle("workspace");
@@ -399,6 +402,10 @@ void RemoteWorkspacePage::initialize_connects() {
                       });
         }
     });
+    connect(ui->workspace_content_table_view,
+            &ElaTableView::customContextMenuRequested,
+            this,
+            &RemoteWorkspacePage::display_right_menu);
 }
 
 void RemoteWorkspacePage::set_workspace_content_icon_size_impl(QSize icon_size) {
@@ -774,6 +781,14 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
         this->get_workspace_content_impl(true);
         this->new_dir_dialog->clear();
     });
+}
+
+void RemoteWorkspacePage::display_right_menu(const QPoint& pos) {
+    qDebug() << "display right menu";
+    QAction* selected = right_menu->menu->exec(ui->workspace_content_table_view->mapToGlobal(pos));
+    if (selected) {
+        qDebug() << "lalalalalalla";
+    }
 }
 
 }   // namespace client
