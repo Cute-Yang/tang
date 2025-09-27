@@ -44,7 +44,8 @@ enum class StatusCode : uint32_t {
     kWebSocketConnectionIsNullptr = 35,
     kWebSocketKeyNotExsit         = 36,
     kUserisAlreadyOnline          = 37,
-    kUserisInvalid        = 38,
+    kUserisInvalid                = 38,
+    kDirisAlreayExit              = 39,
     Count
 };
 
@@ -89,7 +90,8 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "the websocket connection is nullptr!!!",
     "the websocket conn key is not exist!",
     "the user is already online!",
-    "the user is invalid!"};
+    "the user is invalid!",
+    "the dir is alreay exist!"};
 
 inline constexpr std::string_view get_status_str(size_t index) {
     if (index >= status_count) {
@@ -117,7 +119,6 @@ enum class FileKind : uint32_t {
     kError  = 10,
     count
 };
-
 enum class VoteChoiceType : uint8_t { kSingleChoice = 0, kMultiChoice = 1, count };
 // static_assert(is_contiguous_enum_from_zeron_impl<VoteChoiceType, VoteChoiceType::kSingleChoice,
 //                                                  VoteChoiceType::kMultiChoice>::value,

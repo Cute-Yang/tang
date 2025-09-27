@@ -26,8 +26,13 @@ void ClientHttpUrls::format_http_urls() {
     // download file!
     download_file_http_url = QString("http://%1:%2/api/v1/download_file").arg(host).arg(port);
 
-    //upload file
+    // upload file
     upload_file_http_url = QString("http://%1:%2/api/v1/upload_file").arg(host).arg(port);
+
+    is_file_exist_http_url =
+        QString("http://%1:%2/api/v1/is_specify_file_exist").arg(host).arg(port);
+
+    create_dir_http_url = QString("http://%1:%2/api/v1/create_dir").arg(host).arg(port);
 }
 
 
@@ -50,9 +55,16 @@ const QString& ClientHttpUrls::get_workspace_content_url() {
 const QString& ClientHttpUrls::get_download_file_url() {
     return download_file_http_url;
 }
-const QString& ClientHttpUrls::get_upload_file_url(){
+const QString& ClientHttpUrls::get_upload_file_url() {
     return upload_file_http_url;
 }
 
+const QString& ClientHttpUrls::get_is_file_exist_url() {
+    return is_file_exist_http_url;
+}
+
+const QString& ClientHttpUrls::get_create_new_dir_url() {
+    return create_dir_http_url;
+}
 }   // namespace client
 }   // namespace tang

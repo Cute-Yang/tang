@@ -141,7 +141,20 @@ void WorkspaceController::delete_file(const HttpRequestPtr&                     
 // only support create file at directory,not support give a path!
 void WorkspaceController::create_file(const HttpRequestPtr&                         req,
                                       std::function<void(const HttpResponsePtr&)>&& callback) {
-    std::string           file_path = req->getParameter("file_path");
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        LOG_ERROR << req->getJsonError();
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+    constexpr auto key = "file_path";
+    if (!json_data->isMember(key)) {
+        make_response_and_return(StatusCode::kJsonKeyError, callback);
+    }
+
+    if (!(*json_data)[key].isString()) {
+        make_response_and_return(StatusCode::kJsonTypeError, callback);
+    }
+    std::string           file_path = (*json_data)[key].asString();
     std::filesystem::path full_path;
     if (!raise_when_file_exit(file_path, callback, full_path)) {
         return;
@@ -160,13 +173,39 @@ void WorkspaceController::create_file(const HttpRequestPtr&                     
 
 void WorkspaceController::create_dir(const HttpRequestPtr&                         req,
                                      std::function<void(const HttpResponsePtr&)>&& callback) {
-    std::string           file_path = req->getParameter("file_path");
+    // std::string           file_path = req->getParameter("file_path");
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        LOG_ERROR << req->getJsonError();
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+    constexpr auto key = "file_path";
+    if (!json_data->isMember(key)) {
+        make_response_and_return(StatusCode::kJsonKeyError, callback);
+    }
+
+    if (!(*json_data)[key].isString()) {
+        make_response_and_return(StatusCode::kJsonTypeError, callback);
+    }
+    std::string           file_path = (*json_data)[key].asString();
     std::filesystem::path full_path;
-    if (!raise_when_file_exit(file_path, callback, full_path)) {
-        return;
+    if (auto ret = get_full_path(file_path, full_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
     }
     std::error_code ec;
-    auto            ok = std::filesystem::create_directory(full_path);
+    bool            is_exist = std::filesystem::exists(full_path, ec);
+    handle_fs_error(ec, callback);
+
+    ec.clear();
+    bool is_dir = false;
+    if (is_exist) {
+        is_dir = std::filesystem::is_directory(full_path, ec);
+        handle_fs_error(ec, callback);
+    }
+    if (is_exist && is_dir) {
+        make_response_and_return(StatusCode::kDirisAlreayExit, callback);
+    }
+    auto ok = std::filesystem::create_directory(full_path, ec);
     handle_fs_error(ec, callback);
 
     if (!ok) {
@@ -176,7 +215,6 @@ void WorkspaceController::create_dir(const HttpRequestPtr&                      
 
     make_response_and_return(StatusCode::kSuccess, callback);
 }
-
 void WorkspaceController::move_file(const HttpRequestPtr&                         req,
                                     std::function<void(const HttpResponsePtr&)>&& callback) {
     std::string           source_file_path = req->getParameter("source_file_path");
@@ -348,5 +386,48 @@ void WorkspaceController::get_workspace_names(
     ret["workspace_show_names"] = workspace_show_names;
     ret["workspaces"]           = workspaces;
     auto resp                   = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
+}
+
+void WorkspaceController::is_specify_file_exist(
+    const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) {
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+
+    // parse the json,need file path
+    constexpr const char* key = "file_path";
+    if (!json_data->isMember(key)) {
+        make_response_and_return(StatusCode::kJsonKeyError, callback);
+    }
+
+    if (!(*json_data)[key].isString()) {
+        make_response_and_return(StatusCode::kJsonTypeError, callback);
+    }
+
+    std::string file_path = (*json_data)[key].asString();
+
+    std::filesystem::path full_file_path;
+    if (auto ret = get_full_path(file_path, full_file_path); ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
+    }
+
+    std::error_code ec;
+    bool            is_exist = std::filesystem::exists(full_file_path, ec);
+    handle_fs_error(ec, callback);
+
+    ec.clear();
+    bool is_dir = false;
+    if (is_exist) {
+        bool is_dir = std::filesystem::is_directory(full_file_path);
+        handle_fs_error(ec, callback);
+    }
+
+    auto ret                                  = make_json_from_status_code(StatusCode::kSuccess);
+    ret[IsFileExistResResponse::is_exist_key] = is_exist;
+    ret[IsFileExistResResponse::is_dir_key]   = is_dir;
+
+    auto resp = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
 }

@@ -15,7 +15,8 @@ private:
     QString workspace_content_http_url;
     QString download_file_http_url;
     QString upload_file_http_url;
-
+    QString is_file_exist_http_url;
+    QString create_dir_http_url;
 
     void format_http_urls();
 
@@ -30,6 +31,8 @@ public:
     const QString& get_workspace_content_url();
     const QString& get_download_file_url();
     const QString& get_upload_file_url();
+    const QString& get_is_file_exist_url();
+    const QString& get_create_new_dir_url();
 };
 }   // namespace client
 }   // namespace tang

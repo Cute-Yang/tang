@@ -269,9 +269,11 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     workspace_content_list_view = new ElaListView(page);
     workspace_content_list_view->setIconSize(
-        QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
+        QSize(ClientGlobalConfig::large_icon_size, ClientGlobalConfig::large_icon_size));
     workspace_content_list_view->setResizeMode(ElaListView::Adjust);
     workspace_content_list_view->setWrapping(true);
+    workspace_content_list_view->setIconSize(
+        QSize(ClientGlobalConfig::large_icon_size, ClientGlobalConfig::large_icon_size));
     workspace_content_list_view->setSpacing(5);
     stacked_workspace_content_widget->addWidget(workspace_content_list_view);
 
@@ -279,7 +281,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     workspace_content_table_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     workspace_content_table_view->setAlternatingRowColors(true);
     workspace_content_table_view->setIconSize(
-        QSize(ClientGlobalConfig::small_icon_size, ClientGlobalConfig::small_icon_size));
+        QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
     workspace_content_table_view->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     workspace_content_table_view->verticalHeader()->setHidden(true);
     workspace_content_table_view->horizontalHeader()->setSectionResizeMode(

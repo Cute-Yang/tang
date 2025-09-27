@@ -23,7 +23,7 @@
 #include <QUrlQuery>
 #include <QVBoxLayout>
 #include <QtConcurrent/QtConcurrent>
-
+#include <algorithm>
 
 using namespace tang::common;
 namespace tang {
@@ -86,6 +86,17 @@ struct WorkspaceContentResJsonValidator {
         return true;
     }
 };
+
+struct IsFileExistResJsonValidator {
+    static bool validate(const QJsonObject& json_data) {
+        for (auto& key : IsFileExistResResponse::keys) {
+            if (!(json_data.contains(key) && json_data[key].isBool())) {
+                return false;
+            }
+        }
+        return true;
+    }
+};
 // jsut for test!!!
 void add_test() {
     std::vector<QString> test_workspaces = {
@@ -133,7 +144,8 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     , pdf_displayer(new DisplayPdf())
     , show_widget(find_root_widget(this))
     , long_time_http_runner(new QThread(this))
-    , long_time_http_worker(new LongtimeHttpTask()) {
+    , long_time_http_worker(new LongtimeHttpTask())
+    , new_dir_dialog(new NewDir()) {
     // reverse capacity
     ui->setup_ui(this);
     this->setTitleVisible(false);
@@ -163,12 +175,17 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     // move long time task to worker!
     long_time_http_worker->moveToThread(long_time_http_runner);
     long_time_http_runner->start();
+    this->new_dir_dialog->hide();
 }
 
 // should use the std::unique_ptr to manage them!
 RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
     delete pdf_displayer;
+    delete new_dir_dialog;
+    // important,if not do this,maybe crash!
+    long_time_http_runner->quit();
+    long_time_http_runner->wait();
 }
 
 void RemoteWorkspacePage::show_message(const QString& message, bool error) {
@@ -270,6 +287,123 @@ void RemoteWorkspacePage::initialize_connects() {
             &RemoteWorkspacePage::start_download_large_file,
             long_time_http_worker,
             &LongtimeHttpTask::download_large_file);
+
+    connect(long_time_http_worker,
+            &LongtimeHttpTask::download_percent,
+            this->ui->download_file_progress_bar,
+            &ElaProgressBar::setValue);
+
+    connect(ui->upload_file_action,
+            &QAction::triggered,
+            this,
+            &RemoteWorkspacePage::on_upload_file_action_triggered);
+
+    connect(this,
+            &RemoteWorkspacePage::start_upload_files,
+            long_time_http_worker,
+            &LongtimeHttpTask::upload_files);
+
+    connect(long_time_http_worker,
+            &LongtimeHttpTask::finish_upload_files,
+            this,
+            [this](int n1, int n2) {
+                this->show_message(QString("成功上传:%1,失败:%2").arg(n1).arg(n2), n2 > 0);
+            });
+    connect(long_time_http_worker,
+            &LongtimeHttpTask::upload_percent,
+            this->ui->upload_file_progress_bar,
+            &ElaProgressBar::setValue);
+    connect(this->ui->new_dir_action,
+            &QAction::triggered,
+            this,
+            &RemoteWorkspacePage::on_new_dir_action_triggered);
+    connect(new_dir_dialog->ui->ok_button,
+            &ElaToolButton::clicked,
+            this,
+            &RemoteWorkspacePage::on_new_dir_ok_button_clicked);
+    connect(new_dir_dialog->ui->cancle_button, &ElaToolButton::clicked, this, [this]() {
+        this->new_dir_dialog->clear();
+    });
+
+    // view
+    connect(ui->view_file_with_small_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::small_icon_size, ClientGlobalConfig::small_icon_size));
+    });
+
+    connect(ui->view_file_with_middle_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
+    });
+
+    connect(ui->view_file_with_large_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::large_icon_size, ClientGlobalConfig::large_icon_size));
+    });
+
+    connect(ui->view_file_with_tiling_action, &QAction::triggered, this, [this]() {
+        this->ui->stacked_workspace_content_widget->setCurrentWidget(
+            this->ui->workspace_content_list_view);
+    });
+
+    connect(ui->view_file_with_detail_action, &QAction::triggered, this, [this]() {
+        this->ui->stacked_workspace_content_widget->setCurrentWidget(
+            this->ui->workspace_content_table_view);
+    });
+
+    connect(ui->sort_file_by_name_action, &QAction::triggered, this, [this]() {
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            this->path_helper.get_workspace_path());
+        if (file_infos.size() > 0) {
+            std::sort(file_infos.begin(),
+                      file_infos.end(),
+                      [](const RemoteFileInfo& a, const RemoteFileInfo& b) {
+                          return a.file_name < b.file_name;
+                      });
+        }
+    });
+
+    connect(ui->sort_file_by_size_action, &QAction::triggered, this, [this]() {
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            this->path_helper.get_workspace_path());
+        if (file_infos.size() > 0) {
+            std::sort(file_infos.begin(),
+                      file_infos.end(),
+                      [](const RemoteFileInfo& a, const RemoteFileInfo& b) {
+                          return a.file_size < b.file_size;
+                      });
+        }
+    });
+
+    connect(ui->sort_file_by_type_action, &QAction::triggered, this, [this]() {
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            this->path_helper.get_workspace_path());
+        if (file_infos.size() > 0) {
+            std::sort(file_infos.begin(),
+                      file_infos.end(),
+                      [](const RemoteFileInfo& a, const RemoteFileInfo& b) {
+                          return static_cast<uint32_t>(a.file_type) <
+                                 static_cast<uint32_t>(b.file_type);
+                      });
+        }
+    });
+
+    connect(ui->sort_file_by_modify_time_action, &QAction::triggered, this, [this]() {
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            this->path_helper.get_workspace_path());
+        if (file_infos.size() > 0) {
+            std::sort(file_infos.begin(),
+                      file_infos.end(),
+                      [](const RemoteFileInfo& a, const RemoteFileInfo& b) {
+                          return a.modify_time < b.modify_time;
+                      });
+        }
+    });
+}
+
+void RemoteWorkspacePage::set_workspace_content_icon_size_impl(QSize icon_size) {
+    this->ui->workspace_content_table_view->setIconSize(icon_size);
+    this->ui->workspace_content_list_view->setIconSize(icon_size);
 }
 
 void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
@@ -412,35 +546,41 @@ void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
     if (refresh || file_infos.empty()) {
         this->send_get_workspace_content_req(folder_path);
     } else {
-        show_message("从缓存获取(you can refresh) 😊😊😊");
+        show_message("从缓存获取(you can refresh) 😊😊😊", false);
         ui->directory_line_edit->setText(folder_path);
         this->set_workspace_content_data(file_infos);
     }
 }
 
-void RemoteWorkspacePage::send_get_workspace_content_req(const QString& folder_path) {
+void RemoteWorkspacePage::send_get_workspace_content_req(const QString&          folder_path,
+                                                         std::function<void()>&& success_callback,
+                                                         std::function<void()>&& failed_callback) {
     QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_workspace_content_url());
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // no need any params!
     auto&     manager = ClientSingleton::get_network_manager_instance();
     QUrlQuery query;
-    // auto [l, r]           = remove_path_sep(folder_path);
-    // if (!(l == 0 && r == folder_path.size() - 1)) {
-    //     folder_path = folder_path.mid(l, r - l + 1);
-    //     // then set to ui
-    //     ui->directory_line_edit->setText(folder_path);
-    // }
     query.addQueryItem("folder_path", folder_path);
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
     show_message("正在查询服务器😴😴😴...", false);
-    connect(reply, &QNetworkReply::finished, this, [this, reply] {
-        if (this->process_workspace_content_response(reply)) {
-            this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
-        } else {
-            this->path_helper.pop_back_safe();
-        }
-    });
+    connect(
+        reply,
+        &QNetworkReply::finished,
+        this,
+        [this, reply, c1 = std::move(success_callback), c2 = std::move(failed_callback)] {
+            if (this->process_workspace_content_response(reply)) {
+                if (c1) {
+                    c1();
+                }
+                this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
+            } else {
+                if (c2) {
+                    c2();
+                }
+                this->path_helper.pop_back_safe();
+            }
+        });
 }
 
 void RemoteWorkspacePage::on_workspace_item_clicked(const QModelIndex& index) {
@@ -569,13 +709,14 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
     });
 }
 
+
 void RemoteWorkspacePage::display_pdf_from_file_impl(const QString& file_name) {
     this->show_message("保存缓存文件...😂😂😂");
-    auto&   cache_dir          = ClientSingleton::get_cache_file_dir();
-    QString save_file_path     = QString("%1/%2").arg(cache_dir, file_name);
-    QString folder_path        = this->path_helper.get_workspace_path();
-    QString download_file_path = QString("%1/%2").arg(folder_path, file_name);
-    emit    start_download_large_file(save_file_path, download_file_path);
+    auto&   cache_dir      = ClientSingleton::get_cache_file_dir();
+    QString save_file_path = QString("%1/%2").arg(cache_dir, file_name);
+    QString folder_path    = this->path_helper.get_workspace_path();
+    QString src_file_path  = QString("%1/%2").arg(folder_path, file_name);
+    emit    start_download_large_file(src_file_path, save_file_path);
 }
 
 void RemoteWorkspacePage::display_pdf_impl(const QString& file_name, size_t file_size) {
@@ -585,6 +726,54 @@ void RemoteWorkspacePage::display_pdf_impl(const QString& file_name, size_t file
     } else {
         this->display_pdf_from_file_impl(file_name);
     }
+}
+
+void RemoteWorkspacePage::on_upload_file_action_triggered() {
+    QStringList file_names = QFileDialog::getOpenFileNames(this, "选择上传文件", "", "");
+    if (file_names.empty()) {
+        this->show_message("请选择文件🌷🌷🌷!");
+        return;
+    }
+    QString save_dir = this->path_helper.get_workspace_path();
+    emit    start_upload_files(file_names, save_dir);
+}
+
+void RemoteWorkspacePage::on_new_dir_action_triggered() {
+    this->new_dir_dialog->display();
+}
+
+void RemoteWorkspacePage::on_new_dir_ok_button_clicked() {
+    // first,flush the workspace content!
+    auto new_dir_name = new_dir_dialog->ui->line_edit->text();
+    this->create_new_dir_impl(new_dir_name);
+}
+
+
+void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
+    QJsonObject json_data;
+    auto        dir_path = QString("%1/%2").arg(this->path_helper.get_workspace_path(), dir_name);
+    ;
+    json_data["file_path"] = dir_path;
+    auto reply             = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_create_new_dir_url());
+    connect(reply, &QNetworkReply::finished, this, [this, dir_path, reply]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            this->show_message("网络请求错误😫😫😫");
+            return;
+        }
+        auto json_data = document->object();
+
+        int status = json_data[PublicResponseJsonKeys::status_key].toInt();
+        if (status != static_cast<int>(StatusCode::kSuccess)) {
+            this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
+            return;
+        }
+        this->show_message(QString("成功创建了文件夹%1").arg(dir_path));
+        // then flush the workspace content!
+        this->get_workspace_content_impl(true);
+        this->new_dir_dialog->clear();
+    });
 }
 
 }   // namespace client

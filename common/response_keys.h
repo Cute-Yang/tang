@@ -26,15 +26,21 @@ struct WorkspaceResJsonKeys {
 };
 
 struct WorkspaceContentResponse {
-    
+
     static constexpr const char* file_name_key       = "file_name";
     static constexpr const char* file_size_key       = "file_size";
     static constexpr const char* file_type_key       = "file_type";
     static constexpr const char* last_write_time_key = "last_write_time";
-    static constexpr const char* file_infos_key = "file_infos";
+    static constexpr const char* file_infos_key      = "file_infos";
 
     static constexpr std::array<const char*, 4> item_keys = {
         file_name_key, file_size_key, file_type_key, last_write_time_key};
+};
+
+struct IsFileExistResResponse {
+    static constexpr const char*                is_exist_key = "is_exist";
+    static constexpr const char*                is_dir_key   = "is_dir";
+    static constexpr std::array<const char*, 2> keys         = {is_exist_key, is_dir_key};
 };
 }   // namespace common
 }   // namespace tang

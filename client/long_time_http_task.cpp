@@ -16,7 +16,7 @@ LongtimeHttpTask::LongtimeHttpTask()
     : manager(new QNetworkAccessManager(this)) {}
 LongtimeHttpTask::~LongtimeHttpTask() {}
 
-void LongtimeHttpTask::download_large_file(const QString& file_path,
+void LongtimeHttpTask::download_large_file(const QString& src_file_path,
                                            const QString& save_file_path) {
     // test long long time!
     // qDebug() << "Start download file...............";
@@ -26,7 +26,7 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     // prepare the json data!
     QJsonObject json_data;
-    json_data["file_path"] = file_path;
+    json_data["file_path"] = src_file_path;
     QJsonDocument  json_doc(json_data);
     QByteArray     json_bytes = json_doc.toJson(QJsonDocument::Compact);
     QNetworkReply* reply      = manager->post(request, json_bytes);
@@ -43,7 +43,7 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
         }
     }
 
-    QFile* writer = new QFile(file_path);
+    QFile* writer = new QFile(save_file_path);
     if (!writer->open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         emit finish_download_file(false, QString("无法创建缓存文件... 😫😫😫"), save_file_path);
         return;
@@ -80,44 +80,63 @@ void LongtimeHttpTask::download_large_file(const QString& file_path,
 
     // report the progress!
     connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 n_recv, qint64 n_total) {
-        int  percent = static_cast<int>(n_recv * 100.0 / n_total);
+        // round ceil!
+        int  percent = static_cast<int>(n_recv * 100.0 / (n_total + 1e-7) + 0.5);
         emit download_percent(percent);
     });
 }
 
-void LongtimeHttpTask::upload_file(const QString& src_file_path, const QString& save_dir) {
+
+
+void LongtimeHttpTask::upload_files(const QStringList& upload_files, const QString& save_dir) {
+
+    // test sleep 8s
+    qDebug() << "Start sleep for 8s...";
+    QThread::sleep(8);
+
+    qDebug() << "Finish sleep for 8s...";
     QHttpMultiPart* multi_part = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     // add params!
-    QFile* file = new QFile(src_file_path);
-    if (!file->open(QIODevice::ReadOnly)) {
-        delete file;
-        emit finish_upload_file(false, QString("无法打开文件😫😫😫"));
-        return;
-    }
-
     QHttpPart text_part;
     text_part.setHeader(QNetworkRequest::ContentDispositionHeader,
                         QString("form-data; name=\"save_dir\""));
+    text_part.setBody(save_dir.toUtf8());
     multi_part->append(text_part);
 
     // support multi file then
-    QHttpPart file_part;
-    file_part.setHeader(QNetworkRequest::ContentDispositionHeader,
-                        QVariant("form-data; name=\"upload_file\"; filename=\"" +
-                                 QFileInfo(*file).fileName() + "\""));
-    file_part.setBodyDevice(file);   // 将文件流交给 filePart
-    file->setParent(multi_part);     // 确保 file 的生命周期由 multiPart 管理
-    multi_part->append(file_part);
+    int n_success = 0;
+    int n_failed  = 0;
+    for (size_t i = 0; i < upload_files.size(); ++i) {
+        QFile* file = new QFile(upload_files[i]);
+        if (!file->open(QIODevice::ReadOnly)) {
+            delete file;
+            n_failed++;
+            continue;
+        }
+        QHttpPart file_part;
+        file_part.setHeader(QNetworkRequest::ContentDispositionHeader,
+                            QVariant("form-data; name=\"upload_file\"; filename=\"" +
+                                     QFileInfo(*file).fileName() + "\""));
+        file_part.setBodyDevice(file);   // 将文件流交给 filePart
+        file->setParent(multi_part);     // 确保 file 的生命周期由 multiPart 管理
+        multi_part->append(file_part);
+        n_success++;
+    }
 
-    QUrl            url(ClientSingleton::get_http_urls_instance().get_download_file_url());
+    QUrl            url(ClientSingleton::get_http_urls_instance().get_upload_file_url());
     QNetworkRequest request(url);
     QNetworkReply*  reply = manager->post(request, multi_part);
 
-    connect(reply, &QNetworkReply::finished, this, [reply, this]() {
+    connect(reply, &QNetworkReply::finished, this, [reply, this, n_success, n_failed]() {
         if (reply->error() != QNetworkReply::NoError) {
-            emit finish_upload_file(false, reply->errorString());
+            emit finish_upload_files(0, n_success + n_failed);
         }
-        emit finish_upload_file(true, "上传成功😁😁😁...");
+        emit finish_upload_files(n_success, n_failed);
+    });
+
+    connect(reply, &QNetworkReply::uploadProgress, this, [this](qint64 n_recv, qint64 n_total) {
+        int  percent = static_cast<int>(n_recv * 100.0 / (n_total + 1e-7) + 0.5);
+        emit upload_percent(percent);
     });
 }
 

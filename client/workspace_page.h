@@ -6,13 +6,12 @@
 // we should save the model!
 #include "display_pdf_file.h"
 #include "long_time_http_task.h"
+#include "new_dir.h"
 #include "workspace_view_model.h"
 #include <QFile>
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QThread>
-
-
 
 
 namespace tang {
@@ -77,6 +76,8 @@ private:
     QThread*          long_time_http_runner;
     LongtimeHttpTask* long_time_http_worker;
 
+    NewDir* new_dir_dialog;
+
 
     // some helper functions...
     //  process workspace names
@@ -85,7 +86,9 @@ private:
 
     // process workspace content
     void           get_workspace_content_impl(bool refresh);
-    void           send_get_workspace_content_req(const QString& workspace_path);
+    void           send_get_workspace_content_req(const QString&          workspace_path,
+                                                  std::function<void()>&& success_callback = nullptr,
+                                                std::function<void()>&& failed_callback=nullptr);
     bool           process_workspace_content_response(QNetworkReply* reply);
     void           show_message(const QString& message, bool error = true);
     void           enter_folder_impl(const QString& folder_name);
@@ -100,13 +103,15 @@ private:
 
     // adjust table content view!
     void adjust_workspace_content_view();
+    void initialize_connects();
 
+    void create_new_dir_impl(const QString& dir_name);
+
+    void set_workspace_content_icon_size_impl(QSize icon_size);
 
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
-    void initialize_connects();
-
 
 public slots:
     // workspace
@@ -122,9 +127,17 @@ public slots:
 
     void on_adjust_content_view_button_clicked();
 
+    // upload files
+    void on_upload_file_action_triggered();
+
+    void on_new_dir_action_triggered();
+
+    void on_new_dir_ok_button_clicked();
+
     // void on_forward_button_clicked();
 signals:
-    void start_download_large_file(const QString& file_path,const QString& download_file_path);
+    void start_download_large_file(const QString& src_file_path, const QString& save_file_path);
+    void start_upload_files(const QStringList& upload_files, const QString& save_dir);
 };
 
 }   // namespace client

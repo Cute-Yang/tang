@@ -42,6 +42,12 @@ public:
     void test_send_msg(const HttpRequestPtr&                         req,
                        std::function<void(const HttpResponsePtr&)>&& resp);
 
+    // whether the file is exist!
+    // all the file ops use json to pass the value,because the + will be encoded as ' '
+    // return two fields,is_exsit:bool is_dir:bool
+    void is_specify_file_exist(const HttpRequestPtr&                         req,
+                               std::function<void(const HttpResponsePtr&)>&& resp);
+
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(WorkspaceController::test_send_msg, "/api/v1/test_send_msg", Get, Post);
     ADD_METHOD_TO(WorkspaceController::get_file_infos, "/api/v1/get_file_infos", Post, Get);
@@ -54,6 +60,7 @@ public:
     ADD_METHOD_TO(WorkspaceController::get_file_size, "/api/v1/get_file_size", Get, Post);
     ADD_METHOD_TO(WorkspaceController::get_workspace_names, "/api/v1/get_workspace_names", Get,
                   Post);
+    ADD_METHOD_TO(WorkspaceController::is_specify_file_exist, "/api/v1/is_file_exist");
 
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(WorkspaceController::get, "/{2}/{1}", Get); // path is

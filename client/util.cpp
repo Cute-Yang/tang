@@ -1,4 +1,7 @@
 #include "util.h"
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include "client_singleton.h"
 namespace tang {
 namespace client {
 void switch_password_eye_style(ElaLineEdit* line_edit, QAction* action, bool hide) {
@@ -20,7 +23,7 @@ QWidget* find_root_widget(QWidget* widget) {
 
 std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
     if (reply->error() != QNetworkReply::NoError) {
-
+        qDebug() << reply->errorString();
         reply->deleteLater();
         return {};
     }
@@ -54,5 +57,16 @@ void show_and_raise(QWidget* widget){
     widget->activateWindow();
 }
 
+
+QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data,const QString& url_str){
+    QUrl url(url_str);
+    QNetworkRequest request(url_str);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    // prepare json data
+    QJsonDocument json_doc(json_data);
+    QByteArray    json_bytes = json_doc.toJson(QJsonDocument::Compact);
+    auto          reply = ClientSingleton::get_network_manager_instance().post(request, json_bytes);
+    return reply;
+}
 }   // namespace client
 }   // namespace tang
