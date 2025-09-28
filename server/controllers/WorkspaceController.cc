@@ -100,7 +100,21 @@ void WorkspaceController::get_file_infos(const HttpRequestPtr&                  
 
 void WorkspaceController::delete_file(const HttpRequestPtr&                         req,
                                       std::function<void(const HttpResponsePtr&)>&& callback) {
-    std::string           file_path = req->getParameter("file_path");
+    // std::string           file_path = req->getParameter("file_path");
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        LOG_ERROR << req->getJsonError();
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+    constexpr auto key = "file_path";
+    if (!json_data->isMember(key)) {
+        make_response_and_return(StatusCode::kJsonKeyError, callback);
+    }
+
+    if (!(*json_data)[key].isString()) {
+        make_response_and_return(StatusCode::kJsonTypeError, callback);
+    }
+    std::string           file_path = (*json_data)[key].asString();
     std::filesystem::path full_path;
     if (auto ret = get_full_path(file_path, full_path); ret != StatusCode::kSuccess) {
         return;

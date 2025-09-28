@@ -33,6 +33,9 @@ void ClientHttpUrls::format_http_urls() {
         QString("http://%1:%2/api/v1/is_specify_file_exist").arg(host).arg(port);
 
     create_dir_http_url = QString("http://%1:%2/api/v1/create_dir").arg(host).arg(port);
+
+    delete_file_http_url = QString("http://%1:%2/api/v1/delete_file").arg(host).arg(port);
+    rename_file_http_url = QString("http://%1:%2/api/v1/move_file").arg(host).arg(port);
 }
 
 
@@ -65,6 +68,14 @@ const QString& ClientHttpUrls::get_is_file_exist_url() {
 
 const QString& ClientHttpUrls::get_create_new_dir_url() {
     return create_dir_http_url;
+}
+
+const QString& ClientHttpUrls::get_delete_file_url() {
+    return delete_file_http_url;
+}
+
+const QString& ClientHttpUrls::get_rename_file_url() {
+    return rename_file_http_url;
 }
 }   // namespace client
 }   // namespace tang

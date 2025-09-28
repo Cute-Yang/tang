@@ -188,7 +188,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     flush_workspace_name_button = new ElaToolButton(page);
     // flush_button->setElaIcon(ElaIconType::FaceFlushed);
-    flush_workspace_name_button->setIcon(QIcon(":icons/images/flush.svg"));
+    flush_workspace_name_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
     flush_workspace_name_button->setToolTip("刷新工作区");
     flush_workspace_name_button->setIconSize(other_icon_size);
     navigation_layout->addWidget(flush_workspace_name_button);
@@ -239,7 +239,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     flush_workspace_content_button = new ElaToolButton(page);
     flush_workspace_content_button->setToolTip("刷新文件");
-    flush_workspace_content_button->setIcon(QIcon(":icons/images/flush.svg"));
+    flush_workspace_content_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
     flush_workspace_content_button->setIconSize(other_icon_size);
     navigation_layout->addWidget(flush_workspace_content_button);
 

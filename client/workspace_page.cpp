@@ -146,7 +146,9 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     , long_time_http_runner(new QThread(this))
     , long_time_http_worker(new LongtimeHttpTask())
     , new_dir_dialog(new NewDir())
-    , right_menu(new WorkspaceRightMenu()) {
+    , right_menu(new WorkspaceRightMenu())
+    , rename_file_dialog(new WorkspaceRenameFile())
+    , delete_file_dialog(new WorkspaceDeleteFile()) {
     // reverse capacity
     ui->setup_ui(this);
     ui->workspace_content_list_view->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -186,6 +188,8 @@ RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
     delete pdf_displayer;
     delete new_dir_dialog;
+    delete rename_file_dialog;
+    delete delete_file_dialog;
     // important,if not do this,maybe crash!
     long_time_http_runner->quit();
     long_time_http_runner->wait();
@@ -221,7 +225,9 @@ void RemoteWorkspacePage::adjust_workspace_content_view() {
     ui->workspace_content_table_view->setColumnWidth(3, w3);
     ui->workspace_content_table_view->setColumnWidth(4, w4);
 }
+
 void RemoteWorkspacePage::initialize_connects() {
+    // initialize all the connects
     connect(long_time_http_runner,
             &QThread::finished,
             long_time_http_worker,
@@ -354,7 +360,7 @@ void RemoteWorkspacePage::initialize_connects() {
             this->ui->workspace_content_table_view);
     });
 
-    connect(ui->sort_file_by_name_action, &QAction::triggered, this, [this]() {
+    auto sort_file_by_name_func = [this]() {
         auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
             this->path_helper.get_workspace_path());
         if (file_infos.size() > 0) {
@@ -364,9 +370,10 @@ void RemoteWorkspacePage::initialize_connects() {
                           return a.file_name < b.file_name;
                       });
         }
-    });
+    };
+    connect(ui->sort_file_by_name_action, &QAction::triggered, this, sort_file_by_name_func);
 
-    connect(ui->sort_file_by_size_action, &QAction::triggered, this, [this]() {
+    auto sort_file_by_size_func = [this]() {
         auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
             this->path_helper.get_workspace_path());
         if (file_infos.size() > 0) {
@@ -376,9 +383,10 @@ void RemoteWorkspacePage::initialize_connects() {
                           return a.file_size < b.file_size;
                       });
         }
-    });
+    };
+    connect(ui->sort_file_by_size_action, &QAction::triggered, this, sort_file_by_size_func);
 
-    connect(ui->sort_file_by_type_action, &QAction::triggered, this, [this]() {
+    auto sort_file_by_type_func = [this]() {
         auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
             this->path_helper.get_workspace_path());
         if (file_infos.size() > 0) {
@@ -389,9 +397,10 @@ void RemoteWorkspacePage::initialize_connects() {
                                  static_cast<uint32_t>(b.file_type);
                       });
         }
-    });
+    };
+    connect(ui->sort_file_by_type_action, &QAction::triggered, this, sort_file_by_type_func);
 
-    connect(ui->sort_file_by_modify_time_action, &QAction::triggered, this, [this]() {
+    auto sort_file_by_time_func = [this]() {
         auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
             this->path_helper.get_workspace_path());
         if (file_infos.size() > 0) {
@@ -401,11 +410,45 @@ void RemoteWorkspacePage::initialize_connects() {
                           return a.modify_time < b.modify_time;
                       });
         }
-    });
+    };
+    connect(ui->sort_file_by_modify_time_action, &QAction::triggered, this, sort_file_by_time_func);
+
     connect(ui->workspace_content_table_view,
             &ElaTableView::customContextMenuRequested,
             this,
             &RemoteWorkspacePage::display_right_menu);
+
+    connect(right_menu->small_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::small_icon_size, ClientGlobalConfig::small_icon_size));
+    });
+
+    connect(right_menu->middle_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
+    });
+
+    connect(right_menu->large_icon_action, &QAction::triggered, this, [this]() {
+        this->set_workspace_content_icon_size_impl(
+            QSize(ClientGlobalConfig::large_icon_size, ClientGlobalConfig::large_icon_size));
+    });
+
+    connect(right_menu->view_detail_action, &QAction::triggered, this, [this]() {
+        ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_table_view);
+    });
+
+    connect(right_menu->view_tiling_action, &QAction::triggered, this, [this]() {
+        ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_list_view);
+    });
+
+    connect(delete_file_dialog->ok_button, &ElaToolButton::clicked, this, [this]() {
+        this->delete_file_dialog->close();
+        this->delete_file_impl(this->delete_file_dialog->get_delete_fielname());
+    });
+
+    connect(delete_file_dialog->cancle_button, &ElaToolButton::clicked, this, [this]() {
+        this->delete_file_dialog->close();
+    });
 }
 
 void RemoteWorkspacePage::set_workspace_content_icon_size_impl(QSize icon_size) {
@@ -784,12 +827,58 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
 }
 
 void RemoteWorkspacePage::display_right_menu(const QPoint& pos) {
-    qDebug() << "display right menu";
+    QModelIndex index = ui->workspace_content_table_view->indexAt(pos);
+    // add the action impl here!,if need the position value!
+    connect(right_menu->delete_action, &QAction::triggered, this, [this, index]() {
+        auto& file_info = file_info_table_model->get_file_info(index.row());
+        this->delete_file_dialog->hint_text->setText(
+            QString("~~~是否要删除文件%1: '%2' ?\n~~~(请谨慎操作!!!😮😮😮)")
+                .arg(file_info.file_type == FileKind::kFolder ? "夹" : "")
+                .arg(file_info.file_name));
+        this->delete_file_dialog->set_delete_filename(file_info.file_name);
+        this->delete_file_dialog->display();
+    });
+
+    connect(right_menu->rename_action, &QAction::triggered, this, [this, index]() {
+        auto& file_info = file_info_table_model->get_file_info(index.row());
+        this->rename_file_dialog->previous_filename_value->setText(file_info.file_name);
+        this->rename_file_dialog->display();
+    });
+
+    // return the choosed action!
     QAction* selected = right_menu->menu->exec(ui->workspace_content_table_view->mapToGlobal(pos));
-    if (selected) {
-        qDebug() << "lalalalalalla";
+    if (selected == nullptr) {
+        qDebug() << "Not select any action!";
     }
 }
+
+void RemoteWorkspacePage::delete_file_impl(const QString& filename) {
+    QJsonObject json_data;
+    auto        file_path = QString("%1/%2").arg(this->path_helper.get_workspace_path(), filename);
+    ;
+    json_data["file_path"] = file_path;
+    auto reply             = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_delete_file_url());
+    connect(reply, &QNetworkReply::finished, this, [this, file_path, reply]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            this->show_message("网络请求错误😫😫😫");
+            return;
+        }
+        auto json_data = document->object();
+
+        int status = json_data[PublicResponseJsonKeys::status_key].toInt();
+        if (status != static_cast<int>(StatusCode::kSuccess)) {
+            this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
+            return;
+        }
+        this->show_message(QString("成功删除了文件%1").arg(file_path));
+    });
+}
+
+void RemoteWorkspacePage::rename_file_impl(const QString& src_filename,
+                                           const QString& dst_filename) {}
+
 
 }   // namespace client
 }   // namespace tang
