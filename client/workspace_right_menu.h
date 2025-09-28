@@ -17,6 +17,12 @@ public:
     QAction* middle_icon_action;
     QAction* large_icon_action;
     
+    //sort
+    QAction* sort_by_name_action;
+    QAction* sort_by_type_action;
+    QAction* sort_by_size_action;
+    QAction* sort_by_time_action;
+
     //view
     QAction* view_detail_action;
     QAction* view_tiling_action;
