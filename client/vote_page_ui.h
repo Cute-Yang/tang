@@ -43,7 +43,7 @@ public:
     ElaToolButton* start_vote_button;
 
     ElaToolButton* vote_history_text_button;
-    ElaTableView* vote_history;
+    ElaTableView* vote_history_view;
     void          setup_ui(ElaScrollPage* page);
 };
 }   // namespace client

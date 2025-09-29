@@ -214,11 +214,11 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     vote_history_text_layout->addStretch();
 
 
-    vote_history = new ElaTableView(page);
-    vote_history->horizontalHeader()->setFont(key_font);
-    vote_history->setFont(value_font);
-    vote_history->verticalHeader()->hide();
-    vote_history_layout->addWidget(vote_history);
+    vote_history_view = new ElaTableView(page);
+    vote_history_view->horizontalHeader()->setFont(key_font);
+    vote_history_view->setFont(value_font);
+    vote_history_view->verticalHeader()->hide();
+    vote_history_layout->addWidget(vote_history_view);
 
 
     central_widget->setWindowTitle("~~~Vote~~~");

@@ -12,7 +12,8 @@ private:
     VotePageUi* ui;
     VoteItemViewModel* vote_data;
     VoteHistoryViewModel* vote_history_model;
-
+    
+    void adjust_vote_history_view();
 public:
     VotePage(QWidget* parent = nullptr);
     ~VotePage();

@@ -16,11 +16,16 @@ VotePage::VotePage(QWidget* parent)
 
     QStringList vote_history_cols = {"id", "创建者", "创建时间", "主题", "类型", "check"};
     vote_history_model            = new VoteHistoryViewModel(vote_history_cols, 10, this);
-    ui->vote_history->setModel(vote_history_model);
+    ui->vote_history_view->setModel(vote_history_model);
 
     QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
     vote_data->add_vote_items(items);
     this->set_test_model();
+
+    connect(ui->vote_history_view,
+            &ElaTableView::tableViewShow,
+            this,
+            &VotePage::adjust_vote_history_view);
 
     // move the connect to func
     connect(ui->add_vote_item_button, &ElaToolButton::clicked, this, [this]() {
@@ -73,6 +78,23 @@ void VotePage::click_vote_items(const QModelIndex& index) {
     }
 }
 
+
+void VotePage::adjust_vote_history_view() {
+    auto width = ui->vote_history_view->width();
+    int  w0    = std::max(12,static_cast<int>(0.05 * width));
+    int  w1    = static_cast<int>(0.15 * width);
+    int  w2    = static_cast<int>(0.3 * width);
+    int  w3    = static_cast<int>(0.3 * width);
+    int  w4    = std::max(16,static_cast<int>(0.1 * width));
+    int  w5    = static_cast<int>(0.1 * width);
+
+    ui->vote_history_view->setColumnWidth(0, w0);
+    ui->vote_history_view->setColumnWidth(1, w1);
+    ui->vote_history_view->setColumnWidth(2, w2);
+    ui->vote_history_view->setColumnWidth(3, w3);
+    ui->vote_history_view->setColumnWidth(4, w4);
+    ui->vote_history_view->setColumnWidth(5, w5);
+}
 
 }   // namespace client
 }   // namespace tang
