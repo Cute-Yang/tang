@@ -117,7 +117,9 @@ private:
     void delete_file_impl(QString const& file_name);
     void rename_file_impl(QString const& src_filename, QString const& dst_filename);
     void refresh_workspace_content_impl();
-    
+
+    void workspace_content_double_clicked_impl(const RemoteFileInfo& file_info);
+
     void upload_file_impl();
 
 public:
@@ -127,9 +129,6 @@ public:
 public slots:
     // workspace
     void on_workspace_item_clicked(const QModelIndex& index);
-    // workspace content!
-    void on_workspace_table_content_item_clicked(const QModelIndex& index);
-    void on_workspace_list_content_item_clicked(const QModelIndex& index);
     void on_flush_workspace_name_button_clicked();
     void on_view_tiling_button_clicked();
     void on_view_detail_button_clicked();
@@ -143,7 +142,7 @@ public slots:
 
     void display_right_menu_for_table_view(const QPoint& pos);
     void display_right_menu_for_list_view(const QPoint& pos);
-    void display_right_menu_impl(const QModelIndex& index,const QPoint& global_pos);
+    void display_right_menu_impl(const QModelIndex& index, const QPoint& global_pos);
 
 
     // void on_forward_button_clicked();

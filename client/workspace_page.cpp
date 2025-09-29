@@ -3,6 +3,7 @@
 #include "client_global_config.h"
 #include "client_singleton.h"
 #include "common/response_keys.h"
+#include "response_validator.h"
 #include "util.h"
 #include "workspace_page_ui.h"
 #include "workspace_view_model.h"
@@ -25,79 +26,11 @@
 #include <QtConcurrent/QtConcurrent>
 #include <algorithm>
 
+
 using namespace tang::common;
 namespace tang {
 namespace client {
-struct WorkspaceResJsonValidator {
-    static bool validate(const QJsonObject& json_data) {
-        constexpr auto keys = WorkspaceResJsonKeys::keys;
-        for (size_t i = 0; i < keys.size(); ++i) {
-            if (!json_data.contains(keys[i])) {
-                return false;
-            }
-            // validate type!
-            if (!json_data[keys[i]].isArray()) {
-                return false;
-            }
-            auto values = json_data[keys[i]].toArray();
-            for (auto value : values) {
-                if (!value.isString()) {
-                    break;
-                }
-            }
-        }
 
-        return true;
-    }
-};
-
-struct WorkspaceContentResJsonValidator {
-    static bool validate(const QJsonObject& json_data) {
-        if (!json_data.contains(WorkspaceContentResponse::file_infos_key)) {
-            return false;
-        }
-
-        auto file_infos_json = json_data[WorkspaceContentResponse::file_infos_key];
-        if (!file_infos_json.isArray()) {
-            return false;
-        }
-        auto file_infos = file_infos_json.toArray();
-        for (size_t i = 0; i < file_infos.size(); ++i) {
-            auto item = file_infos[i];
-            if (!item.isObject()) {
-                return false;
-            }
-            // then validate keys
-            constexpr auto keys = WorkspaceContentResponse::item_keys;
-            for (size_t j = 0; j < keys.size(); ++j) {
-                if (!item.toObject().contains(keys[j])) {
-                    return false;
-                }
-            }
-            // then validate the type!
-            if (!item.toObject()[WorkspaceContentResponse::file_name_key].isString() ||
-                !item.toObject()[WorkspaceContentResponse::file_size_key].isDouble() ||
-                !item.toObject()[WorkspaceContentResponse::file_type_key].isDouble() ||
-                !item.toObject()[WorkspaceContentResponse::last_write_time_key].isString()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-};
-
-struct IsFileExistResJsonValidator {
-    static bool validate(const QJsonObject& json_data) {
-        for (auto& key : IsFileExistResResponse::keys) {
-            if (!(json_data.contains(key) && json_data[key].isBool())) {
-                return false;
-            }
-        }
-        return true;
-    }
-};
-// jsut for test!!!
 void add_test() {
     std::vector<QString> test_workspaces = {
         "唐远志", "lazydog", "Arics", "jack", "Moris", "Moon", "work"};
@@ -135,7 +68,6 @@ void add_test() {
     workspace_data_cache.set_workspace_show_names(test_workspaces);
     workspace_data_cache.set_workspaces(test_workspaces);
 }
-
 
 RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
@@ -245,12 +177,31 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(ui->workspace_content_table_view,
             &ElaTableView::doubleClicked,
             this,
-            &RemoteWorkspacePage::on_workspace_table_content_item_clicked);
+            [this](const QModelIndex& index) {
+                if (!index.isValid()) {
+                    return;
+                }
+                int row = index.row();
+                int col = index.column();
+
+                // if folder
+                auto& file_info = file_info_table_model->get_file_info(row);
+                this->workspace_content_double_clicked_impl(file_info);
+            });
 
     connect(ui->workspace_content_list_view,
             &ElaListView::doubleClicked,
             this,
-            &RemoteWorkspacePage::on_workspace_list_content_item_clicked);
+            [this](const QModelIndex& index) {
+                if (!index.isValid()) {
+                    return;
+                }
+                int row = index.row();
+
+                // if folder
+                auto& file_info = file_info_list_model->get_file_info(row);
+                this->workspace_content_double_clicked_impl(file_info);
+            });
 
     connect(ui->flush_workspace_name_button,
             &ElaToolButton::clicked,
@@ -714,32 +665,12 @@ void RemoteWorkspacePage::enter_folder_impl(const QString& folder_name) {
     this->get_workspace_content_impl(false);
 }
 
-
-void RemoteWorkspacePage::on_workspace_table_content_item_clicked(const QModelIndex& index) {
-    if (!index.isValid()) {
-        return;
-    }
-    int row = index.row();
-    int col = index.column();
-
-    // if folder
-    auto& file_info = file_info_table_model->get_file_info(row);
+void RemoteWorkspacePage::workspace_content_double_clicked_impl(const RemoteFileInfo& file_info) {
     if (file_info.file_type == FileKind::kFolder) {
         this->enter_folder_impl(file_info.file_name);
     } else if (file_info.file_type == FileKind::kPdf) {
         this->display_pdf_impl(file_info.file_name, file_info.file_size);
     } else {
-    }
-}
-
-void RemoteWorkspacePage::on_workspace_list_content_item_clicked(const QModelIndex& index) {
-    if (!index.isValid()) {
-        return;
-    }
-    int   row       = index.row();
-    auto& file_info = file_info_list_model->get_file_info(row);
-    if (file_info.file_type == FileKind::kFolder) {
-        this->enter_folder_impl(file_info.file_name);
     }
 }
 
@@ -783,7 +714,7 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
         buffer.open(QIODevice::ReadOnly);
         // this is important,must seek to start!
         buffer.seek(0);
-        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊");
+        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊", false);
         this->pdf_displayer->load_pdf(&buffer);
         show_and_raise(this->pdf_displayer);
     });
