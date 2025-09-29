@@ -19,6 +19,7 @@ struct CacheWorkspaceData {
     std::vector<QString> workspaces;
     std::vector<QString> workspace_show_names;
 
+    
     std::span<RemoteFileInfo> get_file_infos(const QString& workspace_name);
     void                      set_file_infos(const QString&                     workspace_name,
                                              const std::vector<RemoteFileInfo>& file_infos = {});

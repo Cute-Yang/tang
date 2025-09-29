@@ -293,6 +293,7 @@ void RemoteWorkspacePage::initialize_connects() {
             return;
         }
         auto src_filename = rename_file_dialog->previous_filename_value->text();
+        this->rename_file_dialog->close();
         this->rename_file_impl(src_filename, dst_filename);
     });
 

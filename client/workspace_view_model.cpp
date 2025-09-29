@@ -5,6 +5,18 @@ using namespace tang::common;
 namespace tang {
 namespace client {
 
+QString get_file_size_str(size_t file_size) {
+    if (file_size < 1024) {
+        return QString("%1(Byte)").arg(file_size);
+    } else if (file_size < 1024 * 1024) {
+        return QString("%1(Kb)").arg(file_size / 1024.0, 0, 'f', 2);
+    } else if (file_size < 1024 * 1024 * 1024) {
+        return QString("%1(Mb)").arg(file_size / (1024.0 * 1024.0), 0, 'f', 2);
+    } else {
+        return QString("%1(Gb)").arg(file_size / (1024.0 * 1024.0 * 1024.0), 0, 'f', 2);
+    }
+}
+
 constexpr size_t                          FileTypeCount     = static_cast<size_t>(FileKind::count);
 static std::array<QString, FileTypeCount> file_type_strings = {
     "文件夹", "PDF", "Word", "Excel", "PPT", "txt", "image", "python", "c++", "其他文件"};
@@ -70,7 +82,7 @@ QVariant RemoteFileInfoViewModel::data(const QModelIndex& index, int role) const
             return file_type_strings[static_cast<size_t>(row_data.file_type)];
         } else if (column == 3) {
             // file size
-            return row_data.file_size;
+            return get_file_size_str(row_data.file_size);
         } else if (column == 4) {
             // change time
             return row_data.modify_time;

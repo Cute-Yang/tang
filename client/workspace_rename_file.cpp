@@ -7,7 +7,8 @@
 namespace tang {
 namespace client {
 WorkspaceRenameFile::WorkspaceRenameFile(QWidget* parent)
-    : ElaDialog(parent) {
+    : ElaDialog(parent)
+    , file_index(0) {
     QVBoxLayout* layout = new QVBoxLayout(this);
 
     constexpr int fixed_key_width        = 80;
@@ -93,6 +94,17 @@ void WorkspaceRenameFile::display() {
     this->raise();
     this->activateWindow();
     this->moveToCenter();
+}
+
+
+// not refresh the content
+
+void WorkspaceRenameFile::set_file_index(size_t index) {
+    file_index = index;
+}
+
+size_t WorkspaceRenameFile::get_file_index() const {
+    return file_index;
 }
 }   // namespace client
 }   // namespace tang

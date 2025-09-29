@@ -517,6 +517,8 @@ void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
     connect(right_menu->rename_action, &QAction::triggered, this, [this, index]() {
         auto& file_info = file_info_table_model->get_file_info(index.row());
         this->rename_file_dialog->previous_filename_value->setText(file_info.file_name);
+        // QAQ
+        this->rename_file_dialog->set_file_index(index.row());
         this->rename_file_dialog->display();
     });
 
@@ -558,8 +560,18 @@ void RemoteWorkspacePage::delete_file_impl(const QString& filename) {
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
-        this->refresh_workspace_content_impl();
-
+        // this->refresh_workspace_content_impl();
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            path_helper.get_workspace_path());
+        auto index = this->delete_file_dialog->get_delete_file_index();
+        if (file_infos.empty() || index >= file_infos.size()) {
+            this->show_message("发生了错误,文件信息获取失败😫😫😫");
+            return;
+        }
+        // earas is delete by value...
+        std::copy(file_infos.data() + index + 1,
+                  file_infos.data() + file_infos.size(),
+                  file_infos.data() + index);
         this->show_message(QString("成功删除了文件%1 😊😊😊").arg(file_path), false);
     });
 }
@@ -588,7 +600,16 @@ void RemoteWorkspacePage::rename_file_impl(const QString& src_filename,
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
-        this->refresh_workspace_content_impl();
+        // this->refresh_workspace_content_impl();
+        // assign the value is better! is better!
+        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
+            path_helper.get_workspace_path());
+        auto index = this->rename_file_dialog->get_file_index();
+        if (file_infos.empty() || this->rename_file_dialog->get_file_index() >= file_infos.size()) {
+            this->show_message("发生了错误,文件信息获取失败😫😫😫");
+            return;
+        }
+        file_infos[index].file_name = dst_filename;
         this->show_message(
             QString("修改文件名 %1 -> %2 😊😊😊").arg(src_filename).arg(dst_filename));
     });

@@ -8,7 +8,8 @@
 namespace tang {
 namespace client {
 WorkspaceDeleteFile::WorkspaceDeleteFile(QWidget* parent)
-    : ElaDialog(parent) {
+    : ElaDialog(parent)
+    , delete_file_index(0) {
     QVBoxLayout* layout = new QVBoxLayout(this);
 
     QWidget* hint_container = new QWidget(this);
@@ -65,13 +66,20 @@ void WorkspaceDeleteFile::display() {
     this->moveToCenter();
 }
 
-
 void WorkspaceDeleteFile::set_delete_filename(const QString& filename) {
     delete_filename = filename;
 }
 
 const QString& WorkspaceDeleteFile::get_delete_fielname() const {
     return delete_filename;
+}
+
+void WorkspaceDeleteFile::set_delete_file_index(size_t index) {
+    delete_file_index = index;
+}
+
+size_t WorkspaceDeleteFile::get_delete_file_index() const {
+    return delete_file_index;
 }
 
 }   // namespace client

@@ -5,7 +5,7 @@ namespace tang {
 namespace client {
 
 // define a icon
-static QIcon cat_icon(":icons/images/cat.svg");
+static QIcon prefer_icon(":icons/images/feng_leaf.svg");
 
 VoteItemViewModel::VoteItemViewModel(const QString& vote_column_, QObject* parent)
     : QAbstractTableModel(parent)
@@ -26,7 +26,7 @@ QVariant VoteItemViewModel::data(const QModelIndex& index, int role) const {
     int row = index.row();
     int col = index.column();
     if (role == Qt::DecorationRole) {
-        return cat_icon;
+        return prefer_icon;
     } else if (role == Qt::DisplayRole) {
         return vote_items[row];
     }
