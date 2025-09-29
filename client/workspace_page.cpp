@@ -257,10 +257,9 @@ void RemoteWorkspacePage::initialize_connects() {
             this,
             &RemoteWorkspacePage::on_flush_workspace_name_button_clicked);
 
-    connect(ui->flush_workspace_content_button,
-            &ElaToolButton::clicked,
-            this,
-            &RemoteWorkspacePage::on_flush_workspace_content_button_clicked);
+    connect(ui->flush_workspace_content_button, &ElaToolButton::clicked, this, [this]() {
+        this->refresh_workspace_content_impl();
+    });
 
     connect(ui->view_tiling_button,
             &ElaToolButton::clicked,
@@ -302,10 +301,8 @@ void RemoteWorkspacePage::initialize_connects() {
             this->ui->download_file_progress_bar,
             &ElaProgressBar::setValue);
 
-    connect(ui->upload_file_action,
-            &QAction::triggered,
-            this,
-            &RemoteWorkspacePage::on_upload_file_action_triggered);
+    connect(
+        ui->upload_file_action, &QAction::triggered, this, [this]() { this->upload_file_impl(); });
 
     connect(this,
             &RemoteWorkspacePage::start_upload_files,
@@ -326,10 +323,17 @@ void RemoteWorkspacePage::initialize_connects() {
             &QAction::triggered,
             this,
             &RemoteWorkspacePage::on_new_dir_action_triggered);
-    connect(new_dir_dialog->ui->ok_button,
-            &ElaToolButton::clicked,
-            this,
-            &RemoteWorkspacePage::on_new_dir_ok_button_clicked);
+
+    connect(new_dir_dialog->ui->ok_button, &ElaToolButton::clicked, this, [this]() {
+        // first,flush the workspace content!
+        auto new_dir_name = new_dir_dialog->ui->line_edit->text();
+        if (new_dir_name.isEmpty()) {
+            this->show_message("名称不能为空😮😮😮");
+            return;
+        }
+        this->new_dir_dialog->clear();
+        this->create_new_dir_impl(new_dir_name);
+    });
     connect(new_dir_dialog->ui->cancle_button, &ElaToolButton::clicked, this, [this]() {
         this->new_dir_dialog->clear();
     });
@@ -411,12 +415,31 @@ void RemoteWorkspacePage::initialize_connects() {
                       });
         }
     };
+
     connect(ui->sort_file_by_modify_time_action, &QAction::triggered, this, sort_file_by_time_func);
 
+    // for list/table view!
     connect(ui->workspace_content_table_view,
             &ElaTableView::customContextMenuRequested,
             this,
-            &RemoteWorkspacePage::display_right_menu);
+            &RemoteWorkspacePage::display_right_menu_for_table_view);
+
+    connect(ui->workspace_content_list_view,
+            &ElaListView::customContextMenuRequested,
+            this,
+            &RemoteWorkspacePage::display_right_menu_for_list_view);
+
+    connect(right_menu->new_dir_action, &QAction::triggered, this, [this]() {
+        this->new_dir_dialog->display();
+    });
+
+    connect(right_menu->upload_file_action, &QAction::triggered, this, [this]() {
+        this->upload_file_impl();
+    });
+
+    connect(right_menu->refresh_action, &QAction::triggered, this, [this]() {
+        this->refresh_workspace_content_impl();
+    });
 
     connect(right_menu->small_icon_action, &QAction::triggered, this, [this]() {
         this->set_workspace_content_icon_size_impl(
@@ -433,6 +456,18 @@ void RemoteWorkspacePage::initialize_connects() {
             QSize(ClientGlobalConfig::large_icon_size, ClientGlobalConfig::large_icon_size));
     });
 
+    connect(right_menu->sort_by_name_action, &QAction::triggered, this, sort_file_by_name_func);
+    connect(right_menu->sort_by_type_action, &QAction::triggered, this, sort_file_by_type_func);
+    connect(right_menu->sort_by_size_action, &QAction::triggered, this, sort_file_by_size_func);
+    connect(right_menu->sort_by_time_action, &QAction::triggered, this, sort_file_by_time_func);
+
+
+    connect(right_menu->adjust_content_view_action,
+            &QAction::triggered,
+            this,
+            &RemoteWorkspacePage::adjust_workspace_content_view);
+
+
     connect(right_menu->view_detail_action, &QAction::triggered, this, [this]() {
         ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_table_view);
     });
@@ -440,6 +475,7 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(right_menu->view_tiling_action, &QAction::triggered, this, [this]() {
         ui->stacked_workspace_content_widget->setCurrentWidget(ui->workspace_content_list_view);
     });
+
 
     connect(delete_file_dialog->ok_button, &ElaToolButton::clicked, this, [this]() {
         this->delete_file_dialog->close();
@@ -449,6 +485,15 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(delete_file_dialog->cancle_button, &ElaToolButton::clicked, this, [this]() {
         this->delete_file_dialog->close();
     });
+}
+
+void RemoteWorkspacePage::refresh_workspace_content_impl() {
+    QString workspace_path = ui->directory_line_edit->text();
+    if (workspace_path.isEmpty()) {
+        show_message("workspace为空🤣🤣🤣...");
+        return;
+    }
+    this->get_workspace_content_impl(true);
 }
 
 void RemoteWorkspacePage::set_workspace_content_icon_size_impl(QSize icon_size) {
@@ -530,15 +575,6 @@ void RemoteWorkspacePage::send_get_workspace_req() {
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         this->process_workspace_response(reply);
     });
-}
-
-void RemoteWorkspacePage::on_flush_workspace_content_button_clicked() {
-    QString workspace_path = ui->directory_line_edit->text();
-    if (workspace_path.isEmpty()) {
-        show_message("workspace为空🤣🤣🤣...");
-        return;
-    }
-    this->get_workspace_content_impl(true);
 }
 
 bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* reply) {
@@ -778,7 +814,7 @@ void RemoteWorkspacePage::display_pdf_impl(const QString& file_name, size_t file
     }
 }
 
-void RemoteWorkspacePage::on_upload_file_action_triggered() {
+void RemoteWorkspacePage::upload_file_impl() {
     QStringList file_names = QFileDialog::getOpenFileNames(this, "选择上传文件", "", "");
     if (file_names.empty()) {
         this->show_message("请选择文件🌷🌷🌷!");
@@ -792,11 +828,6 @@ void RemoteWorkspacePage::on_new_dir_action_triggered() {
     this->new_dir_dialog->display();
 }
 
-void RemoteWorkspacePage::on_new_dir_ok_button_clicked() {
-    // first,flush the workspace content!
-    auto new_dir_name = new_dir_dialog->ui->line_edit->text();
-    this->create_new_dir_impl(new_dir_name);
-}
 
 
 void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
@@ -808,6 +839,7 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
         json_data, ClientSingleton::get_http_urls_instance().get_create_new_dir_url());
     connect(reply, &QNetworkReply::finished, this, [this, dir_path, reply]() {
         auto document = get_json_document(reply);
+
         if (!document) {
             this->show_message("网络请求错误😫😫😫");
             return;
@@ -822,12 +854,11 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
         this->show_message(QString("成功创建了文件夹%1").arg(dir_path));
         // then flush the workspace content!
         this->get_workspace_content_impl(true);
-        this->new_dir_dialog->clear();
     });
 }
 
-void RemoteWorkspacePage::display_right_menu(const QPoint& pos) {
-    QModelIndex index = ui->workspace_content_table_view->indexAt(pos);
+void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
+                                                  const QPoint&      global_pos) {
     // add the action impl here!,if need the position value!
     connect(right_menu->delete_action, &QAction::triggered, this, [this, index]() {
         auto& file_info = file_info_table_model->get_file_info(index.row());
@@ -846,11 +877,23 @@ void RemoteWorkspacePage::display_right_menu(const QPoint& pos) {
     });
 
     // return the choosed action!
-    QAction* selected = right_menu->menu->exec(ui->workspace_content_table_view->mapToGlobal(pos));
+    QAction* selected = right_menu->menu->exec(global_pos);
     if (selected == nullptr) {
         qDebug() << "Not select any action!";
     }
 }
+
+
+void RemoteWorkspacePage::display_right_menu_for_table_view(const QPoint& pos) {
+    QModelIndex index = ui->workspace_content_table_view->indexAt(pos);
+    this->display_right_menu_impl(index, this->ui->workspace_content_table_view->mapToGlobal(pos));
+}
+
+void RemoteWorkspacePage::display_right_menu_for_list_view(const QPoint& pos) {
+    QModelIndex index = ui->workspace_content_list_view->indexAt(pos);
+    this->display_right_menu_impl(index, this->ui->workspace_content_list_view->mapToGlobal(pos));
+}
+
 
 void RemoteWorkspacePage::delete_file_impl(const QString& filename) {
     QJsonObject json_data;

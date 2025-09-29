@@ -7,6 +7,10 @@ WorkspaceRightMenu::WorkspaceRightMenu(QWidget* parent)
     : menu(new ElaMenu(parent)) {
     new_dir_action = menu->addAction("新建文件夹");
     new_dir_action->setIcon(QIcon(":icons/images/new_dir.svg"));
+
+    upload_file_action = menu->addAction("上传文件");
+    upload_file_action->setIcon(QIcon(":icons/images/upload.svg"));
+
     rename_action = menu->addAction("重命名");
     rename_action->setIcon(QIcon(":icons/images/rename.svg"));
 
@@ -50,9 +54,12 @@ WorkspaceRightMenu::WorkspaceRightMenu(QWidget* parent)
     sort_by_time_action = sort_menu->addAction("修改时间");
     sort_by_time_action->setIcon(QIcon(":icons/images/flower.svg"));
     menu->addMenu(sort_menu);
-
+    
+    adjust_content_view_action = view_menu->addAction("调整视图");
+    adjust_content_view_action->setIcon(QIcon(":icons/images/green_leaf.svg"));
+    
     view_detail_action = view_menu->addAction("详情");
-    view_detail_action->setIcon(QIcon(":/icons/images/detail.svg"));
+    view_detail_action->setIcon(QIcon(":icons/images/detail.svg"));
 
     view_tiling_action = view_menu->addAction("平铺");
     view_tiling_action->setIcon(QIcon(":icons/images/tiling.svg"));

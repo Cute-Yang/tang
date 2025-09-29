@@ -17,8 +17,6 @@
 #include <QThread>
 
 
-
-
 namespace tang {
 namespace client {
 class RemoteWorkspacePage : public ElaScrollPage {
@@ -112,13 +110,15 @@ private:
     // adjust table content view!
     void adjust_workspace_content_view();
     void initialize_connects();
-
     void create_new_dir_impl(const QString& dir_name);
 
     void set_workspace_content_icon_size_impl(QSize icon_size);
 
     void delete_file_impl(QString const& file_name);
     void rename_file_impl(QString const& src_filename, QString const& dst_filename);
+    void refresh_workspace_content_impl();
+    
+    void upload_file_impl();
 
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
@@ -131,7 +131,6 @@ public slots:
     void on_workspace_table_content_item_clicked(const QModelIndex& index);
     void on_workspace_list_content_item_clicked(const QModelIndex& index);
     void on_flush_workspace_name_button_clicked();
-    void on_flush_workspace_content_button_clicked();
     void on_view_tiling_button_clicked();
     void on_view_detail_button_clicked();
     void on_back_button_clicked();
@@ -139,15 +138,12 @@ public slots:
     void on_adjust_content_view_button_clicked();
 
     // upload files
-    void on_upload_file_action_triggered();
 
     void on_new_dir_action_triggered();
 
-    void on_new_dir_ok_button_clicked();
-
-    void display_right_menu(const QPoint& pos);
-
-
+    void display_right_menu_for_table_view(const QPoint& pos);
+    void display_right_menu_for_list_view(const QPoint& pos);
+    void display_right_menu_impl(const QModelIndex& index,const QPoint& global_pos);
 
 
     // void on_forward_button_clicked();
