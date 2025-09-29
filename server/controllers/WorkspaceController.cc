@@ -231,8 +231,27 @@ void WorkspaceController::create_dir(const HttpRequestPtr&                      
 }
 void WorkspaceController::move_file(const HttpRequestPtr&                         req,
                                     std::function<void(const HttpResponsePtr&)>&& callback) {
-    std::string           source_file_path = req->getParameter("source_file_path");
-    std::string           target_file_path = req->getParameter("target_file_path");
+    // pass by json is better!
+    auto json_data = req->getJsonObject();
+    if (json_data == nullptr) {
+        LOG_ERROR << req->getJsonError();
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+    constexpr const char*                k1   = "source_file_path";
+    constexpr const char*                k2   = "target_file_path";
+    constexpr std::array<const char*, 2> keys = {k1, k2};
+    for (auto& k : keys) {
+        if (!json_data->isMember(k)) {
+            make_response_and_return(StatusCode::kJsonKeyError, callback);
+        }
+
+        if (!(*json_data)[k].isString()) {
+            make_response_and_return(StatusCode::kJsonTypeError, callback);
+        }
+    }
+    std::string source_file_path = (*json_data)[k1].asString();
+    std::string target_file_path = (*json_data)[k2].asString();
+
     std::filesystem::path source_full_path;
     std::filesystem::path target_full_path;
     if (auto ret = get_full_path(source_file_path, source_full_path); ret != StatusCode::kSuccess) {

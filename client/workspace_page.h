@@ -136,10 +136,6 @@ public slots:
 
     void on_adjust_content_view_button_clicked();
 
-    // upload files
-
-    void on_new_dir_action_triggered();
-
     void display_right_menu_for_table_view(const QPoint& pos);
     void display_right_menu_for_list_view(const QPoint& pos);
     void display_right_menu_impl(const QModelIndex& index, const QPoint& global_pos);
