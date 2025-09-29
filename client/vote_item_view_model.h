@@ -10,7 +10,7 @@ private:
     QStringList vote_items;
 
 protected:
-    int rowCount(const QModelIndex& parent=QModelIndex()) const override;
+    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     int columnCount(const QModelIndex& parent = QModelIndex()) const override;
 
 
@@ -20,19 +20,18 @@ protected:
                         int role = Qt::DisplayRole) const override;
 
 public:
-    VoteItemViewModel(const QString& vote_column_ = "投票选项",QObject* parent = nullptr);
+    VoteItemViewModel(const QString& vote_column_ = "投票选项", QObject* parent = nullptr);
     ~VoteItemViewModel();
 
     bool add_vote_item(const QString& item);
-    
+
     size_t add_vote_items(const QStringList& items);
 
     // void delete_vote_item(size_t index);
 
     // void delete_vote_item(const QString& item);
 
-    QString get_vote_item(size_t index) const ;
-
+    QString get_vote_item(size_t index) const;
 };
 
 }   // namespace client

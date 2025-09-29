@@ -2,6 +2,7 @@
 #include "ElaScrollPage.h"
 #include "vote_page_ui.h"
 #include "vote_item_view_model.h"
+#include "vote_history_view_model.h"
 
 namespace tang {
 namespace client {
@@ -10,6 +11,7 @@ class VotePage : public ElaScrollPage {
 private:
     VotePageUi* ui;
     VoteItemViewModel* vote_data;
+    VoteHistoryViewModel* vote_history_model;
 
 public:
     VotePage(QWidget* parent = nullptr);

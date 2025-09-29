@@ -128,6 +128,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     // upload
 
     upload_file_text = new ElaText(page);
+    upload_file_text->setMaximumHeight(32);
     upload_file_text->setText("文件上传进度:");
     auto font = upload_file_text->font();
     // font.setBold(true);
@@ -144,6 +145,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     // download
     download_file_text = new ElaText(page);
+    download_file_text->setMaximumHeight(32);
     download_file_text->setText("文件下载进度:");
     // font.setBold(true);
     font.setPointSize(10);

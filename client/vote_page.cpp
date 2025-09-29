@@ -9,11 +9,14 @@ namespace client {
 VotePage::VotePage(QWidget* parent)
     : ElaScrollPage(parent)
     , ui(new VotePageUi)
-    , vote_data(new VoteItemViewModel("投票项", this) ) {
+    , vote_data(new VoteItemViewModel("投票项", this)) {
     ui->setup_ui(this);
     this->setTitleVisible(false);
     ui->vote_items->setModel(vote_data);
 
+    QStringList vote_history_cols = {"id", "创建者", "创建时间", "主题", "类型", "check"};
+    vote_history_model            = new VoteHistoryViewModel(vote_history_cols, 10, this);
+    ui->vote_history->setModel(vote_history_model);
 
     QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
     vote_data->add_vote_items(items);
@@ -42,7 +45,7 @@ VotePage::VotePage(QWidget* parent)
     //     ui->vote_items->setColumnWidth(0,ui->vote_items->width());
     // });
 
-    connect(ui->vote_items,&ElaTableView::clicked,this,&VotePage::click_vote_items);
+    connect(ui->vote_items, &ElaTableView::clicked, this, &VotePage::click_vote_items);
 }
 
 VotePage::~VotePage() {
@@ -57,12 +60,16 @@ void VotePage::set_test_model() {
     // auto g = ui->vote_items->model();
 }
 
-void VotePage::click_vote_items(const QModelIndex& index){
-    if(index.isValid()){
-        int row = index.row();
-        int col = index.column();
+void VotePage::click_vote_items(const QModelIndex& index) {
+    if (index.isValid()) {
+        int           row       = index.row();
+        int           col       = index.column();
         const QString vote_item = this->vote_data->get_vote_item(row);
-        ElaMessageBar::information(ElaMessageBarType::TopLeft,"click vote item",QString("当前选中的投票项是%1").arg(vote_item),2700,this);
+        ElaMessageBar::information(ElaMessageBarType::TopLeft,
+                                   "click vote item",
+                                   QString("当前选中的投票项是%1").arg(vote_item),
+                                   2700,
+                                   this);
     }
 }
 

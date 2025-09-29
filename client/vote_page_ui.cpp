@@ -26,29 +26,30 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     QVBoxLayout*  central_layout         = new QVBoxLayout(color_central_widget);
     constexpr int text_width             = 160;
     constexpr int combox_key_width       = text_width - 5;
-    constexpr int container_fixed_height = 42;
+    constexpr int container_fixed_height = 36;
     QWidget*      vote_person_container  = new QWidget(page);
     vote_person_container->setFixedHeight(container_fixed_height);
     central_layout->addWidget(vote_person_container);
     QHBoxLayout* vote_creator_layout = new QHBoxLayout(vote_person_container);
 
     vote_creator_text = new ElaText(page);
-    auto font         = vote_creator_text->font();
-    font.setFamily("SimSun");
-    font.setPointSize(9);
-    font.setBold(true);
+    auto key_font     = vote_creator_text->font();
+    key_font.setFamily("SimSun");
+    key_font.setPointSize(10);
+    key_font.setBold(true);
 
-    auto small_font = font;
-    small_font.setPointSize(9);
+    auto value_font = key_font;
+    value_font.setPointSize(9);
 
     vote_creator_text->setText("发起人:");
     vote_creator_text->setMinimumWidth(text_width);
-    vote_creator_text->setFont(font);
+    vote_creator_text->setFont(key_font);
     vote_creator_layout->addWidget(vote_creator_text);
+    vote_creator_layout->addSpacing(5);
 
     vote_creator_name_text = new ElaText(page);
     vote_creator_name_text->setText("王昭君");
-    vote_creator_name_text->setFont(small_font);
+    vote_creator_name_text->setFont(value_font);
     vote_creator_layout->addWidget(vote_creator_name_text);
     vote_creator_layout->addStretch();
 
@@ -60,14 +61,15 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     vote_topic_text = new ElaText(page);
     vote_topic_text->setMinimumWidth(text_width);
     vote_topic_text->setText("主题:");
-    vote_topic_text->setFont(font);
+    vote_topic_text->setFont(key_font);
     vote_topic_layout->addWidget(vote_topic_text);
 
     vote_topic_line_edit = new ElaLineEdit(page);
+    vote_topic_line_edit->setFixedHeight(30);
     vote_topic_line_edit->setPlaceholderText("投票主题~");
     vote_topic_line_edit->setMinimumWidth(500);
     vote_topic_line_edit->setMaximumWidth(900);
-    vote_topic_line_edit->setFont(small_font);
+    vote_topic_line_edit->setFont(value_font);
     vote_topic_layout->addWidget(vote_topic_line_edit);
     vote_topic_layout->addStretch();
 
@@ -77,15 +79,16 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     central_layout->addWidget(vote_choice_type_container);
     QHBoxLayout* vote_choice_type_layout = new QHBoxLayout(vote_choice_type_container);
     vote_choice_type                     = new ElaText(page);
-    vote_choice_type->setFont(font);
+    vote_choice_type->setFont(key_font);
     vote_choice_type->setText("投票类型:");
     vote_choice_type->setMinimumWidth(combox_key_width);
     vote_choice_type_layout->addWidget(vote_choice_type);
 
     vote_choice_type_combox = new ElaComboBox(page);
+    vote_choice_type_combox->setFixedHeight(30);
     vote_choice_type_combox->addItems({"单选", "多选"});
     vote_choice_type_combox->setMinimumWidth(48);
-    vote_choice_type_combox->setFont(small_font);
+    vote_choice_type_combox->setFont(value_font);
     vote_choice_type_layout->addWidget(vote_choice_type_combox);
     vote_choice_type_layout->addStretch();
 
@@ -98,93 +101,124 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
 
     voters_text = new ElaText(page);
     voters_text->setText("选择参与投票的人:");
-    voters_text->setFont(font);
+    voters_text->setFont(key_font);
     voters_text->setMinimumWidth(combox_key_width);
     start_vote_layout->addWidget(voters_text);
 
     voters_combox = new ElaMultiSelectComboBox(page);
+    voters_combox->setFixedHeight(30);
     voters_combox->setMinimumWidth(270);
-    voters_combox->setFont(small_font);
+    voters_combox->setFont(value_font);
 
     // test datas
-    voters_combox->addItems({"小鱼",
-                             "柯南",
-                             "犬夜叉",
-                             "戈薇",
-                             "桔梗",
-                             "小鱼",
-                             "柯南",
-                             "犬夜叉",
-                             "戈薇",
-                             "桔梗",
-                             "小鱼",
-                             "柯南",
-                             "犬夜叉",
-                             "戈薇",
-                             "桔梗"});
+    voters_combox->addItems({"小鱼", "柯南", "犬夜叉", "戈薇", "桔梗", "小鱼", "柯南"});
     voters_combox->setCurrentSelection(3);
     start_vote_layout->addWidget(voters_combox);
 
     start_vote_layout->addSpacing(6);
     flush_voters_button = new ElaToolButton(page);
-    flush_voters_button->setIcon(QIcon(":icons/images/flush.svg"));
-    flush_voters_button->setToolTip("flush~");
+    flush_voters_button->setFixedHeight(30);
+    flush_voters_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
+    flush_voters_button->setToolTip("refresh~");
     flush_voters_button->setText("刷新");
-    flush_voters_button->setFont(font);
+    flush_voters_button->setFont(key_font);
     flush_voters_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     flush_voters_button->setIconSize(QSize(21, 21));
     start_vote_layout->addWidget(flush_voters_button);
 
     start_vote_layout->addStretch();
 
-    start_vote_button = new ElaToolButton(page);
-    start_vote_button->setText("发起投票");
-    start_vote_button->setFont(font);
-    start_vote_button->setIcon(QIcon(":icons/images/vote.svg"));
-    start_vote_button->setIconSize(QSize(21, 21));
-    start_vote_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    start_vote_layout->addWidget(start_vote_button);
-
-
     QSplitter* spliter = new QSplitter(page);
     central_layout->addWidget(spliter);
     spliter->setOrientation(Qt::Horizontal);
     spliter->setOpaqueResize(true);
+
+
+    QWidget* vote_items_container = new QWidget(page);
+    vote_items_container->setMaximumWidth(270);
+    spliter->addWidget(vote_items_container);
+
+    QVBoxLayout* vote_items_layout = new QVBoxLayout(vote_items_container);
+
+    auto vote_button_container = new QWidget(page);
+    vote_items_layout->addWidget(vote_button_container);
+    auto vote_button_layout = new QHBoxLayout(vote_button_container);
+    vote_button_layout->addStretch();
+
+    new_vote_button = new ElaToolButton(page);
+    new_vote_button->setText("新的投票");
+    new_vote_button->setFont(key_font);
+    new_vote_button->setIcon(QIcon(":icons/images/vote.svg"));
+    new_vote_button->setIconSize(QSize(21, 21));
+    new_vote_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_button_layout->addWidget(new_vote_button);
+    vote_button_layout->addSpacing(12);
+
+    start_vote_button = new ElaToolButton(page);
+    start_vote_button->setText("发起投票");
+    start_vote_button->setFont(key_font);
+    start_vote_button->setIcon(QIcon(":icons/images/vote.svg"));
+    start_vote_button->setIconSize(QSize(21, 21));
+    start_vote_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_button_layout->addWidget(start_vote_button);
+    vote_button_layout->addStretch();
+
+    vote_items_layout->addLayout(vote_button_layout);
+
     vote_items = new ElaTableView(page);
     vote_items->setIconSize(QSize(21, 21));
-    vote_items->setFont(small_font);
+    vote_items->setFont(value_font);
     // make the column width adapt with widget,important!
-    vote_items->horizontalHeader()->setFont(small_font);
+    vote_items->horizontalHeader()->setFont(key_font);
     vote_items->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     vote_items->setAlternatingRowColors(true);
     vote_items->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    vote_items->setMinimumWidth(120);
-    spliter->addWidget(vote_items);
-
-    QWidget* vote_item_operator_container = new QWidget(page);
-    spliter->addWidget(vote_item_operator_container);
-    // vote_item_operator_container->setMinimumWidth(270);
-    QVBoxLayout* vote_item_operator_layout = new QVBoxLayout(vote_item_operator_container);
-
+    vote_items->setMinimumHeight(270);
+    vote_items_layout->addWidget(vote_items);
+    vote_items_layout->addStretch();
 
     QWidget* add_vote_item_container = new QWidget(page);
-    vote_item_operator_layout->addWidget(add_vote_item_container);
+    vote_items_layout->addWidget(add_vote_item_container);
+
     QHBoxLayout* add_vote_item_layout = new QHBoxLayout(add_vote_item_container);
 
     add_vote_item_line_edit = new ElaLineEdit(page);
-    add_vote_item_line_edit->setFont(small_font);
+    add_vote_item_line_edit->setFont(value_font);
     add_vote_item_line_edit->setPlaceholderText("add...");
     add_vote_item_layout->addWidget(add_vote_item_line_edit);
     add_vote_item_layout->addSpacing(8);
 
     add_vote_item_button = new ElaToolButton(page);
-    // add_vote_item_button->setToolTip("增加");
     add_vote_item_button->setText("添加");
     add_vote_item_button->setIcon(QIcon(":icons/images/add_item.svg"));
     add_vote_item_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     add_vote_item_button->setIconSize(QSize(16, 16));
     add_vote_item_layout->addWidget(add_vote_item_button);
-    vote_item_operator_layout->addStretch();
+
+
+    QWidget*     vote_history_widget = new QWidget(page);
+    QVBoxLayout* vote_history_layout = new QVBoxLayout(vote_history_widget);
+    spliter->addWidget(vote_history_widget);
+
+
+    QWidget* vote_history_text_container = new QWidget(page);
+    vote_history_layout->addWidget(vote_history_text_container);
+    QHBoxLayout* vote_history_text_layout = new QHBoxLayout(vote_history_text_container);
+    vote_history_text_layout->addStretch();
+    vote_history_text_button = new ElaToolButton(page);
+    vote_history_text_button->setIcon(QIcon(":icons/images/butterfly.svg"));
+    vote_history_text_button->setFont(key_font);
+    vote_history_text_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_history_text_button->setText("投票创建记录");
+    vote_history_text_layout->addWidget(vote_history_text_button);
+    vote_history_text_layout->addStretch();
+
+
+    vote_history = new ElaTableView(page);
+    vote_history->horizontalHeader()->setFont(key_font);
+    vote_history->setFont(value_font);
+    vote_history->verticalHeader()->hide();
+    vote_history_layout->addWidget(vote_history);
 
 
     central_widget->setWindowTitle("~~~Vote~~~");

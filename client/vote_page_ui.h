@@ -1,11 +1,12 @@
 #pragma once
 #include "ElaComboBox.h"
 #include "ElaLineEdit.h"
-#include "ElaTableView.h"
+#include "ElaMultiSelectComboBox.h"
 #include "ElaScrollPage.h"
+#include "ElaTableView.h"
 #include "ElaText.h"
 #include "ElaToolButton.h"
-#include "ElaMultiSelectComboBox.h"
+
 
 
 namespace tang {
@@ -32,17 +33,18 @@ public:
     ElaToolButton* add_vote_item_button;
 
     ElaLineEdit* add_vote_item_line_edit;
-    
-    //voters
-    ElaText* voters_text;
-    ElaMultiSelectComboBox* voters_combox;
-    ElaToolButton* flush_voters_button;
 
-    //start vote
+    // voters
+    ElaText*                voters_text;
+    ElaMultiSelectComboBox* voters_combox;
+    ElaToolButton*          flush_voters_button;
+
+    ElaToolButton* new_vote_button;
     ElaToolButton* start_vote_button;
 
-    
-    void         setup_ui(ElaScrollPage* page);
+    ElaToolButton* vote_history_text_button;
+    ElaTableView* vote_history;
+    void          setup_ui(ElaScrollPage* page);
 };
 }   // namespace client
 }   // namespace tang
