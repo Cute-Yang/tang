@@ -25,6 +25,8 @@ public:
 
     bool add_vote_item(const QString& item);
 
+    bool contains(const QString& item) const;
+
     size_t add_vote_items(const QStringList& items);
 
     // void delete_vote_item(size_t index);
@@ -32,6 +34,14 @@ public:
     // void delete_vote_item(const QString& item);
 
     QString get_vote_item(size_t index) const;
+
+    QStringList& get_vote_items();
+
+    void swap_item(int i,int j);
+
+    void delete_item(int i);
+
+    void clear();
 };
 
 }   // namespace client

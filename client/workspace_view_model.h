@@ -25,13 +25,14 @@ public:
 
     ~RemoteFileInfoListViewModel();
 
-    void set_file_infos(const std::span<data_item_type>& file_infos_);
+    void            set_file_infos(const std::span<data_item_type>& file_infos_);
     RemoteFileInfo& get_file_info(size_t i);
-
 
     int rowCount(const QModelIndex& index) const override;
 
     QVariant data(const QModelIndex& index, int role) const override;
+
+    void notify_remove_item(size_t i);
 };
 
 // for table
@@ -47,8 +48,9 @@ public:
     ~RemoteFileInfoViewModel() {}
     void set_file_infos(const std::span<data_item_type>& file_infos_);
 
-    RemoteFileInfo& get_file_info(size_t i);
+    void notify_remove_item(size_t i);
 
+    RemoteFileInfo& get_file_info(size_t i);
 
 protected:
     int      rowCount(const QModelIndex& parent) const override;

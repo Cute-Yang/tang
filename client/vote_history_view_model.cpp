@@ -1,4 +1,5 @@
 #include "vote_history_view_model.h"
+#include <QIcon>
 
 using namespace tang::common;
 namespace tang {
@@ -75,8 +76,12 @@ VoteHistoryViewModel::VoteHistoryViewModel(const QStringList& col_names_, size_t
 
 QVariant VoteHistoryViewModel::headerData(int section, Qt::Orientation orientation,
                                           int role) const {
-    if (orientation == Qt::Horizontal and role == Qt::DisplayRole) {
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         return col_names[section];
+        // } else if (role == Qt::DecorationRole) {
+        //     static QIcon icon(":icons/images/yezi.svg");
+        //     return icon;
+        // }
     }
     return QAbstractTableModel::headerData(section, orientation, role);
 }
@@ -109,6 +114,14 @@ QVariant VoteHistoryViewModel::data(const QModelIndex& index, int role) const {
         } else if (col == 4) {
             return history.choice_type == VoteChoiceType::kSingleChoice ? QString("单选")
                                                                         : QString("多选");
+        } else if (col == 5) {
+            return QString("查看");
+        }
+
+    } else if (role == Qt::DecorationRole) {
+        if (col == 5) {
+            static QIcon icon(":icons/images/sea_leaf.svg");
+            return icon;
         }
     }
     return {};

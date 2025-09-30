@@ -30,10 +30,10 @@ namespace tang {
 namespace client {
 
 void add_test() {
-    std::vector<QString> test_workspaces = {
+    QList<QString> test_workspaces = {
         "唐远志", "lazydog", "Arics", "jack", "Moris", "Moon", "work"};
     // take care the life circle!
-    std::vector<RemoteFileInfo> file_infos_data = {
+    QList<RemoteFileInfo> file_infos_data = {
         {"images", 4096, FileKind::kFolder, "2023-04-05 12:32:51"},
         {"report.docx", 1024, FileKind::kWord, "2023-04-05 12:32:51"},
 
@@ -270,7 +270,7 @@ bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  file_infos_json      = json_data[WorkspaceContentResponse::file_infos_key].toArray();
 
-    std::vector<RemoteFileInfo> file_infos;
+    QList<RemoteFileInfo> file_infos;
     file_infos.resize(file_infos_json.size());
     for (size_t i = 0; i < file_infos_json.size(); ++i) {
         auto file_info_json = file_infos_json[i].toObject();
@@ -503,29 +503,11 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
 
 void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
                                                   const QPoint&      global_pos) {
-    // add the action impl here!,if need the position value!
-    connect(right_menu->delete_action, &QAction::triggered, this, [this, index]() {
-        auto& file_info = file_info_table_model->get_file_info(index.row());
-        this->delete_file_dialog->hint_text->setText(
-            QString("~~~是否要删除文件%1: '%2' ?\n~~~(请谨慎操作!!!😮😮😮)")
-                .arg(file_info.file_type == FileKind::kFolder ? "夹" : "")
-                .arg(file_info.file_name));
-        this->delete_file_dialog->set_delete_filename(file_info.file_name);
-        this->delete_file_dialog->display();
-    });
-
-    connect(right_menu->rename_action, &QAction::triggered, this, [this, index]() {
-        auto& file_info = file_info_table_model->get_file_info(index.row());
-        this->rename_file_dialog->previous_filename_value->setText(file_info.file_name);
-        // QAQ
-        this->rename_file_dialog->set_file_index(index.row());
-        this->rename_file_dialog->display();
-    });
-
-    // return the choosed action!
     QAction* selected = right_menu->menu->exec(global_pos);
-    if (selected == nullptr) {
-        qDebug() << "Not select any action!";
+    if (selected == right_menu->rename_action) {
+        emit start_rename_file(index.row());
+    } else if (selected == right_menu->delete_action) {
+        emit start_delete_file(index.row());
     }
 }
 
@@ -560,18 +542,20 @@ void RemoteWorkspacePage::delete_file_impl(const QString& filename) {
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
-        // this->refresh_workspace_content_impl();
-        auto file_infos = ClientSingleton::get_cache_workspace_data_instance().get_file_infos(
-            path_helper.get_workspace_path());
-        auto index = this->delete_file_dialog->get_delete_file_index();
-        if (file_infos.empty() || index >= file_infos.size()) {
-            this->show_message("发生了错误,文件信息获取失败😫😫😫");
+        auto& cache_instance = ClientSingleton::get_cache_workspace_data_instance();
+        auto  index          = delete_file_dialog->get_delete_file_index();
+        auto  workspace_path = path_helper.get_workspace_path();
+        qDebug() << "the remove index is " << index;
+        if (!cache_instance.delete_file_info(workspace_path, index)) {
+            this->show_message("删除失败😫😫😫");
             return;
         }
-        // earas is delete by value...
-        std::copy(file_infos.data() + index + 1,
-                  file_infos.data() + file_infos.size(),
-                  file_infos.data() + index);
+        auto new_file_infos = cache_instance.get_file_infos(workspace_path);
+        this->file_info_list_model->set_file_infos(new_file_infos);
+        // this->file_info_list_model->notify_remove_item(index);
+        this->file_info_table_model->set_file_infos(new_file_infos);
+        // this->file_info_table_model->notify_remove_item(index);
+
         this->show_message(QString("成功删除了文件%1 😊😊😊").arg(file_path), false);
     });
 }

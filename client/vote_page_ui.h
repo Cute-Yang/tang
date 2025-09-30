@@ -14,20 +14,18 @@ namespace client {
 class VotePageUi {
 public:
     // vote_initator
-    ElaText* vote_creator_text;
-    ElaText* vote_creator_name_text;
+    ElaText* vote_creator_key;
+    ElaText* vote_creator_value;;
 
     // vote topic
-    ElaText*     vote_topic_text;
+    ElaText*     vote_topic_key;
     ElaLineEdit* vote_topic_line_edit;
 
     // single/multi choice?
-    ElaText*     vote_choice_type;
+    ElaText*     vote_choice_type_key;
     ElaComboBox* vote_choice_type_combox;
 
-    // vote items
-    // ElaListView* vote_items;
-    ElaTableView* vote_items;
+    ElaTableView* vote_item_view;
 
     // add item button
     ElaToolButton* add_vote_item_button;
@@ -35,7 +33,7 @@ public:
     ElaLineEdit* add_vote_item_line_edit;
 
     // voters
-    ElaText*                voters_text;
+    ElaText*                voters_key;
     ElaMultiSelectComboBox* voters_combox;
     ElaToolButton*          flush_voters_button;
 
@@ -43,6 +41,8 @@ public:
     ElaToolButton* start_vote_button;
 
     ElaToolButton* vote_history_text_button;
+
+    ElaToolButton* adjust_history_view_button;
     ElaTableView* vote_history_view;
     void          setup_ui(ElaScrollPage* page);
 };

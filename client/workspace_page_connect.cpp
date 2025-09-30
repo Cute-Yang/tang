@@ -1,6 +1,10 @@
 #include "client_global_config.h"
 #include "client_singleton.h"
+#include "common/status.h"
 #include "workspace_page.h"
+
+
+using namespace tang::common;
 
 
 namespace tang {
@@ -299,6 +303,25 @@ void RemoteWorkspacePage::initialize_connects() {
 
     connect(rename_file_dialog->cancle_button, &ElaToolButton::clicked, this, [this]() {
         this->rename_file_dialog->close();
+    });
+
+    connect(this, &RemoteWorkspacePage::start_delete_file, this, [this](int file_index) {
+        auto& file_info = file_info_table_model->get_file_info(file_index);
+        this->delete_file_dialog->hint_text->setText(
+            QString("~~~是否要删除文件%1: '%2' ?\n~~~(请谨慎操作!!!😮😮😮)")
+                .arg(file_info.file_type == FileKind::kFolder ? "夹" : "")
+                .arg(file_info.file_name));
+        this->delete_file_dialog->set_delete_filename(file_info.file_name);
+        this->delete_file_dialog->display();
+    });
+
+    connect(this, &RemoteWorkspacePage::start_rename_file, this, [this](int file_index) {
+        // qDebug() << "rename file...";
+        auto& file_info = file_info_table_model->get_file_info(file_index);
+        this->rename_file_dialog->previous_filename_value->setText(file_info.file_name);
+        // QAQ
+        this->rename_file_dialog->set_file_index(file_index);
+        this->rename_file_dialog->display();
     });
 }
 }   // namespace client

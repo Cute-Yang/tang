@@ -67,6 +67,10 @@ RemoteFileInfo& RemoteFileInfoViewModel::get_file_info(size_t i) {
     return this->file_infos[i];
 }
 
+void RemoteFileInfoViewModel::notify_remove_item(size_t i) {
+    beginRemoveRows(QModelIndex(), i, i);
+    endRemoveRows();
+}
 
 QVariant RemoteFileInfoViewModel::data(const QModelIndex& index, int role) const {
     int   row      = index.row();
@@ -118,6 +122,11 @@ RemoteFileInfo& RemoteFileInfoListViewModel::get_file_info(size_t i) {
     return file_infos[i];
 }
 
+void RemoteFileInfoListViewModel::notify_remove_item(size_t i) {
+    beginRemoveRows(QModelIndex(), i, i);
+    endRemoveRows();
+}
+
 
 int RemoteFileInfoListViewModel::rowCount(const QModelIndex& index) const {
     Q_UNUSED(index);
@@ -134,6 +143,7 @@ QVariant RemoteFileInfoListViewModel::data(const QModelIndex& index, int role) c
     }
     return QVariant{};
 }
+
 
 
 static QIcon workspace_icon = QIcon(":/icons/images/workspace.svg");

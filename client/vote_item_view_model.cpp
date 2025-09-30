@@ -41,6 +41,11 @@ QVariant VoteItemViewModel::headerData(int section, Qt::Orientation orientation,
 }
 
 
+bool VoteItemViewModel::contains(const QString& item) const {
+    return vote_items.contains(item);
+}
+
+
 bool VoteItemViewModel::add_vote_item(const QString& item) {
     if (vote_items.contains(item)) {
         return false;
@@ -79,6 +84,33 @@ size_t VoteItemViewModel::add_vote_items(const QStringList& items) {
 QString VoteItemViewModel::get_vote_item(size_t index) const {
     assert(index < vote_items.size());
     return vote_items[index];
+}
+
+QStringList& VoteItemViewModel::get_vote_items() {
+    return vote_items;
+}
+
+void VoteItemViewModel::clear() {
+    vote_items.clear();
+    this->layoutChanged();
+}
+
+void VoteItemViewModel::swap_item(int i, int j) {
+    if (i == j || i < 0 || j < 0 || i >= vote_items.size() || j >= vote_items.size()) {
+        return;
+    }
+    std::swap(vote_items[i], vote_items[j]);
+    qDebug() << "i:" << i << " j:" << j;
+    // this->layoutChanged();
+}
+
+void VoteItemViewModel::delete_item(int i) {
+    if (i < 0 || i >= vote_items.size()) {
+        return;
+    }
+    beginRemoveRows(QModelIndex(), i, i);
+    vote_items.removeAt(i);
+    endRemoveRows();
 }
 
 }   // namespace client
