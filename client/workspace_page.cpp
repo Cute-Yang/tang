@@ -142,13 +142,13 @@ void RemoteWorkspacePage::show_message(const QString& message, bool error) {
 }
 
 void RemoteWorkspacePage::adjust_workspace_content_view() {
-    size_t width = this->ui->workspace_content_table_view->width();
+    int width = this->ui->workspace_content_table_view->width();
     // the percent of each column is 0.1,0.35,0.15,0.15,0.25
-    size_t w0 = static_cast<size_t>(width * 0.1);
-    size_t w1 = static_cast<size_t>(width * 0.35);
-    size_t w2 = static_cast<size_t>(width * 0.15);
-    size_t w3 = static_cast<size_t>(width * 0.15);
-    size_t w4 = static_cast<size_t>(width * 0.25);
+    int w0 = static_cast<int>(width * 0.1);
+    int w1 = static_cast<int>(width * 0.35);
+    int w2 = static_cast<int>(width * 0.15);
+    int w3 = static_cast<int>(width * 0.15);
+    int w4 = static_cast<int>(width * 0.25);
     ui->workspace_content_table_view->setColumnWidth(0, w0);
     ui->workspace_content_table_view->setColumnWidth(1, w1);
     ui->workspace_content_table_view->setColumnWidth(2, w2);
@@ -403,7 +403,6 @@ void RemoteWorkspacePage::on_adjust_content_view_button_clicked() {
     this->adjust_workspace_content_view();
 }
 
-
 QNetworkReply* RemoteWorkspacePage::send_download_file_req(const QString& file_name) {
     auto& manager = ClientSingleton::get_network_manager_instance();
     QUrl  url(ClientSingleton::get_http_urls_instance().get_download_file_url(), QUrl::StrictMode);
@@ -483,7 +482,6 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
         json_data, ClientSingleton::get_http_urls_instance().get_create_new_dir_url());
     connect(reply, &QNetworkReply::finished, this, [this, dir_path, reply]() {
         auto document = get_json_document(reply);
-
         if (!document) {
             this->show_message("网络请求错误😫😫😫");
             return;

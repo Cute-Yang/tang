@@ -220,7 +220,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     adjust_content_view_button = new ElaToolButton(page);
     adjust_content_view_button->setToolTip("调整列宽");
-    adjust_content_view_button->setIcon(QIcon(":icons/images/leaf.svg"));
+    adjust_content_view_button->setIcon(QIcon(":icons/images/yezi.svg"));
     adjust_content_view_button->setIconSize(other_icon_size);
     navigation_layout->addWidget(adjust_content_view_button);
 

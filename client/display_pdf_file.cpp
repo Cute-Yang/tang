@@ -122,10 +122,10 @@ void DisplayPdf::init_connects() {
 
     connect(ui->hide_left_button, &ElaToolButton::clicked, this, [this](bool hide) {
         if (hide) {
-            qDebug() << "hide";
+            // qDebug() << "hide";
             ui->tab_container->setMaximumWidth(12);
         } else {
-            qDebug() << "not hide";
+            // qDebug() << "not hide";
             ui->tab_container->setMaximumWidth(320);
         }
     });
