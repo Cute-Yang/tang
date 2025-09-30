@@ -44,14 +44,17 @@ public:
     ElaTabWidget* switch_tabs;
     ElaTreeView*  bookmark_view;
 
-    QWidget*     thumbnail_container;
-    QListView*   thumbnail_view;
-    ElaListView* search_result_view;
+    QWidget*         thumbnail_container;
+    QListView*       thumbnail_view;
+    ElaListView*     search_result_view;
     ElaToggleSwitch* enable_thumbnail;
-    QWidget* search_result_container;
-    ElaText* enable_thumbnail_text;
-    QPdfView* pdf_show_page;
-    void setup_ui(QWidget* window);
+    QWidget*         search_result_container;
+    ElaText*         enable_thumbnail_text;
+    QPdfView*        pdf_show_page;
+
+    // for adjust width
+    QWidget* tab_container;
+    void     setup_ui(QWidget* window);
 };
 
 }   // namespace client

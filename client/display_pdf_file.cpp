@@ -119,22 +119,32 @@ void DisplayPdf::init_connects() {
             &DisplayPdf::on_enable_thumbnail_checked);
 
     connect(ui->zoom_slider, &ElaSlider::valueChanged, this, &DisplayPdf::on_zoom_slider_changed);
+
+    connect(ui->hide_left_button, &ElaToolButton::clicked, this, [this](bool hide) {
+        if (hide) {
+            qDebug() << "hide";
+            ui->tab_container->setMaximumWidth(12);
+        } else {
+            qDebug() << "not hide";
+            ui->tab_container->setMaximumWidth(320);
+        }
+    });
 }
 
 
 void DisplayPdf::show_message(const QString& message, bool error) {
     if (error) {
         ElaMessageBar::warning(ElaMessageBarType::TopLeft,
-                               "DisplayPdf",
+                               "Display PDF",
                                message,
                                ClientGlobalConfig::error_show_time,
                                this);
     } else {
-        ElaMessageBar::information(ElaMessageBarType::TopLeft,
-                                   "DisplayPdf",
-                                   message,
-                                   ClientGlobalConfig::message_show_time,
-                                   this);
+        ElaMessageBar::success(ElaMessageBarType::TopLeft,
+                               "Display PDF",
+                               message,
+                               ClientGlobalConfig::message_show_time,
+                               this);
     }
 }
 
@@ -185,7 +195,8 @@ void DisplayPdf::page_selected(int page) {
     // qDebug() << "current page is " << page;
     int total_page = document->pageCount();
     if (page <= 0 || page > total_page) {
-        show_message(QString("页数:%1 不正确 🤣🤣🤣...").arg(page));
+        // show_message(QString("页数:%1 不正确 🤣🤣🤣...").arg(page));
+        return;
     }
     if (page == 1) {
         show_message("已经是第一页了 😂😂", false);

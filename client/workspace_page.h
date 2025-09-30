@@ -71,6 +71,10 @@ private:
     void set_workspace_content_icon_size_impl(QSize icon_size);
 
     void delete_file_impl(QString const& file_name);
+    bool delete_cache_file_info_impl(size_t index);
+
+    
+
     void rename_file_impl(QString const& src_filename, QString const& dst_filename);
     void refresh_workspace_content_impl();
 

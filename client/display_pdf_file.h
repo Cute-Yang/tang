@@ -16,6 +16,7 @@ private:
     QPdfSearchModel* search_model;
     QPdfDocument*    document;
     QString          previous_search_text;
+    QWidget*         show_widget;
 
     double compute_zoom_factor(bool zoom_in);
     // claim and show some message!
@@ -25,6 +26,7 @@ private:
     void   show_message(const QString& message, bool error = true);
     void   clear();
     void   process_after_load();
+
 public:
     void load_pdf(const QString& file_path);
     void load_pdf(QIODevice* device);

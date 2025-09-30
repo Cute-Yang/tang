@@ -13,6 +13,9 @@ void DisplayPdfUi::setup_ui(QWidget* window) {
     tool_bar = new ElaToolBar(window);
     tool_bar->setIconSize(QSize(21, 21));
     hide_left_button = new ElaToolButton(window);
+    hide_left_button->setCheckable(true);
+    // means wheter hide?
+    hide_left_button->setChecked(false);
     hide_left_button->setToolTip(QString("收起侧边栏"));
     // hide_left_button->setElaIcon(ElaIconType::ArrowsSplitUpAndLeft);
     hide_left_button->setIcon(QIcon(":/icons/images/shanhu.svg"));
@@ -105,7 +108,8 @@ void DisplayPdfUi::setup_ui(QWidget* window) {
     page_container_layout->addWidget(page_spliter);
 
     // tabs!
-    QWidget* tab_container = new QWidget(window);
+    tab_container = new QWidget(window);
+    tab_container->setMaximumWidth(320);
     // set the vertical layout!
     QVBoxLayout* tab_container_layout = new QVBoxLayout(tab_container);
 

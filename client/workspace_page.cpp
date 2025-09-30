@@ -503,23 +503,43 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
 
 void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
                                                   const QPoint&      global_pos) {
-    QAction* selected = right_menu->menu->exec(global_pos);
+    QAction* selected   = right_menu->menu->exec(global_pos);
+    int      file_index = index.row();
     if (selected == right_menu->rename_action) {
-        emit start_rename_file(index.row());
+        emit start_rename_file(file_index);
     } else if (selected == right_menu->delete_action) {
-        emit start_delete_file(index.row());
+        emit start_delete_file(file_index);
     }
 }
 
-
 void RemoteWorkspacePage::display_right_menu_for_table_view(const QPoint& pos) {
     QModelIndex index = ui->workspace_content_table_view->indexAt(pos);
+    qDebug() << "the index is " << index;
     this->display_right_menu_impl(index, this->ui->workspace_content_table_view->mapToGlobal(pos));
 }
 
 void RemoteWorkspacePage::display_right_menu_for_list_view(const QPoint& pos) {
     QModelIndex index = ui->workspace_content_list_view->indexAt(pos);
+    qDebug() << "the index is " << index;
+
     this->display_right_menu_impl(index, this->ui->workspace_content_list_view->mapToGlobal(pos));
+}
+
+
+bool RemoteWorkspacePage::delete_cache_file_info_impl(size_t index) {
+    auto& cache_instance = ClientSingleton::get_cache_workspace_data_instance();
+    auto  workspace_path = path_helper.get_workspace_path();
+    if (!cache_instance.delete_file_info(workspace_path, index)) {
+        return false;
+    }
+    // here our model just own a span,so we can not delete it!
+    auto new_file_infos = cache_instance.get_file_infos(workspace_path);
+    this->file_info_list_model->set_file_infos(new_file_infos);
+    this->file_info_list_model->notify_remove_item(index);
+
+    this->file_info_table_model->set_file_infos(new_file_infos);
+    this->file_info_table_model->notify_remove_item(index);
+    return true;
 }
 
 
@@ -542,21 +562,13 @@ void RemoteWorkspacePage::delete_file_impl(const QString& filename) {
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
-        auto& cache_instance = ClientSingleton::get_cache_workspace_data_instance();
-        auto  index          = delete_file_dialog->get_delete_file_index();
-        auto  workspace_path = path_helper.get_workspace_path();
-        qDebug() << "the remove index is " << index;
-        if (!cache_instance.delete_file_info(workspace_path, index)) {
-            this->show_message("删除失败😫😫😫");
-            return;
-        }
-        auto new_file_infos = cache_instance.get_file_infos(workspace_path);
-        this->file_info_list_model->set_file_infos(new_file_infos);
-        // this->file_info_list_model->notify_remove_item(index);
-        this->file_info_table_model->set_file_infos(new_file_infos);
-        // this->file_info_table_model->notify_remove_item(index);
+        auto index = delete_file_dialog->get_delete_file_index();
 
-        this->show_message(QString("成功删除了文件%1 😊😊😊").arg(file_path), false);
+        if (!this->delete_cache_file_info_impl(index)) {
+            this->show_message(QString("删除失败 %1😫😫😫").arg(file_path));
+        } else {
+            this->show_message(QString("成功删除了文件%1 😊😊😊").arg(file_path), false);
+        }
     });
 }
 

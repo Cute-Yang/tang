@@ -312,6 +312,7 @@ void RemoteWorkspacePage::initialize_connects() {
                 .arg(file_info.file_type == FileKind::kFolder ? "夹" : "")
                 .arg(file_info.file_name));
         this->delete_file_dialog->set_delete_filename(file_info.file_name);
+        this->delete_file_dialog->set_delete_file_index(file_index);
         this->delete_file_dialog->display();
     });
 
