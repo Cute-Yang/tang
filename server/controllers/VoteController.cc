@@ -220,7 +220,11 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
             // should reset status -> invalid???
         }
         // here should return a vote_id?
-        make_response_and_return(StatusCode::kSuccess, callback);
+        auto ret = make_json_from_status_code(StatusCode::kSuccess);
+        ret["vote_id"] = vote_id;
+        auto resp = HttpResponse::newHttpJsonResponse(ret);
+        callback(resp);
+        //then notify all user!
     };
 
     auto c2 = [callback](const orm::DrogonDbException& ex) {
@@ -229,7 +233,6 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
     };
     vote_data_mapper.insert(insert_vote_data, c1, c2);
 }
-
 
 
 void VoteController::remove_vote(const HttpRequestPtr&                         req,
@@ -555,4 +558,36 @@ bool VoteController::vote_finished_work(vote_id_type vote_id) {
     // 4.notify voters
 
     return true;
+}
+
+
+void VoteController::get_online_voters(const HttpRequestPtr&                         req,
+                                       std::function<void(const HttpResponsePtr&)>&& callback) {
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        LOG_ERROR << "Fail to get database ptr!";
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    // 2.update vote finished!
+    orm::Mapper<VoteUser> vote_data_mapper(db_client_ptr);
+    auto                  online_voters = vote_data_mapper.findBy(orm::Criteria(
+        VoteUser::Cols::_user_status, orm::CompareOperator::EQ, VoteUserStatus::kActive));
+    if (online_voters.size() == 0) {
+        LOG_WARN << "The num of online user is zero....";
+    }
+
+    auto ret = make_json_from_status_code(StatusCode::kSuccess);
+
+    Json::Value voter_infos = Json::Value(Json::arrayValue);
+
+    for (size_t i = 0; i < ret.size(); ++i) {
+        Json::Value voter_info;
+        voter_info["voter_name"] = online_voters[i].getValueOfUserName();
+        voter_info["voter_id"]   = online_voters[i].getValueOfId();
+        voter_infos.append(voter_info);
+    }
+    ret["voter_infos"] = voter_infos;
+    auto resp          = HttpResponse::newHttpJsonResponse(ret);
+    callback(resp);
 }

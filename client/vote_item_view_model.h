@@ -29,6 +29,8 @@ public:
 
     size_t add_vote_items(const QStringList& items);
 
+    void set_vote_items(const QStringList& items );
+
     // void delete_vote_item(size_t index);
 
     // void delete_vote_item(const QString& item);

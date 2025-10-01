@@ -19,10 +19,14 @@ public:
     void send_vote_choices(const HttpRequestPtr&                         req,
                            std::function<void(const HttpResponsePtr&)>&& callback);
 
+    void get_online_voters(const HttpRequestPtr&                         req,
+                           std::function<void(const HttpResponsePtr&)>&& callback);
+
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(VoteController::create_vote, "/api/v1/create_vote", Post);
     ADD_METHOD_TO(VoteController::remove_vote, "/api/v1/remove_vote", Post);
     ADD_METHOD_TO(VoteController::send_vote_choices, "/api/v1/send_vote_choices", Post);
+    ADD_METHOD_TO(VoteController::get_online_voters, "/api/v1/get_online_voters", Get, Post);
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(VoteController::get, "/{2}/{1}", Get); // path is /VoteController/{arg2}/{arg1}
     // METHOD_ADD(VoteController::your_method_name, "/{1}/{2}/list", Get); // path is

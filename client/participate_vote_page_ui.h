@@ -38,7 +38,7 @@ class ParticipateVotePageUi {
 
         ElaToolButton* confirm_vote_button;
 
-        ElaTableView* vote_history_view;
+        ElaTableView* vote_todo_list;
 
         void setup_ui(ElaScrollPage* page);
 

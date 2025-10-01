@@ -25,5 +25,7 @@ std::pair<size_t, size_t> remove_path_sep(const QString& file_path);
 void show_and_raise(QWidget* widget);
 
 QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data, const QString& url_str);
+
+std::string format_time(const std::chrono::system_clock::time_point& tp) ;
 }   // namespace client
 }   // namespace tang

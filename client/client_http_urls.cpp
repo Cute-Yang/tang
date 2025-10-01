@@ -28,14 +28,13 @@ void ClientHttpUrls::format_http_urls() {
 
     // upload file
     upload_file_http_url = QString("http://%1:%2/api/v1/upload_file").arg(host).arg(port);
-
     is_file_exist_http_url =
         QString("http://%1:%2/api/v1/is_specify_file_exist").arg(host).arg(port);
-
-    create_dir_http_url = QString("http://%1:%2/api/v1/create_dir").arg(host).arg(port);
-
-    delete_file_http_url = QString("http://%1:%2/api/v1/delete_file").arg(host).arg(port);
-    rename_file_http_url = QString("http://%1:%2/api/v1/move_file").arg(host).arg(port);
+    create_dir_http_url    = QString("http://%1:%2/api/v1/create_dir").arg(host).arg(port);
+    delete_file_http_url   = QString("http://%1:%2/api/v1/delete_file").arg(host).arg(port);
+    rename_file_http_url   = QString("http://%1:%2/api/v1/move_file").arg(host).arg(port);
+    online_voters_http_url = QString("http://%1:%2/api/v1/get_online_voters").arg(host).arg(port);
+    create_vote_http_url   = QString("http://%1:%2/api/v1/create_vote").arg(host).arg(port);
 }
 
 
@@ -77,5 +76,14 @@ const QString& ClientHttpUrls::get_delete_file_url() {
 const QString& ClientHttpUrls::get_rename_file_url() {
     return rename_file_http_url;
 }
+
+const QString& ClientHttpUrls::get_online_voters_url() {
+    return online_voters_http_url;
+}
+
+const QString& ClientHttpUrls::get_create_vote_http_url() {
+    return create_vote_http_url;
+}
+
 }   // namespace client
 }   // namespace tang

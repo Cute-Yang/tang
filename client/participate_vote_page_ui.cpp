@@ -1,7 +1,9 @@
 #include "participate_vote_page_ui.h"
 #include <QFont>
+#include <QHeaderView>
 #include <QVBoxLayout>
 #include <QWidget>
+
 
 
 namespace tang {
@@ -167,8 +169,14 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_item_layout->addStretch();
 
     central_layout->addSpacing(6);
-    vote_history_view = new ElaTableView(page);
-    central_layout->addWidget(vote_history_view);
+    vote_todo_list = new ElaTableView(page);
+    vote_todo_list->horizontalHeader()->setFont(font);
+    vote_todo_list->verticalHeader()->hide();
+    vote_todo_list->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    vote_todo_list->setFont(font);
+
+
+    central_layout->addWidget(vote_todo_list);
 
 
     _central_widget->setWindowTitle("Start Vote");

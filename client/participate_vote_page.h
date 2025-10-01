@@ -1,22 +1,14 @@
 #include "ElaScrollPage.h"
 #include "participate_vote_page_ui.h"
 #include <QWidget>
+#include "participate_view_model.h"
 
 namespace tang {
 namespace client {
 class ParticipateVotePage : public ElaScrollPage {
-public:
-    enum class VoteStatus : uint8_t {
-        // not vote
-        ready = 0,
-        // alreay vote
-        finish = 1,
-        // the vote is invalid!
-        pending = 2
-    };
-
 private:
     ParticipateVotePageUi* ui;
+    ParticipateViewModel* view_model;
 
 public:
     ParticipateVotePage(QWidget* parent = nullptr);

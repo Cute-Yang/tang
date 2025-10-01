@@ -1,7 +1,8 @@
 #include "util.h"
+#include "client_singleton.h"
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include "client_singleton.h"
+
 namespace tang {
 namespace client {
 void switch_password_eye_style(ElaLineEdit* line_edit, QAction* action, bool hide) {
@@ -51,15 +52,15 @@ std::pair<size_t, size_t> remove_path_sep(const QString& folder_path) {
     return {l, r};
 }
 
-void show_and_raise(QWidget* widget){
+void show_and_raise(QWidget* widget) {
     widget->show();
     widget->raise();
     widget->activateWindow();
 }
 
 
-QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data,const QString& url_str){
-    QUrl url(url_str);
+QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data, const QString& url_str) {
+    QUrl            url(url_str);
     QNetworkRequest request(url_str);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     // prepare json data
@@ -68,5 +69,25 @@ QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data,const Q
     auto          reply = ClientSingleton::get_network_manager_instance().post(request, json_bytes);
     return reply;
 }
+
+std::string format_time(const std::chrono::system_clock::time_point& tp) {
+    // 转换为 time_t
+    std::time_t t = std::chrono::system_clock::to_time_t(tp);
+
+    // 转换为本地时间的 tm 结构
+    std::tm tm_snapshot;
+#ifdef _WIN32
+    localtime_s(&tm_snapshot, &t);
+#else
+    localtime_r(&tt, &tm_snapshot);   // POSIX
+#endif
+    // 使用 stringstream 和 put_time 格式化
+    std::ostringstream oss;
+    oss << std::put_time(&tm_snapshot, "%Y-%m-%d %H:%M:%S");
+
+    return oss.str();
+}
+
+
 }   // namespace client
 }   // namespace tang

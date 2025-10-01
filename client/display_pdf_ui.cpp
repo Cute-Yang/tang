@@ -33,7 +33,7 @@ void DisplayPdfUi::setup_ui(QWidget* window) {
     zoom_out_button = new ElaToolButton(window);
     zoom_out_button->setToolTip("放大");
     // zoom_out_button->setElaIcon(ElaIconType::AnchorCircleXmark);
-    zoom_out_button->setIcon(QIcon(":/icons/images/zoom_out.svg"));
+    zoom_out_button->setIcon(QIcon(":icons/images/zoom_out.svg"));
     tool_bar->addWidget(zoom_out_button);
     tool_bar->addSeparator();
 

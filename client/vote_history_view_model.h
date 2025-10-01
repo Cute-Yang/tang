@@ -7,8 +7,7 @@ namespace tang {
 namespace client {
 
 struct VoteHistory {
-    // id
-    size_t vote_id;
+    uint32_t vote_id;
     // people
     QString creator;
     // time
@@ -16,6 +15,7 @@ struct VoteHistory {
     // topic
     QString                      vote_topic;
     QStringList                  vote_items;
+    QStringList voters;
     tang::common::VoteChoiceType choice_type;
 };
 
@@ -40,6 +40,10 @@ private:
 public:
     VoteHistoryViewModel(const QStringList& col_names, size_t batch_size_ = 10,
                          QObject* parent = nullptr);
+    void append(VoteHistory&& item);
+    void append(const VoteHistory& item);
+
+    VoteHistory& at(size_t i);
 };
 }   // namespace client
 }   // namespace tang

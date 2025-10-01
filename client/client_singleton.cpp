@@ -18,6 +18,13 @@ ClientHttpUrls& ClientSingleton::get_http_urls_instance() {
 
 CacheUserInfo& ClientSingleton::get_cache_user_info_instance() {
     static CacheUserInfo instance;
+    // only for test!
+    instance.user_name     = "陈静";
+    instance.email         = "chenjing@qq.com";
+    instance.user_id       = 9;
+    instance.vote_prioirty = 1;
+
+
     return instance;
 }
 

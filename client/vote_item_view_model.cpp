@@ -113,5 +113,11 @@ void VoteItemViewModel::delete_item(int i) {
     endRemoveRows();
 }
 
+void VoteItemViewModel::set_vote_items(const QStringList& items) {
+    vote_items.assign(items.begin(), items.end());
+    layoutChanged();
+}
+
+
 }   // namespace client
 }   // namespace tang
