@@ -32,7 +32,6 @@ void ChatController::handleNewConnection(const HttpRequestPtr&         req,
 
     LOG_INFO << "New connection:" << wsConnPtr->peerAddr().toIpPort() << "user_name:" << user_name
              << " user_id:" << user_id_str << " join our chatroom!";
-
     auto& chat_instance = tang::server::ChatClientCollections::get_instance();
     chat_instance.add_new_connection(user_id, wsConnPtr);
 }

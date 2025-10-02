@@ -679,7 +679,7 @@ void VoteController::get_chunk_vote_data(const HttpRequestPtr&                  
     orm::Mapper<VoteData>            vote_data_mapper(db_client_ptr);
     orm::Mapper<VoteItem>            vote_item_mapper(db_client_ptr);
     orm::Mapper<VoteParticipateInfo> vote_participate_mapper(db_client_ptr);
-    
+
     vote_data_mapper.limit(vote_num)
         .offset(vote_offset)
         .orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
