@@ -14,6 +14,7 @@ find_package(
         Pdf
         Charts
         Network
+        WebSockets
 )
 find_package(ElaWidgetTools REQUIRED)
 # find all the files...
@@ -59,6 +60,8 @@ target_link_libraries(
     PUBLIC Qt${QT_VERSION_MAJOR}::PdfWidgets
     PUBLIC Qt${QT_VERSION_MAJOR}::Charts
     PUBLIC Qt${QT_VERSION_MAJOR}::Network
+    PUBLIC Qt${QT_VERSION_MAJOR}::WebSockets
+
 )
 
 function(add_client_test file_path)
@@ -86,6 +89,7 @@ set(
     "water/test_main_window.cpp"
     "water/test_client.cpp"
     "water/test_pie_plot.cpp"
+    "water/test_ws.cpp"
 )
 
 foreach(source ${client_test_sources})

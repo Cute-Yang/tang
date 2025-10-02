@@ -121,7 +121,9 @@ void VotePage::clear_vote_data() {
     // key,value is a better choice!
     // ui->vote_creator_value->clear();
     ui->vote_topic_line_edit->clear();
-    ui->voters_combox->clearEditText();
+    // ui->voters_combox->clearEditText();
+    ui->voters_combox->setCurrentSelection(0);
+    ui->vote_choice_type_combox->setCurrentIndex(0);
     vote_data_model->clear();
     this->set_frozon(true);
     // flush
@@ -229,7 +231,10 @@ void VotePage::get_online_voters_impl() {
         }
         this->ui->voters_combox->clear();
         this->ui->voters_combox->addItems(voter_names);
-        this->show_message("refresh成功(●'◡'●)", false);
+        this->ui->voters_combox->setCurrentSelection(0);
+        // qDebug() << "******" << ui->voters_combox->getCurrentSelection() << " "
+        //          << ui->voters_combox->getCurrentSelectionIndex();
+        this->show_message("在线列表更新成功(●'◡'●)", false);
     });
 }
 
@@ -273,6 +278,8 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     QJsonArray  json_voter_ids;
     QStringList voters;
     for (size_t i = 0; i < select_voter_indexes.size(); ++i) {
+        // qDebug() << select_voter_indexes;
+        // qDebug() << online_voters.size();
         if (i >= online_voters.size()) {
             this->show_message("越界啦§(*￣▽￣*)§");
             return false;
