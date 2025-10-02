@@ -140,7 +140,7 @@ QVariant VoteHistoryViewModel::data(const QModelIndex& index, int role) const {
     }
     int   row     = index.row();
     int   col     = index.column();
-    auto& history = vote_history[vote_history.size() - 1 - row];
+    auto& history = vote_history[row];
     if (role == Qt::DisplayRole) {
         if (col == vote_id_col) {
             return history.vote_id;

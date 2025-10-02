@@ -61,6 +61,13 @@ VotePage::VotePage(QWidget* parent)
     QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
     vote_data_model->add_vote_items(items);
 
+
+    // some initialzie work!
+    auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
+    ui->vote_creator_value->setText(current_user_info.user_name);
+
+    this->get_online_voters_impl();
+
     this->initialize_connects();
 }
 
@@ -112,8 +119,7 @@ void VotePage::adjust_vote_history_view() {
 
 void VotePage::clear_vote_data() {
     // key,value is a better choice!
-    ui->vote_creator_value->clear();
-    ui->vote_creator_value->setText("西雅图");
+    // ui->vote_creator_value->clear();
     ui->vote_topic_line_edit->clear();
     ui->voters_combox->clearEditText();
     vote_data_model->clear();
@@ -235,6 +241,7 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
         return false;
     }
     auto& vote_items = vote_data_model->get_vote_items();
+    qDebug() << "the vote_item is " << vote_items;
     if (vote_items.empty()) {
         this->show_message("还没有添加投票项哦§(*￣▽￣*)§");
         return false;
@@ -263,23 +270,31 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     json_data["vote_creator"]     = current_user_info.user_name;
     json_data["vote_create_time"] = us_timestamp;
 
-    QJsonArray json_voter_ids;
+    QJsonArray  json_voter_ids;
+    QStringList voters;
     for (size_t i = 0; i < select_voter_indexes.size(); ++i) {
         if (i >= online_voters.size()) {
             this->show_message("越界啦§(*￣▽￣*)§");
             return false;
         }
         // not supported unsigned!
+        voters.push_back(online_voters[i].voter_name);
         json_voter_ids.append(static_cast<int>(online_voters[i].voter_id));
     }
-    json_data["voters"]           = json_voter_ids;
-    json_data["vote_choice_type"] = static_cast<int>(
-        ui->vote_choice_type_combox->currentIndex() == 0 ? VoteChoiceType::kSingleChoice
-                                                         : VoteChoiceType::kMultiChoice);
-    vote_history.creator     = current_user_info.user_name;
-    vote_history.create_time = QString(format_time(now).c_str());
-    vote_history.vote_topic  = vote_topic;
-    vote_history.vote_items  = vote_items;
+    json_data["voters"] = json_voter_ids;
+
+    auto vote_choice_type         = ui->vote_choice_type_combox->currentIndex() == 0
+                                        ? VoteChoiceType::kSingleChoice
+                                        : VoteChoiceType::kMultiChoice;
+    json_data["vote_choice_type"] = static_cast<int>(vote_choice_type);
+    vote_history.creator          = current_user_info.user_name;
+    vote_history.create_time      = QString(format_time(now).c_str());
+    vote_history.vote_topic       = vote_topic;
+    vote_history.vote_items       = vote_items;
+    vote_history.voters           = voters;
+    vote_history.vote_status      = VoteStatus::kReady;
+    vote_history.choice_type      = vote_choice_type;
+
     this->show_message(
         QString("%1 成功发起了投票 %2 (✿◠‿◠)").arg(current_user_info.user_name, vote_topic), false);
     return true;

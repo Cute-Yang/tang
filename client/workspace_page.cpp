@@ -23,7 +23,7 @@
 #include <QStyledItemDelegate>
 #include <QUrlQuery>
 #include <QVBoxLayout>
-#include <QtConcurrent/QtConcurrent>
+#include <algorithm>
 
 using namespace tang::common;
 namespace tang {
@@ -285,6 +285,12 @@ bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
             file_info_json[WorkspaceContentResponse::last_write_time_key].toString();
     }
 
+    // sort by type
+    std::sort(
+        file_infos.begin(), file_infos.end(), [](const RemoteFileInfo& a, const RemoteFileInfo& b) {
+            return static_cast<int>(a.file_type) < static_cast<int>(b.file_type);
+        });
+
     auto folder_path = path_helper.get_workspace_path();
     // append to cache!
     cache_workspace_data.set_file_infos(folder_path, std::move(file_infos));
@@ -308,7 +314,7 @@ void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
     }
 }
 
-//change to json!
+// change to json!
 void RemoteWorkspacePage::send_get_workspace_content_req(const QString&          folder_path,
                                                          std::function<void()>&& success_callback,
                                                          std::function<void()>&& failed_callback) {

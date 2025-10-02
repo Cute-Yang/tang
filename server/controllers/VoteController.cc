@@ -194,12 +194,13 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
     }
     orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
     VoteData              insert_vote_data;
+    // vote_data_mapper.
     insert_vote_data.setVoteTopic(parsed_vote_data.vote_topic);
     insert_vote_data.setVoteCreator(parsed_vote_data.vote_creator);
     insert_vote_data.setVoteCreatorId(parsed_vote_data.vote_creator_id),
         // hei,using the global
         // make sure the microsecons!!!
-        insert_vote_data.setVoteCreateTime(::trantor::Date(parsed_vote_data.vote_create_time));
+    insert_vote_data.setVoteCreateTime(::trantor::Date(parsed_vote_data.vote_create_time));
     insert_vote_data.setVoteType(static_cast<uint8_t>(parsed_vote_data.choice_type));
     // very important!
     //  insert_vote_data.setValid(parsed_vote_data.is_valid);
