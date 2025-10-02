@@ -59,11 +59,16 @@ private:
         std::vector<int> ret;
     };
 
+    struct VoteItemAndId {
+        std::string vote_item;
+        size_t      vote_item_id;
+    };
+
     struct VoteCacheData {
         // topic
         std::string vote_topic;
         // items
-        std::vector<std::string> vote_items;
+        std::vector<VoteItemAndId> vote_items;
         // creator
         std::string vote_creator;
         // create time! give the timestap!!!

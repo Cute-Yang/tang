@@ -1,18 +1,21 @@
 #include "VoteController.h"
 #include "../models/TestVoteData.h"
 #include "../models/TestVoteItem.h"
+#include "../models/TestVoteParticipateInfo.h"
 #include "../models/TestVoteUser.h"
 #include "util.h"
 #include <mutex>
+
 
 
 // Add definition of your processing function here
 using namespace tang::common;
 using namespace tang::server::utils;
 
-using VoteData = drogon_model::vote::TestVoteData;
-using VoteUser = drogon_model::vote::TestVoteUser;
-using VoteItem = drogon_model::vote::TestVoteItem;
+using VoteData            = drogon_model::vote::TestVoteData;
+using VoteUser            = drogon_model::vote::TestVoteUser;
+using VoteItem            = drogon_model::vote::TestVoteItem;
+using VoteParticipateInfo = drogon_model::vote::TestVoteParticipateInfo;
 
 
 struct VoteCacheConfig {
@@ -146,7 +149,6 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
     if (auto ret = VoteJsonValidator::validate_vote_data(*json_data); ret != StatusCode::kSuccess) {
         make_response_and_return(ret, callback);
     }
-
     // then parse the json
     VoteCacheData parsed_vote_data;
     parsed_vote_data.vote_status = VoteStatus::kReady;
@@ -156,7 +158,7 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
         auto n_item                 = (*json_data)[VoteJsonValidator::vote_items_key].size();
         parsed_vote_data.vote_items.reserve(n_item);
         for (auto& item : (*json_data)[VoteJsonValidator::vote_items_key]) {
-            parsed_vote_data.vote_items.push_back(item.asString());
+            parsed_vote_data.vote_items.push_back({item.asString(), 0});
         }
         parsed_vote_data.vote_creator =
             (*json_data)[VoteJsonValidator::vote_creator_key].asString();
@@ -174,17 +176,11 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
             LOG_ERROR << "Invalid choice type:" << choice_type_value;
             make_response_and_return(StatusCode::kInvalidChoiceType, callback);
         }
-
         parsed_vote_data.choice_type = static_cast<VoteChoiceType>(choice_type_value);
-
-
     } catch (Json::Exception& ex) {
-        LOG_ERROR << "Json exxception:" << ex.what();
+        LOG_ERROR << "Json exception:" << ex.what();
         make_response_and_return(StatusCode::kParseJsonError, callback);
     }
-
-    // need to insert to sql
-
     auto db_client_ptr = app().getDbClient(get_db_client_name());
     if (db_client_ptr == nullptr) {
         // wow,the databas is nullptr!
@@ -192,30 +188,43 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
         LOG_ERROR << "database ptr is invalid...";
         make_response_and_return(StatusCode::kInvalidDatabase, callback);
     }
-    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
-    VoteData              insert_vote_data;
-    // vote_data_mapper.
+    auto                             trans = db_client_ptr->newTransaction();
+    orm::Mapper<VoteData>            vote_data_mapper(trans);
+    orm::Mapper<VoteItem>            vote_item_mapper(trans);
+    orm::Mapper<VoteParticipateInfo> vote_participate_mapper(trans);
+
+    VoteData insert_vote_data;
     insert_vote_data.setVoteTopic(parsed_vote_data.vote_topic);
     insert_vote_data.setVoteCreator(parsed_vote_data.vote_creator);
     insert_vote_data.setVoteCreatorId(parsed_vote_data.vote_creator_id),
-        // hei,using the global
-        // make sure the microsecons!!!
-    insert_vote_data.setVoteCreateTime(::trantor::Date(parsed_vote_data.vote_create_time));
+        insert_vote_data.setVoteCreateTime(::trantor::Date(parsed_vote_data.vote_create_time));
     insert_vote_data.setVoteType(static_cast<uint8_t>(parsed_vote_data.choice_type));
-    // very important!
-    //  insert_vote_data.setValid(parsed_vote_data.is_valid);
-    //  very important,the name maybe changed!
-    //   insert_vote_data.setVoteCreatorId(parsed_vote_data.vote_creator_id)
-    auto c1 = [callback, value = std::move(parsed_vote_data), this](VoteData vote_data) mutable {
-        // auto with decay type!
-        auto        vote_id    = vote_data.getValueOfVoteId();
-        const auto& vote_topic = value.vote_topic;
-        LOG_INFO << "Successfully add vote, vote_id:" << vote_id << " vote_topic:" << vote_topic;
-        // just add to the map!
-        // then insert the data!!!
-        value.vote_id = vote_id;
+    try {
+        vote_data_mapper.insert(insert_vote_data);
+        auto vote_id = insert_vote_data.getValueOfVoteId();
+        LOG_INFO << "Successfully add vote, vote_id:" << vote_id
+                 << " vote_topic:" << parsed_vote_data.vote_topic;
+        auto& vote_items = parsed_vote_data.vote_items;
+        for (size_t i = 0; i < vote_items.size(); ++i) {
+            VoteItem insert_vote_item;
+            auto&    vote_item = vote_items[i];
+            insert_vote_item.setVoteItem(vote_item.vote_item);
+            insert_vote_item.setVoteId(vote_id);
+            insert_vote_item.setVoteCount(0);
+            vote_item_mapper.insert(insert_vote_item);
+            vote_item.vote_item_id = insert_vote_item.getValueOfVoteId();
+        }
 
-        if (auto ret = this->add_vote_data_to_cache(std::move(value));
+        for (auto& [k, _] : parsed_vote_data.voter_choices) {
+            VoteParticipateInfo insert_participate;
+            insert_participate.setVoterId(k);
+            insert_participate.setVoteId(vote_id);
+            vote_participate_mapper.insert(insert_participate);
+        }
+
+
+        parsed_vote_data.vote_id = vote_id;
+        if (auto ret = this->add_vote_data_to_cache(std::move(parsed_vote_data));
             ret != StatusCode::kSuccess) {
             make_response_and_return(ret, callback);
             // should reset status -> invalid???
@@ -225,14 +234,11 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
         ret["vote_id"] = vote_id;
         auto resp      = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
-        // then notify all user!
-    };
-
-    auto c2 = [callback](const orm::DrogonDbException& ex) {
+    } catch (const orm::DrogonDbException& ex) {
         LOG_ERROR << "Fail to insert data with error:" << ex.base().what();
+        trans->rollback();
         make_response_and_return(StatusCode::kSqlRuntimeError, callback);
-    };
-    vote_data_mapper.insert(insert_vote_data, c1, c2);
+    }
 }
 
 
@@ -500,8 +506,8 @@ VoteController::VoteResult VoteController::compute_vote_result(
 }
 
 bool VoteController::vote_finished_work(vote_id_type vote_id) {
-    VoteResult               vote_result;
-    std::vector<std::string> vote_items;
+    VoteResult                 vote_result;
+    std::vector<VoteItemAndId> vote_items;
     {
         // 1.compute and remove from cache!
         std::lock_guard<std::mutex> guard(this->vote_mt);
@@ -538,23 +544,24 @@ bool VoteController::vote_finished_work(vote_id_type vote_id) {
         LOG_ERROR << ex.base().what();
         return false;
     }
+    // just update!
 
     // 3.insert to database
 
-    orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
-    VoteItem              vote_item;
-    try {
-        for (size_t i = 0; i < vote_items.size(); ++i) {
-            vote_item.setVoteId(vote_id);
-            vote_item.setVoteItem(std::move(vote_items[i]));
-            vote_item.setVoteCount(vote_result.counts[i]);
-            vote_item_mapper.insert(vote_item);
-            LOG_INFO << "add vote item,id:" << vote_item.getValueOfVoteId();
-        }
-    } catch (const orm::DrogonDbException& ex) {
-        LOG_ERROR << "fail to insert vote items...";
-        return false;
-    }
+    // orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
+    // VoteItem              vote_item;
+    // try {
+    //     for (size_t i = 0; i < vote_items.size(); ++i) {
+    //         vote_item.setVoteId(vote_id);
+    //         vote_item.setVoteItem(std::move(vote_items[i].vote_item));
+    //         vote_item.setVoteCount(vote_result.counts[i]);
+    //         vote_item_mapper.insert(vote_item);
+    //         LOG_INFO << "add vote item,id:" << vote_item.getValueOfVoteId();
+    //     }
+    // } catch (const orm::DrogonDbException& ex) {
+    //     LOG_ERROR << "fail to insert vote items...";
+    //     return false;
+    // }
 
     // 4.notify voters
 
@@ -669,10 +676,10 @@ void VoteController::get_chunk_vote_data(const HttpRequestPtr&                  
     }
 
     // 2.update vote finished!
-    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
-
-    orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
-
+    orm::Mapper<VoteData>            vote_data_mapper(db_client_ptr);
+    orm::Mapper<VoteItem>            vote_item_mapper(db_client_ptr);
+    orm::Mapper<VoteParticipateInfo> vote_participate_mapper(db_client_ptr);
+    
     vote_data_mapper.limit(vote_num)
         .offset(vote_offset)
         .orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
@@ -688,34 +695,48 @@ void VoteController::get_chunk_vote_data(const HttpRequestPtr&                  
             // json_vote_datas.append(results[i].toJson());
             vote_ids.push_back(results[i].getValueOfVoteId());
         }
-        try {
-            std::vector<VoteItem> vote_items = vote_item_mapper.findBy(
-                orm::Criteria(VoteItem::Cols::_vote_id, orm::CompareOperator::In, vote_ids));
-            std::map<uint32_t, std::vector<size_t>> group_by_vote_ids;
-            for (size_t i = 0; i < vote_items.size(); ++i) {
-                group_by_vote_ids[vote_items[i].getValueOfVoteId()].push_back(i);
-            }
 
-            for (size_t i = 0; i < results.size(); ++i) {
-                auto     json_vote_data  = results[i].toJson();
-                auto     json_vote_items = Json::Value(Json::arrayValue);
-                uint32_t vote_id         = results[i].getValueOfVoteId();
-                if (group_by_vote_ids.contains(vote_id)) {
-                    auto& indexes = group_by_vote_ids.at(vote_id);
-                    for (auto index : indexes) {
-                        json_vote_items.append(vote_items[index].getValueOfVoteItem());
-                    }
-                }
-                json_vote_data["vote_items"] = json_vote_items;
-                json_vote_datas.append(std::move(json_vote_data));
-            }
-            ret["vote_datas"] = json_vote_datas;
-        } catch (const orm::DrogonDbException& ex) {
-            LOG_ERROR << ex.base().what();
-            make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+        std::vector<VoteItem> vote_items = vote_item_mapper.findBy(
+            orm::Criteria(VoteItem::Cols::_vote_id, orm::CompareOperator::In, vote_ids));
+
+        std::vector<VoteParticipateInfo> vote_participate_infos = vote_participate_mapper.findBy(
+            orm::Criteria(VoteParticipateInfo::Cols::_vote_id, orm::CompareOperator::In, vote_ids));
+        struct GroupValue {
+            std::vector<size_t> item_indexes;
+            std::vector<size_t> participate_indexes;
+        };
+        std::map<uint32_t, GroupValue> group_by_vote_ids;
+        for (size_t i = 0; i < vote_items.size(); ++i) {
+            auto  k = vote_items[i].getValueOfVoteId();
+            auto& v = group_by_vote_ids[k].item_indexes;
+            v.push_back(i);
+        }
+        for (size_t i = 0; i < vote_participate_infos.size(); ++i) {
+            auto  k = vote_participate_infos[i].getValueOfVoteId();
+            auto& v = group_by_vote_ids[k].participate_indexes;
+            v.push_back(i);
         }
 
-        auto resp = HttpResponse::newHttpJsonResponse(ret);
+        for (size_t i = 0; i < results.size(); ++i) {
+            auto     json_vote_data         = results[i].toJson();
+            auto     json_vote_items        = Json::Value(Json::arrayValue);
+            auto     json_vote_participates = Json::Value(Json::arrayValue);
+            uint32_t vote_id                = results[i].getValueOfVoteId();
+            if (group_by_vote_ids.contains(vote_id)) {
+                auto& vv = group_by_vote_ids.at(vote_id);
+                for (auto v : vv.item_indexes) {
+                    json_vote_items.append(vote_items[v].getValueOfVoteItem());
+                }
+                for (auto v : vv.participate_indexes) {
+                    json_vote_participates.append(vote_participate_infos[i].getValueOfVoterId());
+                }
+            }
+            json_vote_data["vote_items"] = json_vote_items;
+            json_vote_data["voters"]     = json_vote_participates;
+            json_vote_datas.append(std::move(json_vote_data));
+        }
+        ret["vote_datas"] = json_vote_datas;
+        auto resp         = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
     } catch (const orm::DrogonDbException& ex) {
         LOG_ERROR << ex.base().what();
