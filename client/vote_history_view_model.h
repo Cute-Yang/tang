@@ -15,7 +15,7 @@ struct VoteHistory {
     // topic
     QString                      vote_topic;
     QStringList                  vote_items;
-    QStringList voters;
+    QStringList                  voters;
     tang::common::VoteChoiceType choice_type;
 };
 
@@ -43,7 +43,11 @@ public:
     void append(VoteHistory&& item);
     void append(const VoteHistory& item);
 
+    void         resize(size_t n) { vote_history.resize(n); }
     VoteHistory& at(size_t i);
+
+    size_t get_batch_size();
+    void   set_batch_size(size_t batch_size_);
 };
 }   // namespace client
 }   // namespace tang

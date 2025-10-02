@@ -8,7 +8,9 @@
 #include "vote_item_view_model.h"
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QUrlQuery>
 #include <chrono>
+
 
 
 using namespace tang::common;
@@ -141,7 +143,7 @@ void VotePage::clear_vote_data() {
     ui->voters_combox->clearEditText();
     vote_data_model->clear();
     this->set_frozon(true);
-    //flush
+    // flush
     this->get_online_voters_impl();
 }
 
@@ -204,6 +206,15 @@ void VotePage::initialize_connects() {
                     this->display_vote_history_impl(vote_history_model->at(index.row()));
                 }
             });
+    connect(ui->refresh_vote_history_button,
+            &ElaToolButton::clicked,
+            this,
+            &VotePage::refresh_vote_history_impl);
+
+    connect(ui->current_vote_history_page, &ElaSpinBox::valueChanged, this, [this](int i) {
+        auto batch_size = vote_history_model->get_batch_size();
+        get_chunk_vote_data_impl(batch_size, batch_size * i);
+    });
 }
 
 void VotePage::get_online_voters_impl() {
@@ -338,7 +349,7 @@ void VotePage::display_vote_history_impl(const VoteHistory& vote_history) {
     ui->voters_combox->clear();
     ui->voters_combox->addItems(vote_history.voters);
     QList<int> ss(vote_history.voters.size());
-    for(size_t i =0;i <vote_history.voters.size();++i){
+    for (size_t i = 0; i < vote_history.voters.size(); ++i) {
         ss[i] = i;
     }
     ui->voters_combox->setCurrentSelection(ss);
@@ -356,6 +367,74 @@ void VotePage::set_frozon(bool enable) {
     ui->start_vote_button->setEnabled(enable);
     ui->add_vote_item_line_edit->setEnabled(enable);
     ui->flush_voters_button->setEnabled(enable);
+}
+
+
+void VotePage::refresh_vote_history_impl() {
+    auto&     current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QUrlQuery query;
+    query.addQueryItem("voter_id", QString::number(current_user_info.user_id));
+    QNetworkReply* reply = send_http_req_with_form_data(
+        query, ClientSingleton::get_http_urls_instance().get_vote_num_url());
+    this->show_message("查询中(✿◠‿◠)", false);
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            return;
+        }
+        auto json_data = document->object();
+        qDebug() << json_data;
+        VALIDATE_JSON_RESP_IS_OK(json_data);
+        int vote_count = json_data["vote_count"].toInteger();
+        if (vote_count < 0) {
+            this->show_message("§(*￣▽￣*)§ 负数...");
+            return;
+        }
+        size_t batch_size = vote_history_model->get_batch_size();
+        qDebug() << "the batch size is" << batch_size;
+        size_t n = (vote_count + batch_size - 1) / batch_size;
+        ui->total_vote_history_pages->setText(
+            QString(" / %1(pages) (total:%2)").arg(n).arg(vote_count));
+
+        ui->current_vote_history_page->setRange(0, n - 1);
+        this->get_chunk_vote_data_impl(batch_size < vote_count ? batch_size : vote_count, 0);
+    });
+}
+
+void VotePage::get_chunk_vote_data_impl(size_t vote_num, size_t vote_offset) {
+    auto&     current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QUrlQuery query;
+    query.addQueryItem("voter_id", QString::number(current_user_info.user_id));
+    query.addQueryItem("vote_num", QString::number(vote_num));
+    query.addQueryItem("vote_offset", QString::number(vote_offset));
+    QNetworkReply* reply = send_http_req_with_form_data(
+        query, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
+    this->show_message("查询中(✿◠‿◠)", false);
+
+    connect(reply, &QNetworkReply::finished, this, [reply, this]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            return;
+        }
+        auto json_data = document->object();
+        VALIDATE_JSON_RESP_IS_OK(json_data);
+
+        QJsonArray vote_datas = json_data["vote_datas"].toArray();
+        qDebug() << vote_datas;
+        size_t n = vote_datas.size();
+        vote_history_model->resize(n);
+        for (size_t i = 0; i < n; ++i) {
+            auto  vote_data           = vote_datas[i].toObject();
+            auto& vote_hisotory       = vote_history_model->at(i);
+            vote_hisotory.vote_id     = vote_data["vote_id"].toInteger();
+            vote_hisotory.creator     = vote_data["vote_creator"].toString();
+            vote_hisotory.create_time = vote_data["vote_create_time"].toString();
+            vote_hisotory.vote_topic  = vote_data["vote_topic"].toString();
+            vote_hisotory.choice_type = static_cast<VoteChoiceType>(vote_data["vote_type"].toInt());
+        }
+        vote_history_model->layoutChanged();
+    });
 }
 }   // namespace client
 }   // namespace tang

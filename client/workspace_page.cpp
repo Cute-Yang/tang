@@ -308,6 +308,7 @@ void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
     }
 }
 
+//change to json!
 void RemoteWorkspacePage::send_get_workspace_content_req(const QString&          folder_path,
                                                          std::function<void()>&& success_callback,
                                                          std::function<void()>&& failed_callback) {
@@ -488,11 +489,7 @@ void RemoteWorkspacePage::create_new_dir_impl(const QString& dir_name) {
         }
         auto json_data = document->object();
 
-        int status = json_data[PublicResponseJsonKeys::status_key].toInt();
-        if (status != static_cast<int>(StatusCode::kSuccess)) {
-            this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
-            return;
-        }
+        VALIDATE_JSON_RESP_IS_OK(json_data);
         this->show_message(QString("成功创建了文件夹%1").arg(dir_path));
         // then flush the workspace content!
         this->get_workspace_content_impl(true);

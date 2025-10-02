@@ -40,6 +40,8 @@ class ParticipateVotePageUi {
 
         ElaTableView* vote_todo_list;
 
+        ElaToolButton* adjust_content_view_button;
+
         void setup_ui(ElaScrollPage* page);
 
 };

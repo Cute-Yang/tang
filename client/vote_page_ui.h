@@ -3,10 +3,10 @@
 #include "ElaLineEdit.h"
 #include "ElaMultiSelectComboBox.h"
 #include "ElaScrollPage.h"
+#include "ElaSpinBox.h"
 #include "ElaTableView.h"
 #include "ElaText.h"
 #include "ElaToolButton.h"
-
 
 
 namespace tang {
@@ -15,7 +15,8 @@ class VotePageUi {
 public:
     // vote_initator
     ElaText* vote_creator_key;
-    ElaText* vote_creator_value;;
+    ElaText* vote_creator_value;
+    ;
 
     // vote topic
     ElaText*     vote_topic_key;
@@ -43,8 +44,13 @@ public:
     ElaToolButton* vote_history_text_button;
 
     ElaToolButton* adjust_history_view_button;
-    ElaTableView* vote_history_view;
-    void          setup_ui(ElaScrollPage* page);
+    ElaTableView*  vote_history_view;
+    ElaToolButton* refresh_vote_history_button;
+    // for db
+    ElaSpinBox* current_vote_history_page;
+    ElaText*    total_vote_history_pages;
+
+    void setup_ui(ElaScrollPage* page);
 };
 }   // namespace client
 }   // namespace tang

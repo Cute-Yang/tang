@@ -21,6 +21,8 @@ private:
     QString delete_file_http_url;
     QString online_voters_http_url;
     QString create_vote_http_url;
+    QString vote_num_http_url;
+    QString chunk_vote_data_http_url;
 
     void format_http_urls();
 
@@ -41,6 +43,8 @@ public:
     const QString& get_delete_file_url();
     const QString& get_online_voters_url();
     const QString& get_create_vote_http_url();
+    const QString& get_vote_num_url();
+    const QString& get_chunk_vote_data_url();
 };
 }   // namespace client
 }   // namespace tang

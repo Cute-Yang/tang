@@ -37,6 +37,10 @@ private:
 
     void set_frozon(bool enable=false);
 
+    void refresh_vote_history_impl();
+
+    void get_chunk_vote_data_impl(size_t vote_num,size_t vote_offset);
+
 signals:
     void start_swap_vote_item(int i, int j);
     void start_delete_vote_item(int i);

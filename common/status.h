@@ -46,6 +46,7 @@ enum class StatusCode : uint32_t {
     kUserisAlreadyOnline          = 37,
     kUserisInvalid                = 38,
     kDirisAlreayExit              = 39,
+    kInvalidNumberError = 40,
     Count
 };
 
@@ -91,7 +92,7 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "the websocket conn key is not exist!",
     "the user is already online!",
     "the user is invalid!",
-    "the dir is alreay exist!"};
+    "the dir is alreay exist!","fail to convert str -> number!"};
 
 inline constexpr std::string_view get_status_str(size_t index) {
     if (index >= status_count) {

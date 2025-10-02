@@ -1,14 +1,23 @@
 #include "ElaScrollPage.h"
+#include "participate_view_model.h"
 #include "participate_vote_page_ui.h"
 #include <QWidget>
-#include "participate_view_model.h"
+
 
 namespace tang {
 namespace client {
 class ParticipateVotePage : public ElaScrollPage {
 private:
     ParticipateVotePageUi* ui;
-    ParticipateViewModel* view_model;
+    ParticipateViewModel*  view_model;
+    QWidget* show_widget;
+    int                    vote_data_index;
+    void                   initialize_connects();
+    void                   adjust_vote_todo_list_view();
+    void                   display_vote_data(const VoteData& vote_data);
+    void                   set_frozon(bool enable);
+
+    void show_message(const QString& message,bool error=true);
 
 public:
     ParticipateVotePage(QWidget* parent = nullptr);

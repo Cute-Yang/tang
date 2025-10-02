@@ -220,11 +220,11 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
             // should reset status -> invalid???
         }
         // here should return a vote_id?
-        auto ret = make_json_from_status_code(StatusCode::kSuccess);
+        auto ret       = make_json_from_status_code(StatusCode::kSuccess);
         ret["vote_id"] = vote_id;
-        auto resp = HttpResponse::newHttpJsonResponse(ret);
+        auto resp      = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
-        //then notify all user!
+        // then notify all user!
     };
 
     auto c2 = [callback](const orm::DrogonDbException& ex) {
@@ -590,4 +590,105 @@ void VoteController::get_online_voters(const HttpRequestPtr&                    
     ret["voter_infos"] = voter_infos;
     auto resp          = HttpResponse::newHttpJsonResponse(ret);
     callback(resp);
+}
+
+
+void VoteController::get_vote_num(const HttpRequestPtr&                         req,
+                                  std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string voter_id_str = req->getParameter("voter_id");
+    uint32_t    voter_id;
+    auto        cvt =
+        std::from_chars(voter_id_str.data(), voter_id_str.data() + voter_id_str.size(), voter_id);
+
+    if (cvt.ec != std::errc()) {
+        LOG_ERROR << "invlaid voter id str " << voter_id_str;
+        make_response_and_return(StatusCode::kUserisInvalid, callback);
+    }
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        LOG_ERROR << "Fail to get database ptr!";
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    // 2.update vote finished!
+    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+
+    auto c1 = [callback](size_t count) {
+        auto ret          = make_json_from_status_code(StatusCode::kSuccess);
+        ret["vote_count"] = count;
+        auto resp         = HttpResponse::newHttpJsonResponse(ret);
+        callback(resp);
+    };
+
+    auto c2 = [callback](const orm::DrogonDbException& ex) {
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+    };
+
+
+    vote_data_mapper.count(
+        orm::Criteria(VoteData::Cols::_vote_creator_id, orm::CompareOperator::EQ, voter_id),
+        c1,
+        c2);
+}
+
+
+void VoteController::get_chunk_vote_data(const HttpRequestPtr&                         req,
+                                         std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string vote_num_str    = req->getParameter("vote_num");
+    std::string vote_offset_str = req->getParameter("vote_offset");
+    std::string voter_id_str    = req->getParameter("voter_id");
+    uint32_t    voter_id;
+
+    uint32_t vote_num;
+    uint32_t vote_offset;
+    auto     cvt =
+        std::from_chars(voter_id_str.data(), voter_id_str.data() + voter_id_str.size(), voter_id);
+
+    if (cvt.ec != std::errc()) {
+        LOG_ERROR << "invlaid voter id str " << voter_id_str;
+        make_response_and_return(StatusCode::kUserisInvalid, callback);
+    }
+    cvt = std::from_chars(vote_num_str.data(), vote_num_str.data() + vote_num_str.size(), vote_num);
+
+    if (cvt.ec != std::errc()) {
+        LOG_ERROR << "invlaid voter id str " << vote_num_str;
+        make_response_and_return(StatusCode::kInvalidNumberError, callback);
+    }
+    cvt = std::from_chars(
+        vote_offset_str.data(), vote_offset_str.data() + vote_offset_str.size(), vote_offset);
+
+    if (cvt.ec != std::errc()) {
+        LOG_ERROR << "invlaid voter id str " << vote_offset_str;
+        make_response_and_return(StatusCode::kInvalidNumberError, callback);
+    }
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        LOG_ERROR << "Fail to get database ptr!";
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    // 2.update vote finished!
+    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+    vote_data_mapper.limit(vote_num)
+        .offset(vote_offset)
+        .orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
+
+    auto c1 = [callback](const std::vector<VoteData>& results) {
+        auto        ret = make_json_from_status_code(StatusCode::kSuccess);
+        Json::Value json_vote_datas(Json::arrayValue);
+        for (size_t i = 0; i < results.size(); ++i) {
+            json_vote_datas.append(results[i].toJson());
+        }
+        ret["vote_datas"] = json_vote_datas;
+
+        auto resp = HttpResponse::newHttpJsonResponse(ret);
+        callback(resp);
+    };
+    auto c2 = [callback](const orm::DrogonDbException& ex) {
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+    };
+    vote_data_mapper.findBy(
+        orm::Criteria(VoteData::Cols::_vote_creator_id, orm::CompareOperator::EQ, voter_id),
+        c1,
+        c2);
 }

@@ -36,7 +36,7 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     key_font.setBold(true);
 
     auto value_font = key_font;
-    value_font.setPointSize(9);
+    value_font.setPointSize(10);
 
     vote_creator_key->setText("发起人:");
     vote_creator_key->setMinimumWidth(text_width);
@@ -222,7 +222,34 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     vote_history_view->verticalHeader()->hide();
     vote_history_layout->addWidget(vote_history_view);
 
+    QWidget* vote_page_container = new QWidget(page);
+    vote_history_layout->addWidget(vote_page_container);
 
+    QHBoxLayout* vote_page_layout = new QHBoxLayout(vote_page_container);
+    refresh_vote_history_button   = new ElaToolButton(page);
+    refresh_vote_history_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
+    refresh_vote_history_button->setText("刷新");
+    refresh_vote_history_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_page_layout->addWidget(refresh_vote_history_button);
+    vote_page_layout->addStretch();
+
+    current_vote_history_page = new ElaSpinBox(page);
+    current_vote_history_page->setRange(0, 8);
+    current_vote_history_page->setFont(value_font);
+    vote_page_layout->addWidget(current_vote_history_page);
+    vote_page_layout->addSpacing(10);
+
+
+
+    total_vote_history_pages = new ElaText(page);
+
+    total_vote_history_pages->setText(" / 8");
+    total_vote_history_pages->setFont(value_font);
+    total_vote_history_pages->setMinimumWidth(200);
+    total_vote_history_pages->setEnabled(false);
+
+    vote_page_layout->addWidget(total_vote_history_pages);
+    vote_page_layout->addStretch();
     central_widget->setWindowTitle("~~~Vote~~~");
     page->addCentralWidget(central_widget);
 }

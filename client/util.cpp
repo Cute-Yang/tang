@@ -2,6 +2,7 @@
 #include "client_singleton.h"
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QUrlQuery>
 
 namespace tang {
 namespace client {
@@ -70,6 +71,18 @@ QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data, const 
     return reply;
 }
 
+QNetworkReply* send_http_req_with_form_data(const QUrlQuery& query,const QString& url_str){
+      QUrl            url(url_str);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    // no need any params!
+    auto&     manager = ClientSingleton::get_network_manager_instance();
+
+    QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
+    QNetworkReply* reply      = manager.post(request, query_data);
+    return reply;
+}
+
 std::string format_time(const std::chrono::system_clock::time_point& tp) {
     // 转换为 time_t
     std::time_t t = std::chrono::system_clock::to_time_t(tp);
@@ -87,6 +100,7 @@ std::string format_time(const std::chrono::system_clock::time_point& tp) {
 
     return oss.str();
 }
+
 
 
 }   // namespace client

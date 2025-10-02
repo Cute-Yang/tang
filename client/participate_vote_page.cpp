@@ -1,97 +1,117 @@
 #include "participate_vote_page.h"
-
+#include "ElaMessageBar.h"
+#include "client_global_config.h"
+#include "util.h"
 namespace tang {
 namespace client {
 // use unique_ptr to instead!
 ParticipateVotePage::ParticipateVotePage(QWidget* parent)
     : ElaScrollPage(parent)
-    , ui(new ParticipateVotePageUi()) {
+    , ui(new ParticipateVotePageUi())
+    , show_widget(find_root_widget(this)) {
     ui->setup_ui(this);
     this->setTitleVisible(false);
 
-    QStringList     headers        = {"vote id", "创建者", "创建时间", "类型", "状态", "check"};
-    QList<VoteData> vote_data_list = {
-        // 数据 1
-        {"张三",
-         "2025-09-25 14:30:22",
-         {"周末去哪里玩？", "郊外踏青", "电影院", "在家休息", "逛街购物"},
-         1000,
-         common::VoteStatus::kReady,
-         common::VoteChoiceType::kSingleChoice},
-        // 数据 2
-        {"李四",
-         "2025-09-26 09:15:45",
-         {"午餐吃什么？", "火锅", "烧烤", "快餐", "食堂", "外卖"},
-         1001,
-         common::VoteStatus::kFinished,
-         common::VoteChoiceType::kMultiChoice},
-        // 数据 3
-        {"王五",
-         "2025-09-24 18:20:10",
-         {"选择最佳员工", "张三", "李四", "王五", "赵六"},
-         1002,
-         common::VoteStatus::kFinished,
-         common::VoteChoiceType::kSingleChoice},
-        // 数据 4
-        {"赵六",
-         "2025-09-27 11:05:33",
-         {"团建活动方案", "密室逃脱", "KTV", "聚餐", "短途旅行"},
-         1003,
-         common::VoteStatus::kReady,
-         common::VoteChoiceType::kMultiChoice},
-        // 数据 5
-        {"钱七",
-         "2025-09-23 16:40:18",
-         {"办公室装修风格", "现代简约", "工业风", "温馨田园", "北欧风格"},
-         1004,
-         common::VoteStatus::kInvalid,
-         common::VoteChoiceType::kSingleChoice},
-        // 数据 6
-        {"孙八",
-         "2025-09-28 13:25:55",
-         {"年会节目类型", "唱歌", "跳舞", "小品", "魔术", "乐器演奏"},
-         1005,
-         common::VoteStatus::kReady,
-         common::VoteChoiceType::kMultiChoice},
-        // 数据 7
-        {"周九",
-         "2025-09-22 10:10:01",
-         {"新项目名称", "星辰大海", "智启未来", "创新引擎", "极光计划"},
-         1006,
-         common::VoteStatus::kFinished,
-         common::VoteChoiceType::kSingleChoice},
-        // 数据 8
-        {"吴十",
-         "2025-09-29 15:50:44",
-         {"技术选型", "React", "Vue", "Angular", "Svelte", "原生开发"},
-         1007,
-         common::VoteStatus::kReady,
-         common::VoteChoiceType::kMultiChoice},
-        // 数据 9
-        {"郑一",
-         "2025-09-21 12:35:27",
-         {"假期安排", "调休", "补假", "发补贴", "灵活工作", "团队旅游"},
-         1008,
-         common::VoteStatus::kInvalid,
-         common::VoteChoiceType::kSingleChoice},
-        // 数据 10
-        {"王二",
-         "2025-09-30 08:00:15",
-         {"福利发放方式", "购物卡", "现金", "实物礼品", "带薪假期", "股票期权"},
-         1009,
-         common::VoteStatus::kReady,
-         common::VoteChoiceType::kMultiChoice}};
+    QStringList headers = {
+        "vote id", "创建者", "创建时间", "主题", "类型", "状态", "check", "进度"};
+
 
     view_model = new ParticipateViewModel(8, headers, this);
-    view_model->set_vote_datas(vote_data_list);
     ui->vote_todo_list->setModel(view_model);
-    connect(ui->confirm_vote_button, &ElaToolButton::clicked, this, [this]() {
-        ui->vote_status_value->setText("已投票");
-        ui->combox_stacked_container->setCurrentIndex(1);
-    });
+
+    this->initialize_connects();
 }
 ParticipateVotePage::~ParticipateVotePage() {
     delete ui;
+}
+
+void ParticipateVotePage::show_message(const QString& message, bool error) {
+    if (error) {
+        ElaMessageBar::warning(ElaMessageBarType::TopLeft,
+                               "Participate",
+                               message,
+                               ClientGlobalConfig::error_show_time,
+                               show_widget);
+    } else {
+        ElaMessageBar::success(ElaMessageBarType::TopLeft,
+                               "Participate",
+                               message,
+                               ClientGlobalConfig::message_show_time,
+                               show_widget);
+    }
+}
+
+void ParticipateVotePage::initialize_connects() {
+    connect(ui->vote_todo_list,
+            &ElaTableView::tableViewShow,
+            this,
+            &ParticipateVotePage::adjust_vote_todo_list_view);
+    connect(ui->adjust_content_view_button,
+            &ElaToolButton::clicked,
+            this,
+            &ParticipateVotePage::adjust_vote_todo_list_view);
+    connect(
+        ui->vote_todo_list, &ElaTableView::doubleClicked, this, [this](const QModelIndex& index) {
+            if (!index.isValid()) {
+                return;
+            }
+            int row = index.row();
+            if (row >= view_model->size()) {
+                this->show_message("越界啦(ノへ￣、)");
+                vote_data_index = -1;
+                return;
+            }
+            vote_data_index = row;
+            auto& vote_data = view_model->at(row);
+            this->display_vote_data(vote_data);
+        });
+    connect(ui->confirm_vote_button, &ElaToolButton::clicked, this, [this]() {
+        if (vote_data_index >= view_model->size() || vote_data_index < 0) {
+            this->show_message("越界啦(ノへ￣、)");
+            return;
+        }
+        auto& vote_data = view_model->at(vote_data_index);
+        if (vote_data.processed) {
+            this->show_message("已经投过票啦(✿◠‿◠)", false);
+            return;
+        }
+        view_model->at(vote_data_index).processed = true;
+        this->show_message(QString("投票 '%1' 成功(✿◠‿◠)").arg(vote_data.vote_topic), false);
+    });
+}
+
+void ParticipateVotePage::set_frozon(bool enable) {
+    ui->confirm_vote_button->setEnabled(enable);
+}
+
+void ParticipateVotePage::display_vote_data(const VoteData& vote_data) {
+    ui->vote_id_value->setText(std::to_string(vote_data.vote_id).c_str());
+    ui->vote_creator_value->setText(vote_data.creator);
+    ui->vote_create_time_value->setText(vote_data.create_time);
+    bool is_single = vote_data.vote_choice_type == common::VoteChoiceType::kSingleChoice;
+    ui->vote_type_value->setText(is_single ? "单选" : "多选");
+    if (is_single) {
+        ui->vote_item_combox->clear();
+        ui->vote_item_combox->addItems(vote_data.vote_items);
+        ui->combox_stacked_container->setCurrentWidget(ui->vote_item_combox);
+    } else {
+        ui->vote_item_multi_combox->clear();
+        ui->vote_item_multi_combox->addItems(vote_data.vote_items);
+        ui->vote_item_multi_combox->setCurrentSelection(0);
+        ui->combox_stacked_container->setCurrentWidget(ui->vote_item_multi_combox);
+    }
+    ui->vote_status_value->setText(get_vote_status_display_str(vote_data.vote_status));
+
+    this->set_frozon(vote_data.vote_status == common::VoteStatus::kReady && !vote_data.processed);
+}
+
+void ParticipateVotePage::adjust_vote_todo_list_view() {
+    constexpr std::array<float, 8> percents = {0.08, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1};
+    int                            width    = ui->vote_todo_list->width();
+    for (size_t i = 0; i < percents.size(); ++i) {
+        int w = static_cast<int>(width * percents[i]);
+        ui->vote_todo_list->setColumnWidth(i, w);
+    }
 }
 }   // namespace client
 }   // namespace tang

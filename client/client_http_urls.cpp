@@ -35,6 +35,10 @@ void ClientHttpUrls::format_http_urls() {
     rename_file_http_url   = QString("http://%1:%2/api/v1/move_file").arg(host).arg(port);
     online_voters_http_url = QString("http://%1:%2/api/v1/get_online_voters").arg(host).arg(port);
     create_vote_http_url   = QString("http://%1:%2/api/v1/create_vote").arg(host).arg(port);
+
+    vote_num_http_url = QString("http://%1:%2/api/v1/get_vote_num").arg(host).arg(port);
+    chunk_vote_data_http_url =
+        QString("http://%1:%2/api/v1/get_chunk_vote_data").arg(host).arg(port);
 }
 
 
@@ -85,5 +89,12 @@ const QString& ClientHttpUrls::get_create_vote_http_url() {
     return create_vote_http_url;
 }
 
+
+const QString& ClientHttpUrls::get_vote_num_url() {
+    return vote_num_http_url;
+}
+const QString& ClientHttpUrls::get_chunk_vote_data_url() {
+    return chunk_vote_data_http_url;
+}
 }   // namespace client
 }   // namespace tang

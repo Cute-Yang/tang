@@ -8,6 +8,7 @@ VoteHistoryViewModel::VoteHistoryViewModel(const QStringList& col_names_, size_t
                                            QObject* parent)
     : QAbstractTableModel(parent)
     , col_names(col_names_)
+    , batch_size(batch_size_)
     , vote_history() {
     vote_history.reserve(batch_size_);
 
@@ -144,7 +145,7 @@ QVariant VoteHistoryViewModel::data(const QModelIndex& index, int role) const {
         } else if (col == 5) {
             icon_file = ":icons/images/sea_leaf.svg";
         }
-        if(!icon_file.isEmpty()){
+        if (!icon_file.isEmpty()) {
             return QIcon(icon_file);
         }
     }
@@ -164,6 +165,15 @@ void VoteHistoryViewModel::append(const VoteHistory& item) {
 
 VoteHistory& VoteHistoryViewModel::at(size_t i) {
     return vote_history[i];
+}
+
+
+
+size_t VoteHistoryViewModel::get_batch_size() {
+    return batch_size;
+}
+void VoteHistoryViewModel::set_batch_size(size_t batch_size_) {
+    batch_size = batch_size_;
 }
 }   // namespace client
 

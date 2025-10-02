@@ -152,6 +152,7 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_item_multi_combox->setFont(font);
     vote_item_multi_combox->addItems({"小鱼", "小虾"});
     vote_item_multi_combox->setMinimumWidth(vote_value_width);
+    vote_item_multi_combox->setMinimumWidth(400);
     combox_stacked_container->addWidget(vote_item_multi_combox);
     combox_stacked_container->setCurrentIndex(0);
 
@@ -168,11 +169,18 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_item_layout->addWidget(confirm_vote_button);
     vote_item_layout->addStretch();
 
+        adjust_content_view_button = new ElaToolButton(page);
+    adjust_content_view_button->setText("调整视图");
+    adjust_content_view_button->setFont(font);
+    adjust_content_view_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    adjust_content_view_button->setIcon(QIcon(":icons/images/yezi.svg"));
+    vote_item_layout->addWidget(adjust_content_view_button);
+
     central_layout->addSpacing(6);
     vote_todo_list = new ElaTableView(page);
     vote_todo_list->horizontalHeader()->setFont(font);
     vote_todo_list->verticalHeader()->hide();
-    vote_todo_list->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    vote_todo_list->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     vote_todo_list->setFont(font);
 
 
