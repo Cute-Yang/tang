@@ -101,6 +101,14 @@ std::string format_time(const std::chrono::system_clock::time_point& tp) {
     return oss.str();
 }
 
+QString get_vote_status_display_str(common::VoteStatus status) {
+    switch (status) {
+    case common::VoteStatus::kReady: return QString("投票中"); break;
+    case common::VoteStatus::kFinished: return QString("已完成"); break;
+    default: return QString("已作废"); break;
+    }
+}
+
 
 
 }   // namespace client

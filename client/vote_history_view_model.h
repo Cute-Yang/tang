@@ -16,6 +16,7 @@ struct VoteHistory {
     QString                      vote_topic;
     QStringList                  vote_items;
     QStringList                  voters;
+    tang::common::VoteStatus vote_status;
     tang::common::VoteChoiceType choice_type;
 };
 

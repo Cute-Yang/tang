@@ -3,13 +3,7 @@
 
 namespace tang {
 namespace client {
-QString get_vote_status_display_str(common::VoteStatus status) {
-    switch (status) {
-    case common::VoteStatus::kReady: return QString("投票中"); break;
-    case common::VoteStatus::kFinished: return QString("已完成"); break;
-    default: return QString("已作废"); break;
-    }
-}
+
 constexpr int vote_id_col          = 0;
 constexpr int creator_col          = 1;
 constexpr int create_time_col      = 2;

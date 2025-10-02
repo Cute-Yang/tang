@@ -53,7 +53,7 @@ VotePage::VotePage(QWidget* parent)
     this->setTitleVisible(false);
     ui->vote_item_view->setModel(vote_data_model);
 
-    QStringList vote_history_cols = {"id", "创建者", "创建时间", "主题", "类型", "check"};
+    QStringList vote_history_cols = {"id", "创建者", "创建时间", "主题", "状态", "类型", "check"};
     vote_history_model            = new VoteHistoryViewModel(vote_history_cols, 10, this);
     ui->vote_history_view->setModel(vote_history_model);
 
@@ -101,39 +101,14 @@ void VotePage::display_vote_item_right_menu(const QPoint& pos) {
     }
 }
 
-
-void VotePage::click_vote_items(const QModelIndex& index) {
-    if (index.isValid()) {
-        int           row       = index.row();
-        int           col       = index.column();
-        const QString vote_item = this->vote_data_model->get_vote_item(row);
-        ElaMessageBar::information(ElaMessageBarType::TopLeft,
-                                   "click vote item",
-                                   QString("当前选中的投票项是%1").arg(vote_item),
-                                   2700,
-                                   this);
-    }
-}
-
-
 void VotePage::adjust_vote_history_view() {
-    auto width = ui->vote_history_view->width();
-    // the min size of first column is 12
-    int w0 = std::max(12, static_cast<int>(0.05 * width));
-    int w1 = static_cast<int>(0.15 * width);
-    int w2 = static_cast<int>(0.3 * width);
-    int w3 = static_cast<int>(0.3 * width);
-    // the min size of this column is 16
-    int w4 = std::max(16, static_cast<int>(0.1 * width));
-    int w5 = static_cast<int>(0.1 * width);
-
-    ui->vote_history_view->setColumnWidth(0, w0);
-    ui->vote_history_view->setColumnWidth(1, w1);
-    ui->vote_history_view->setColumnWidth(2, w2);
-    ui->vote_history_view->setColumnWidth(3, w3);
-    ui->vote_history_view->setColumnWidth(4, w4);
-    ui->vote_history_view->setColumnWidth(5, w5);
-}
+    auto                           width = ui->vote_history_view->width();
+    constexpr std::array<float, 7> rr    = {0.05, 0.15, 0.25, 0.25, 0.1, 0.1, 0.1};
+    for (size_t i = 0; i < rr.size(); ++i) {
+        int w = static_cast<int>(width * rr[i]);
+        ui->vote_history_view->setColumnWidth(i, w);
+    }
+}   // namespace client
 
 void VotePage::clear_vote_data() {
     // key,value is a better choice!
@@ -201,7 +176,8 @@ void VotePage::initialize_connects() {
                     return;
                 }
                 int col = index.column();
-                if (col == 5) {
+                // the check col...
+                if (col == 6) {
                     // display!
                     this->display_vote_history_impl(vote_history_model->at(index.row()));
                 }
@@ -376,7 +352,7 @@ void VotePage::refresh_vote_history_impl() {
     query.addQueryItem("voter_id", QString::number(current_user_info.user_id));
     QNetworkReply* reply = send_http_req_with_form_data(
         query, ClientSingleton::get_http_urls_instance().get_vote_num_url());
-    this->show_message("查询中(✿◠‿◠)", false);
+    // this->show_message("查询中(✿◠‿◠)", false);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         auto document = get_json_document(reply);
@@ -432,6 +408,12 @@ void VotePage::get_chunk_vote_data_impl(size_t vote_num, size_t vote_offset) {
             vote_hisotory.create_time = vote_data["vote_create_time"].toString();
             vote_hisotory.vote_topic  = vote_data["vote_topic"].toString();
             vote_hisotory.choice_type = static_cast<VoteChoiceType>(vote_data["vote_type"].toInt());
+            auto  json_vote_items     = vote_data["vote_items"].toArray();
+            auto& vote_items          = vote_hisotory.vote_items;
+            vote_items.clear();
+            for (size_t i = 0; i < json_vote_items.size(); ++i) {
+                vote_items.push_back(json_vote_items[i].toString());
+            }
         }
         vote_history_model->layoutChanged();
     });

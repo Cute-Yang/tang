@@ -669,26 +669,55 @@ void VoteController::get_chunk_vote_data(const HttpRequestPtr&                  
 
     // 2.update vote finished!
     orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+
+    orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
+
     vote_data_mapper.limit(vote_num)
         .offset(vote_offset)
         .orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
+    try {
+        auto results = vote_data_mapper.findBy(
+            orm::Criteria(VoteData::Cols::_vote_creator_id, orm::CompareOperator::EQ, voter_id));
 
-    auto c1 = [callback](const std::vector<VoteData>& results) {
-        auto        ret = make_json_from_status_code(StatusCode::kSuccess);
-        Json::Value json_vote_datas(Json::arrayValue);
+        orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
+        std::vector<uint32_t> vote_ids;
+        auto                  ret = make_json_from_status_code(StatusCode::kSuccess);
+        Json::Value           json_vote_datas(Json::arrayValue);
         for (size_t i = 0; i < results.size(); ++i) {
-            json_vote_datas.append(results[i].toJson());
+            // json_vote_datas.append(results[i].toJson());
+            vote_ids.push_back(results[i].getValueOfVoteId());
         }
-        ret["vote_datas"] = json_vote_datas;
+        try {
+            std::vector<VoteItem> vote_items = vote_item_mapper.findBy(
+                orm::Criteria(VoteItem::Cols::_vote_id, orm::CompareOperator::In, vote_ids));
+            std::map<uint32_t, std::vector<size_t>> group_by_vote_ids;
+            for (size_t i = 0; i < vote_items.size(); ++i) {
+                group_by_vote_ids[vote_items[i].getValueOfVoteId()].push_back(i);
+            }
+
+            for (size_t i = 0; i < results.size(); ++i) {
+                auto     json_vote_data  = results[i].toJson();
+                auto     json_vote_items = Json::Value(Json::arrayValue);
+                uint32_t vote_id         = results[i].getValueOfVoteId();
+                if (group_by_vote_ids.contains(vote_id)) {
+                    auto& indexes = group_by_vote_ids.at(vote_id);
+                    for (auto index : indexes) {
+                        json_vote_items.append(vote_items[index].getValueOfVoteItem());
+                    }
+                }
+                json_vote_data["vote_items"] = json_vote_items;
+                json_vote_datas.append(std::move(json_vote_data));
+            }
+            ret["vote_datas"] = json_vote_datas;
+        } catch (const orm::DrogonDbException& ex) {
+            LOG_ERROR << ex.base().what();
+            make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+        }
 
         auto resp = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
-    };
-    auto c2 = [callback](const orm::DrogonDbException& ex) {
+    } catch (const orm::DrogonDbException& ex) {
+        LOG_ERROR << ex.base().what();
         make_response_and_return(StatusCode::kSqlRuntimeError, callback);
-    };
-    vote_data_mapper.findBy(
-        orm::Criteria(VoteData::Cols::_vote_creator_id, orm::CompareOperator::EQ, voter_id),
-        c1,
-        c2);
+    }
 }
