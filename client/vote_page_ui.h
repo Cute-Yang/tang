@@ -49,6 +49,10 @@ public:
     // for db
     ElaSpinBox* current_vote_history_page;
     ElaText*    total_vote_history_pages;
+    // ElaToggleSwitch* only_select_valid;
+
+    ElaText* vote_status_text;
+    ElaMultiSelectComboBox* select_vote_status_combox;
 
     void setup_ui(ElaScrollPage* page);
 };

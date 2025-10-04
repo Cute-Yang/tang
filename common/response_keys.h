@@ -26,7 +26,6 @@ struct WorkspaceResJsonKeys {
 };
 
 struct WorkspaceContentResponse {
-
     static constexpr const char* file_name_key       = "file_name";
     static constexpr const char* file_size_key       = "file_size";
     static constexpr const char* file_type_key       = "file_type";
@@ -41,6 +40,31 @@ struct IsFileExistResResponse {
     static constexpr const char*                is_exist_key = "is_exist";
     static constexpr const char*                is_dir_key   = "is_dir";
     static constexpr std::array<const char*, 2> keys         = {is_exist_key, is_dir_key};
+};
+
+struct GetChunkVoteReqKeys {
+    static constexpr const char*                voter_id_key    = "voter_id";
+    static constexpr const char*                vote_num_key    = "vote_num";
+    static constexpr const char*                vote_offset_key = "vote_offset";
+    static constexpr const char*                vote_status_key = "vote_status";
+    static constexpr std::array<const char*, 4> keys            = {
+        voter_id_key, vote_num_key, vote_offset_key, vote_status_key};
+};
+
+struct GetParticipateVoteReqKeys : public GetChunkVoteReqKeys {
+    static constexpr const char* vote_process_status_key = "vote_process_status";
+};
+
+
+
+struct GetVoteNumReqKeys {
+    static constexpr const char*                voter_id_key    = "voter_id";
+    static constexpr const char*                vote_status_key = "vote_status";
+    static constexpr std::array<const char*, 2> keys            = {voter_id_key, vote_status_key};
+};
+
+struct GetParticipateNumReqKeys:public GetVoteNumReqKeys{
+    static constexpr const char* vote_process_status_key = "vote_process_status";
 };
 }   // namespace common
 }   // namespace tang

@@ -39,7 +39,7 @@ private:
 
     void refresh_vote_history_impl();
 
-    void get_chunk_vote_data_impl(size_t vote_num, size_t vote_offset);
+    void get_chunk_vote_data_impl(int vote_num, int vote_offset);
 
 signals:
     void start_swap_vote_item(int i, int j);
@@ -49,7 +49,7 @@ public:
     VotePage(QWidget* parent = nullptr);
     ~VotePage();
 
-    void set_test_model();
+    // void set_test_model();
 };
 }   // namespace client
 }   // namespace tang

@@ -17,14 +17,8 @@ ClientHttpUrls& ClientSingleton::get_http_urls_instance() {
 }
 
 CacheUserInfo& ClientSingleton::get_cache_user_info_instance() {
-    static CacheUserInfo instance;
-    // only for test!
-    instance.user_name     = "黄蓉";
-    instance.email         = "huangrong@qq.com";
-    instance.user_id       = 10;
-    instance.vote_prioirty = 1;
-
-
+    // remeber,do not any assign after init it,the value will be changed!
+    static CacheUserInfo instance(QString("黄蓉"), QString("huangrong.qq.com"), 10, 1);
     return instance;
 }
 

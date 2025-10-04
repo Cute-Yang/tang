@@ -1,10 +1,17 @@
 #include "participate_vote_page.h"
 #include "ElaMessageBar.h"
 #include "client_global_config.h"
+#include "client_singleton.h"
+#include "common/response_keys.h"
 #include "util.h"
+#include <QJsonArray>
+#include <QJsonObject>
+
+
+using namespace tang::common;
+
 namespace tang {
 namespace client {
-// use unique_ptr to instead!
 ParticipateVotePage::ParticipateVotePage(QWidget* parent)
     : ElaScrollPage(parent)
     , ui(new ParticipateVotePageUi())
@@ -71,13 +78,18 @@ void ParticipateVotePage::initialize_connects() {
             return;
         }
         auto& vote_data = view_model->at(vote_data_index);
-        if (vote_data.processed) {
+        if (vote_data.vote_process_status == VoteProcessStatus::kProcessed) {
             this->show_message("已经投过票啦(✿◠‿◠)", false);
             return;
         }
-        view_model->at(vote_data_index).processed = true;
+        view_model->at(vote_data_index).vote_process_status = VoteProcessStatus::kProcessed;
         this->show_message(QString("投票 '%1' 成功(✿◠‿◠)").arg(vote_data.vote_topic), false);
     });
+
+    connect(ui->refresh_todo_list_button,
+            &ElaToolButton::clicked,
+            this,
+            &ParticipateVotePage::refresh_participate_vote_history_impl);
 }
 
 void ParticipateVotePage::set_frozon(bool enable) {
@@ -102,7 +114,8 @@ void ParticipateVotePage::display_vote_data(const VoteData& vote_data) {
     }
     ui->vote_status_value->setText(get_vote_status_display_str(vote_data.vote_status));
 
-    this->set_frozon(vote_data.vote_status == common::VoteStatus::kReady && !vote_data.processed);
+    this->set_frozon(vote_data.vote_status == common::VoteStatus::kReady &&
+                     vote_data.vote_process_status == common::VoteProcessStatus::kReady);
 }
 
 void ParticipateVotePage::adjust_vote_todo_list_view() {
@@ -112,6 +125,137 @@ void ParticipateVotePage::adjust_vote_todo_list_view() {
         int w = static_cast<int>(width * percents[i]);
         ui->vote_todo_list->setColumnWidth(i, w);
     }
+}
+
+
+void ParticipateVotePage::refresh_participate_vote_history_impl() {
+    auto&       current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QJsonObject json_data;
+    json_data[GetParticipateVoteReqKeys::voter_id_key] = current_user_info.user_id;
+
+    QJsonArray select_vote_status;
+    auto       selected = ui->select_vote_status_combox->getCurrentSelectionIndex();
+    qDebug() << selected;
+    if (selected.size() == 0) {
+        this->show_message("请至少选择一个投票的状态哦(✿◠‿◠)");
+        return;
+    }
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_status.append(selected[i]);
+    }
+    json_data[GetParticipateVoteReqKeys::vote_status_key] = select_vote_status;
+
+    QJsonArray select_vote_process_status;
+    selected = ui->select_vote_process_status_combox->getCurrentSelectionIndex();
+    qDebug() << selected;
+    qDebug() << "******************************";
+    if (selected.size() == 0) {
+        this->show_message("请至少选择一个处理的状态哦(✿◠‿◠)");
+        return;
+    }
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_process_status.append(selected[i]);
+    }
+    json_data[GetParticipateVoteReqKeys::vote_process_status_key] = select_vote_process_status;
+    QNetworkReply* reply                                          = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_participate_vote_num_url());
+
+    connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            return;
+        }
+        auto json_data = document->object();
+        qDebug() << json_data;
+        VALIDATE_JSON_RESP_IS_OK(json_data);
+        int vote_count = json_data["vote_count"].toInteger();
+        if (vote_count < 0) {
+            this->show_message("§(*￣▽￣*)§ 负数...");
+            return;
+        }
+        size_t batch_size = view_model->get_batch_size();
+        qDebug() << "the batch size is" << batch_size;
+        size_t n = (vote_count + batch_size - 1) / batch_size;
+        ui->totoal_todo_list_page->setText(
+            QString(" / %1(pages) (total:%2)").arg(n).arg(vote_count));
+
+        ui->current_todo_list_page->setRange(0, n - 1);
+        this->get_chunk_participate_vote_data_impl(
+            batch_size < vote_count ? batch_size : vote_count, 0);
+    });
+}
+
+void ParticipateVotePage::get_chunk_participate_vote_data_impl(int vote_num, int vote_offset) {
+    if (vote_num < 0 || vote_offset < 0) {
+        this->show_message("invalid value...");
+        return;
+    }
+    if(vote_num == 0){
+        view_model->resize(0);
+        return;
+    }
+    auto&       current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QJsonObject json_data;
+    json_data[GetParticipateVoteReqKeys::voter_id_key]    = current_user_info.user_id;
+    json_data[GetParticipateVoteReqKeys::vote_num_key]    = vote_num;
+    json_data[GetParticipateVoteReqKeys::vote_offset_key] = vote_offset;
+    QJsonArray select_vote_status;
+    auto       selected = ui->select_vote_status_combox->getCurrentSelectionIndex();
+    if (selected.size() == 0) {
+        this->show_message("请至少选择一个投票的状态哦(✿◠‿◠)");
+        return;
+    }
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_status.append(selected[i]);
+    }
+    json_data[GetParticipateVoteReqKeys::vote_status_key] = select_vote_status;
+    QJsonArray select_vote_process_status;
+    selected = ui->select_vote_process_status_combox->getCurrentSelectionIndex();
+    if (selected.size() == 0) {
+        this->show_message("请至少选择一个处理的状态哦(✿◠‿◠)");
+        return;
+    }
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_process_status.append(selected[i]);
+    }
+    json_data[GetParticipateVoteReqKeys::vote_process_status_key] = select_vote_process_status;
+    // qDebug() << json_data;
+    QNetworkReply* reply = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
+    this->show_message("查询中(✿◠‿◠)", false);
+
+    connect(reply, &QNetworkReply::finished, this, [reply, this]() {
+        auto document = get_json_document(reply);
+        if (!document) {
+            return;
+        }
+        auto json_data = document->object();
+        VALIDATE_JSON_RESP_IS_OK(json_data);
+        QJsonArray vote_datas = json_data["vote_datas"].toArray();
+        size_t     n          = vote_datas.size();
+        view_model->resize(n);
+        for (size_t i = 0; i < n; ++i) {
+            auto  json_vote_data  = vote_datas[i].toObject();
+            auto& vote_data       = view_model->at(i);
+            vote_data.vote_id     = json_vote_data["vote_id"].toInteger();
+            vote_data.creator     = json_vote_data["vote_creator"].toString();
+            vote_data.create_time = json_vote_data["vote_create_time"].toString();
+            vote_data.vote_topic  = json_vote_data["vote_topic"].toString();
+            vote_data.vote_status = static_cast<VoteStatus>(json_vote_data["vote_status"].toInt());
+            vote_data.vote_choice_type =
+                static_cast<VoteChoiceType>(json_vote_data["vote_type"].toInt());
+            vote_data.vote_process_status =
+                static_cast<VoteProcessStatus>(json_vote_data["vote_process_status"].toInt());
+            auto  json_vote_items = json_vote_data["vote_items"].toArray();
+            auto& vote_items      = vote_data.vote_items;
+            vote_items.clear();
+            vote_items.reserve(json_vote_items.size());
+            for (size_t i = 0; i < json_vote_items.size(); ++i) {
+                vote_items.push_back(json_vote_items[i].toString());
+            }
+        }
+        view_model->layoutChanged();
+    });
 }
 }   // namespace client
 }   // namespace tang

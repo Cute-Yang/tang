@@ -40,12 +40,17 @@ void to_lower(char* s, size_t len);
 std::string get_file_last_time_str(const std::filesystem::directory_entry& p);
 
 
-
-
 [[nodiscard]]
 common::StatusCode get_full_path(const std::string& file_path, std::filesystem::path& full_path);
 
 
+
+template<class T>
+[[nodiscard]]
+bool convert_str(std::string_view data, T& ret) {
+    auto r = std::from_chars(data.data(), data.data() + data.size(), ret);
+    return r.ec == std::errc();
+}
 }   // namespace utils
 }   // namespace server
 }   // namespace tang

@@ -62,7 +62,7 @@ void SignController::login(const HttpRequestPtr&                         req,
     auto current_status = result.getValueOfUserStatus();
     if (current_status == static_cast<uint8_t>(VoteUserStatus::kActive)) {
         LOG_WARN << "The user:" << result.getValueOfUserName() << " is already online";
-        make_response_and_return(StatusCode::kUserisAlreadyOnline, callback);
+        // make_response_and_return(StatusCode::kUserisAlreadyOnline, callback);
     } else if (current_status == static_cast<uint8_t>(VoteUserStatus::kInvalid)) {
         make_response_and_return(StatusCode::kUserisInvalid, callback);
     }
@@ -73,7 +73,7 @@ void SignController::login(const HttpRequestPtr&                         req,
         // the affect rows,if only query,will get 0,only chage will get > 0
         if (n != 1) {
             // LOG_INFO << "the expected value is 0,but get " << n;
-            make_response_and_return(StatusCode::kLogicError, callback);
+            // make_response_and_return(StatusCode::kLogicError, callback);
         }
 
         Json::Value ret = make_json_from_status_code(StatusCode::kSuccess);

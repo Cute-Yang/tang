@@ -78,8 +78,8 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         return;
     }
 
-    auto& document_value = document.value();
-    QJsonObject json_data = document_value.object();
+    auto&       document_value = document.value();
+    QJsonObject json_data      = document_value.object();
     // here the default!add a public key conf!
     auto status = json_data[PublicResponseJsonKeys::status_key].toInt();
     if (status != static_cast<int>(StatusCode::kSuccess)) {
@@ -101,17 +101,18 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         return;
     }
     // then set the data!
-    auto& cache_user_info     = ClientSingleton::get_cache_user_info_instance();
+    auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
     cache_user_info.user_name = json_data[LoginResponseJsonKeys::user_name_key].toString();
     cache_user_info.email     = json_data[LoginResponseJsonKeys::email_key].toString();
     cache_user_info.user_id =
-        static_cast<uint8_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt());
+        static_cast<uint32_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt());
     cache_user_info.vote_prioirty =
         static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt());
+    // cache_user_info.print_data();
 
     ElaMessageBar::success(ElaMessageBarType::TopRight,
                            "login",
-                           "正在初始化,请稍后...",
+                           "正在初始化,请稍后 (✿◠‿◠)...",
                            ClientGlobalConfig::message_show_time,
                            show_widget);
     // if success,emit the signal!

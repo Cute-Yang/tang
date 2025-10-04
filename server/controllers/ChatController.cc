@@ -18,7 +18,6 @@ void ChatController::handleNewConnection(const HttpRequestPtr&         req,
                                          const WebSocketConnectionPtr& wsConnPtr) {
     auto user_id_str = req->getParameter("user_id");
     auto user_name   = req->getParameter("user_name");
-
     uint32_t user_id;
     // parse the user id from url?
     auto result =

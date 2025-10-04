@@ -1,18 +1,37 @@
 #include "main_window.h"
+#include "client_singleton.h"
 #include "participate_vote_page.h"
+#include "util.h"
 #include "vote_page.h"
 #include "vote_result_page.h"
 #include "workspace_page.h"
 
 
+
+using namespace tang::common;
 namespace tang {
 namespace client {
 ClientMainWindow::ClientMainWindow(QWidget* parent)
     : ElaWindow(parent) {
     this->init_page();
+    this->setFocusPolicy(Qt::StrongFocus);
     this->resize(QSize(1200, 600));
-
     this->moveToCenter();
+    this->setWindowTitle("Butterfly");
+    // left info
+
+    // setUserInfoCardVisible(false);
+    // 设置窗口标题
+}
+void ClientMainWindow::init_user_display_info() {
+    // setUserInfoCardPixmap(QPixmap(":/Resource/Image/Cirno.jpg"));
+    auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
+    this->setUserInfoCardTitle(QString("%1 (%2)")
+                                   .arg(current_user_info.user_name)
+                                   .arg(get_vote_priority_display_str(static_cast<VotePriority>(
+                                       current_user_info.vote_prioirty))));
+
+    this->setUserInfoCardSubTitle(current_user_info.email);
 }
 
 void ClientMainWindow::init_page() {

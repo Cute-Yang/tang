@@ -46,7 +46,7 @@ enum class StatusCode : uint32_t {
     kUserisAlreadyOnline          = 37,
     kUserisInvalid                = 38,
     kDirisAlreayExit              = 39,
-    kInvalidNumberError = 40,
+    kInvalidNumberError           = 40,
     Count
 };
 
@@ -92,7 +92,8 @@ constexpr std::array<std::string_view, status_count> status_strs = {
     "the websocket conn key is not exist!",
     "the user is already online!",
     "the user is invalid!",
-    "the dir is alreay exist!","fail to convert str -> number!"};
+    "the dir is alreay exist!",
+    "fail to convert str -> number!"};
 
 inline constexpr std::string_view get_status_str(size_t index) {
     if (index >= status_count) {
@@ -143,6 +144,9 @@ enum class VoteUserStatus : uint8_t { kOffline = 0, kActive, kInvalid, count };
 constexpr size_t vote_user_status_count = static_cast<size_t>(VoteUserStatus::count);
 constexpr std::array<std::string_view, vote_user_status_count> vote_user_status_strs = {
     "offline", "active", "invalid"};
+
+
+enum class VoteProcessStatus : uint8_t { kReady = 0, kProcessed = 1, kAbstained, count };
 
 enum class VotePriority : uint8_t {
     // don't have vote priority

@@ -22,6 +22,18 @@ QWidget* find_root_widget(QWidget* widget) {
     }
     return parent;
 }
+std::optional<QJsonDocument> get_json_document(const QByteArray& json_bytes) {
+    // parse it from the json!
+    QJsonParseError parse_error;
+    QJsonDocument   document = QJsonDocument::fromJson(json_bytes, &parse_error);
+    if (parse_error.error != QJsonParseError::NoError) {
+        return {};
+    }
+    return document;
+}
+std::optional<QJsonDocument> get_json_document(const QString& json_str) {
+    return get_json_document(json_str.toUtf8());
+}
 
 std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
     if (reply->error() != QNetworkReply::NoError) {
@@ -32,13 +44,7 @@ std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
     auto resp = reply->readAll();
     // avoid memory leak!
     reply->deleteLater();
-    // parse it from the json!
-    QJsonParseError parse_error;
-    QJsonDocument   document = QJsonDocument::fromJson(resp, &parse_error);
-    if (parse_error.error != QJsonParseError::NoError) {
-        return {};
-    }
-    return document;
+    return get_json_document(resp);
 }
 
 std::pair<size_t, size_t> remove_path_sep(const QString& folder_path) {
@@ -71,12 +77,12 @@ QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data, const 
     return reply;
 }
 
-QNetworkReply* send_http_req_with_form_data(const QUrlQuery& query,const QString& url_str){
-      QUrl            url(url_str);
+QNetworkReply* send_http_req_with_form_data(const QUrlQuery& query, const QString& url_str) {
+    QUrl            url(url_str);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // no need any params!
-    auto&     manager = ClientSingleton::get_network_manager_instance();
+    auto& manager = ClientSingleton::get_network_manager_instance();
 
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
@@ -103,13 +109,34 @@ std::string format_time(const std::chrono::system_clock::time_point& tp) {
 
 QString get_vote_status_display_str(common::VoteStatus status) {
     switch (status) {
-    case common::VoteStatus::kReady: return QString("投票中"); break;
-    case common::VoteStatus::kFinished: return QString("已完成"); break;
-    default: return QString("已作废"); break;
+    case common::VoteStatus::kReady: return QString("投票中");
+    case common::VoteStatus::kFinished: return QString("已完成");
+    default: return QString("已作废");
     }
 }
 
+QString get_vote_process_status_display_str(common::VoteProcessStatus status) {
+    switch (status) {
+    case tang::common::VoteProcessStatus::kReady: return QString("未投票");
+    case tang::common::VoteProcessStatus::kProcessed: return QString("已投票");
+    case tang::common::VoteProcessStatus::kAbstained: return QString("弃权");
+    default: return QString("其他");
+    }
+}
 
-
+QString get_choice_type_display_str(common::VoteChoiceType choice_type) {
+    switch (choice_type) {
+    case tang::common::VoteChoiceType::kSingleChoice: return QString("单选");
+    case tang::common::VoteChoiceType::kMultiChoice: return QString("多选");
+    default: return QString("未知");
+    }
+}
+QString get_vote_priority_display_str(common::VotePriority prioirty) {
+    switch (prioirty) {
+    case tang::common::VotePriority::kNormal: return QString("normal");
+    case tang::common::VotePriority::kMaximum: return QString("vip");
+    default: return QString("");
+    }
+}
 }   // namespace client
 }   // namespace tang

@@ -1,10 +1,13 @@
 #include "participate_vote_page_ui.h"
+#include "common/status.h"
+#include "util.h"
 #include <QFont>
 #include <QHeaderView>
 #include <QVBoxLayout>
 #include <QWidget>
 
 
+using namespace tang::common;
 
 namespace tang {
 namespace client {
@@ -169,7 +172,7 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_item_layout->addWidget(confirm_vote_button);
     vote_item_layout->addStretch();
 
-        adjust_content_view_button = new ElaToolButton(page);
+    adjust_content_view_button = new ElaToolButton(page);
     adjust_content_view_button->setText("调整视图");
     adjust_content_view_button->setFont(font);
     adjust_content_view_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -177,16 +180,81 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_item_layout->addWidget(adjust_content_view_button);
 
     central_layout->addSpacing(6);
+    QWidget*     vote_todo_list_container = new QWidget(page);
+    QVBoxLayout* vote_todo_list_layout    = new QVBoxLayout(vote_todo_list_container);
+    central_layout->addWidget(vote_todo_list_container);
+
     vote_todo_list = new ElaTableView(page);
     vote_todo_list->horizontalHeader()->setFont(font);
     vote_todo_list->verticalHeader()->hide();
     vote_todo_list->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     vote_todo_list->setFont(font);
+    vote_todo_list_layout->addWidget(vote_todo_list);
+
+    // vote_todo_list_layout->addStretch();
+
+    QWidget* page_info_container = new QWidget(page);
+    vote_todo_list_layout->addWidget(page_info_container);
+    QHBoxLayout* page_info_layout = new QHBoxLayout(page_info_container);
+    refresh_todo_list_button      = new ElaToolButton(page);
+    refresh_todo_list_button->setText("刷新");
+    refresh_todo_list_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
+    refresh_todo_list_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    refresh_todo_list_button->setFont(font);
+    page_info_layout->addWidget(refresh_todo_list_button);
+
+    page_info_layout->addSpacing(5);
+
+    vote_status_text = new ElaText(page);
+    vote_status_text->setText("状态:");
+    vote_status_text->setFont(font);
+    page_info_layout->addWidget(vote_status_text);
+
+    select_vote_status_combox = new ElaMultiSelectComboBox(page);
+    select_vote_status_combox->setFixedHeight(27);
+    select_vote_status_combox->setMaximumHeight(30);
+    select_vote_status_combox->setFont(font);
+    // the order must keep same with the xx
+    size_t n_status = static_cast<size_t>(VoteStatus::count);
+    for (size_t i = 0; i < n_status; ++i) {
+        select_vote_status_combox->addItem(get_vote_status_display_str(static_cast<VoteStatus>(i)));
+    }
+    select_vote_status_combox->setCurrentSelection(0);
+    page_info_layout->addWidget(select_vote_status_combox);
+
+    page_info_layout->addSpacing(8);
+
+    vote_process_status_text = new ElaText(page);
+    vote_process_status_text->setText("进度:");
+    vote_process_status_text->setFont(font);
+    page_info_layout->addWidget(vote_process_status_text);
+
+    select_vote_process_status_combox = new ElaMultiSelectComboBox(page);
+    select_vote_process_status_combox->setFixedHeight(27);
+    select_vote_process_status_combox->setFont(font);
+
+    for (size_t i = 0; i < static_cast<size_t>(VoteProcessStatus::count); ++i) {
+        select_vote_process_status_combox->addItem(
+            get_vote_process_status_display_str(static_cast<VoteProcessStatus>(i)));
+    }
+    select_vote_process_status_combox->setCurrentSelection(0);
+    page_info_layout->addWidget(select_vote_process_status_combox);
+    page_info_layout->addStretch();
 
 
-    central_layout->addWidget(vote_todo_list);
+    current_todo_list_page = new ElaSpinBox(page);
+    current_todo_list_page->setFixedHeight(27);
+    current_todo_list_page->setRange(0, 0);
+    current_todo_list_page->setFont(font);
+    page_info_layout->addWidget(current_todo_list_page);
+    page_info_layout->addSpacing(2);
 
-
+    totoal_todo_list_page = new ElaText(page);
+    totoal_todo_list_page->setFont(font);
+    totoal_todo_list_page->setMinimumWidth(160);
+    totoal_todo_list_page->setText(" / 总数");
+    page_info_layout->addWidget(totoal_todo_list_page);
+    page_info_layout->addStretch();
     _central_widget->setWindowTitle("Start Vote");
     page->addCentralWidget(_central_widget);
 }

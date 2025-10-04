@@ -153,8 +153,7 @@ QVariant VoteHistoryViewModel::data(const QModelIndex& index, int role) const {
         } else if (col == vote_status_col) {
             return get_vote_status_display_str(history.vote_status);
         } else if (col == vote_type_col) {
-            return history.choice_type == VoteChoiceType::kSingleChoice ? QString("单选")
-                                                                        : QString("多选");
+            return get_choice_type_display_str(history.choice_type);
         } else if (col == check_col) {
             return QString("查看");
         }

@@ -10,14 +10,18 @@ class ParticipateVotePage : public ElaScrollPage {
 private:
     ParticipateVotePageUi* ui;
     ParticipateViewModel*  view_model;
-    QWidget* show_widget;
+    QWidget*               show_widget;
     int                    vote_data_index;
     void                   initialize_connects();
     void                   adjust_vote_todo_list_view();
     void                   display_vote_data(const VoteData& vote_data);
     void                   set_frozon(bool enable);
 
-    void show_message(const QString& message,bool error=true);
+    void refresh_participate_vote_history_impl();
+
+    void get_chunk_participate_vote_data_impl(int vote_num, int vote_offset) ;
+
+    void show_message(const QString& message, bool error = true);
 
 public:
     ParticipateVotePage(QWidget* parent = nullptr);

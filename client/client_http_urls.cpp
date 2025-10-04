@@ -39,6 +39,13 @@ void ClientHttpUrls::format_http_urls() {
     vote_num_http_url = QString("http://%1:%2/api/v1/get_vote_num").arg(host).arg(port);
     chunk_vote_data_http_url =
         QString("http://%1:%2/api/v1/get_chunk_vote_data").arg(host).arg(port);
+
+    participate_vote_num_http_url =
+        QString("http://%1:%2/api/v1/get_participate_vote_num").arg(host).arg(port);
+    chunk_participate_vote_data_http_url =
+        QString("http://%1:%2/api/v1/get_chunk_participate_vote_data").arg(host).arg(port);
+
+    ws_chat_client_url = QString("ws://localhost:9000/api/v1/chat?user_id=%1&user_name=%2");
 }
 
 
@@ -89,12 +96,23 @@ const QString& ClientHttpUrls::get_create_vote_http_url() {
     return create_vote_http_url;
 }
 
-
 const QString& ClientHttpUrls::get_vote_num_url() {
     return vote_num_http_url;
 }
 const QString& ClientHttpUrls::get_chunk_vote_data_url() {
     return chunk_vote_data_http_url;
 }
+
+const QString& ClientHttpUrls::get_participate_vote_num_url() {
+    return participate_vote_num_http_url;
+}
+const QString& ClientHttpUrls::get_participate_chunk_vote_data_url() {
+    return chunk_participate_vote_data_http_url;
+}
+
+QString ClientHttpUrls::get_ws_chat_client_url(uint32_t user_id, const QString& user_name) {
+    return ws_chat_client_url.arg(user_id).arg(user_name);
+}
+
 }   // namespace client
 }   // namespace tang

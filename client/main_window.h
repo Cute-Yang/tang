@@ -2,18 +2,18 @@
 #include "ElaWindow.h"
 namespace tang {
 namespace client {
-class ClientMainWindow : public ElaWindow{
-Q_OBJECT
+class ClientMainWindow : public ElaWindow {
+    Q_OBJECT
 private:
     void init_page();
 
 public:
     ClientMainWindow(QWidget* parent = nullptr);
-    ~ClientMainWindow(){}
+    ~ClientMainWindow() {}
 
+    void init_user_display_info();
 
-// private:
-    
+    // private:
 };
-}
-}
+}   // namespace client
+}   // namespace tang

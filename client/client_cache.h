@@ -8,8 +8,15 @@ namespace client {
 struct CacheUserInfo {
     QString user_name;
     QString email;
-    uint8_t user_id;
+    int32_t user_id;
     uint8_t vote_prioirty;
+    void    print_data() {
+        qDebug() << "user_name:" << user_name;
+        qDebug() << "email" << email;
+
+        qDebug() << "user_id:" << user_id;
+        qDebug() << "vote_priority" << vote_prioirty;
+    }
 };
 
 using workspace_file_infos_t = QList<RemoteFileInfo>;
@@ -22,7 +29,7 @@ struct CacheWorkspaceData {
 
 
     std::span<RemoteFileInfo> get_file_infos(const QString& workspace_name);
-    bool                     delete_file_info(const QString& workspace_name, size_t i);
+    bool                      delete_file_info(const QString& workspace_name, size_t i);
     void                      set_file_infos(const QString&                workspace_name,
                                              const workspace_file_infos_t& file_infos = {});
     void set_file_infos(const QString& workspace_name, workspace_file_infos_t&& file_infos = {});

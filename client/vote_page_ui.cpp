@@ -1,10 +1,15 @@
 #include "vote_page_ui.h"
+#include "common/status.h"
+#include "util.h"
 #include <ElaComboBox.h>
 #include <ElaText.h>
 #include <QHeaderView>
 #include <QSplitter>
 #include <QVBoxLayout>
 
+
+
+using namespace tang::common;
 namespace tang {
 namespace client {
 void VotePageUi::setup_ui(ElaScrollPage* page) {
@@ -231,18 +236,39 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     refresh_vote_history_button->setText("刷新");
     refresh_vote_history_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     vote_page_layout->addWidget(refresh_vote_history_button);
+    vote_page_layout->addSpacing(8);
+
+    // only_select_valid = new ElaToggleSwitch(page);
+    // only_select_valid->setIsToggled(false);
+    // only_select_valid->setToolTip("只展示投票中~~~");
+    // vote_page_layout->addWidget(only_select_valid);
+    vote_status_text = new ElaText(page);
+    vote_status_text->setFixedWidth(42);
+    vote_status_text->setText("状态:");
+    vote_status_text->setFont(value_font);
+    vote_page_layout->addWidget(vote_status_text);
+
+    select_vote_status_combox = new ElaMultiSelectComboBox(page);
+    select_vote_status_combox->setFixedHeight(27);
+    select_vote_status_combox->setFont(value_font);
+    // the order must keep same with the xx
+    size_t n_status = static_cast<size_t>(VoteStatus::count);
+    for (size_t i = 0; i < n_status; ++i) {
+        select_vote_status_combox->addItem(get_vote_status_display_str(static_cast<VoteStatus>(i)));
+    }
+    select_vote_status_combox->setCurrentSelection(0);
+    vote_page_layout->addWidget(select_vote_status_combox);
+    vote_page_layout->addSpacing(16);
+
     vote_page_layout->addStretch();
 
     current_vote_history_page = new ElaSpinBox(page);
+    current_vote_history_page->setFixedHeight(27);
     current_vote_history_page->setRange(0, 8);
     current_vote_history_page->setFont(value_font);
     vote_page_layout->addWidget(current_vote_history_page);
     vote_page_layout->addSpacing(10);
-
-
-
     total_vote_history_pages = new ElaText(page);
-
     total_vote_history_pages->setText(" / 8");
     total_vote_history_pages->setFont(value_font);
     total_vote_history_pages->setMinimumWidth(200);

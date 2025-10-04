@@ -1,5 +1,7 @@
 #include "participate_view_model.h"
+#include "util.h"
 #include <QIcon>
+
 
 namespace tang {
 namespace client {
@@ -28,7 +30,8 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    {"郊外踏青", "电影院", "在家休息", "逛街购物"},
                    1000,
                    common::VoteStatus::kReady,
-                   common::VoteChoiceType::kSingleChoice},
+                   common::VoteChoiceType::kSingleChoice,
+                   common::VoteProcessStatus::kReady},
                   // 数据 2
                   {"李四",
                    "2025-09-26 09:15:45",
@@ -36,7 +39,8 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    {"火锅", "烧烤", "快餐", "食堂", "外卖"},
                    1001,
                    common::VoteStatus::kFinished,
-                   common::VoteChoiceType::kMultiChoice},
+                   common::VoteChoiceType::kMultiChoice,
+                   common::VoteProcessStatus::kReady},
                   // 数据 3
                   {"王五",
                    "2025-09-24 18:20:10",
@@ -44,7 +48,8 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    {"张三", "李四", "王五", "赵六"},
                    1002,
                    common::VoteStatus::kFinished,
-                   common::VoteChoiceType::kSingleChoice},
+                   common::VoteChoiceType::kSingleChoice,
+                   common::VoteProcessStatus::kReady},
                   // 数据 4
                   {"赵六",
                    "2025-09-27 11:05:33",
@@ -52,7 +57,8 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    {"密室逃脱", "KTV", "聚餐", "短途旅行"},
                    1003,
                    common::VoteStatus::kReady,
-                   common::VoteChoiceType::kMultiChoice},
+                   common::VoteChoiceType::kMultiChoice,
+                   common::VoteProcessStatus::kReady},
                   // 数据 5
                   {"钱七",
                    "2025-09-23 16:40:18",
@@ -61,7 +67,7 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    1004,
                    common::VoteStatus::kInvalid,
                    common::VoteChoiceType::kSingleChoice,
-                   true},
+                   common::VoteProcessStatus::kReady},
                   // 数据 6
                   {"孙八",
                    "2025-09-28 13:25:55",
@@ -94,7 +100,7 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    1008,
                    common::VoteStatus::kInvalid,
                    common::VoteChoiceType::kSingleChoice,
-                   true},
+                   common::VoteProcessStatus::kProcessed},
                   // 数据 10
                   {"王二",
                    "2025-09-30 08:00:15",
@@ -102,7 +108,8 @@ ParticipateViewModel::ParticipateViewModel(size_t batch_size_, const QStringList
                    {"购物卡", "现金", "实物礼品", "带薪假期", "股票期权"},
                    1009,
                    common::VoteStatus::kReady,
-                   common::VoteChoiceType::kMultiChoice}};
+                   common::VoteChoiceType::kMultiChoice,
+                   common::VoteProcessStatus::kProcessed}};
 }
 
 
@@ -141,15 +148,13 @@ QVariant ParticipateViewModel::data(const QModelIndex& index, int role) const {
         } else if (col == vote_topic_col) {
             return vote_data.vote_topic;
         } else if (col == vote_choice_type_col) {
-            return vote_data.vote_choice_type == common::VoteChoiceType::kSingleChoice
-                       ? QString("单选")
-                       : QString("多选");
+            return get_choice_type_display_str(vote_data.vote_choice_type);
         } else if (col == vote_status_col) {
             return get_vote_status_display_str(vote_data.vote_status);
         } else if (col == check_col) {
             return QString("查看");
         } else if (col == processed_col) {
-            return vote_data.processed ? "已投票" : "未投票";
+            return get_vote_process_status_display_str(vote_data.vote_process_status);
         }
     } else if (role == Qt::DecorationRole) {
         QString icon_file;
@@ -174,8 +179,9 @@ QVariant ParticipateViewModel::data(const QModelIndex& index, int role) const {
         } else if (col == creator_col) {
             icon_file = ":icons/images/mifeng.svg";
         } else if (col == processed_col) {
-            icon_file =
-                vote_data.processed ? ":icons/images/do_it.svg" : ":icons/images/not_do_it.svg";
+            icon_file = vote_data.vote_process_status == common::VoteProcessStatus::kProcessed
+                            ? ":icons/images/do_it.svg"
+                            : ":icons/images/not_do_it.svg";
         }
         if (!icon_file.isEmpty()) {
             return QIcon(icon_file);
@@ -194,5 +200,15 @@ QVariant ParticipateViewModel::headerData(int section, Qt::Orientation orientati
     return {};
 }
 
+
+void ParticipateViewModel::set_batch_size(size_t batch_size_) {
+    assert(batch_size_ > 0);
+    batch_size = batch_size_;
+}
+
+
+size_t ParticipateViewModel::get_batch_size() const {
+    return batch_size;
+}
 }   // namespace client
 }   // namespace tang

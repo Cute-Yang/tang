@@ -11,11 +11,7 @@
 #include <QUrlQuery>
 #include <chrono>
 
-
-
 using namespace tang::common;
-
-
 namespace tang {
 namespace client {
 class VoteItemRightMenu {
@@ -219,6 +215,7 @@ void VotePage::get_online_voters_impl() {
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
+        qDebug() << json_data;
 
         auto voter_infos = json_data["voter_infos"].toArray();
         this->online_voters.resize(voter_infos.size());
@@ -276,7 +273,8 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     json_data["vote_create_time"] = us_timestamp;
 
     QJsonArray  json_voter_ids;
-    QStringList voters;
+    QJsonArray  json_voter_names;
+    QStringList voters_names;
     for (size_t i = 0; i < select_voter_indexes.size(); ++i) {
         // qDebug() << select_voter_indexes;
         // qDebug() << online_voters.size();
@@ -285,10 +283,12 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
             return false;
         }
         // not supported unsigned!
-        voters.push_back(online_voters[i].voter_name);
+        voters_names.push_back(online_voters[i].voter_name);
         json_voter_ids.append(static_cast<int>(online_voters[i].voter_id));
+        json_voter_names.append(online_voters[i].voter_name);
     }
-    json_data["voters"] = json_voter_ids;
+    json_data["voters"]      = json_voter_ids;
+    json_data["voter_names"] = json_voter_names;
 
     auto vote_choice_type         = ui->vote_choice_type_combox->currentIndex() == 0
                                         ? VoteChoiceType::kSingleChoice
@@ -298,7 +298,7 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     vote_history.create_time      = QString(format_time(now).c_str());
     vote_history.vote_topic       = vote_topic;
     vote_history.vote_items       = vote_items;
-    vote_history.voters           = voters;
+    vote_history.voters           = voters_names;
     vote_history.vote_status      = VoteStatus::kReady;
     vote_history.choice_type      = vote_choice_type;
 
@@ -344,15 +344,16 @@ void VotePage::display_vote_history_impl(const VoteHistory& vote_history) {
     ui->vote_topic_line_edit->setText(vote_history.vote_topic);
     ui->vote_choice_type_combox->setCurrentIndex(
         vote_history.choice_type == VoteChoiceType::kSingleChoice ? 0 : 1);
+
     ui->voters_combox->clear();
     ui->voters_combox->addItems(vote_history.voters);
-    QList<int> ss(vote_history.voters.size());
-    for (size_t i = 0; i < vote_history.voters.size(); ++i) {
+    auto       n = vote_history.voters.size();
+    QList<int> ss(n);
+    for (size_t i = 0; i < n; ++i) {
         ss[i] = i;
     }
     ui->voters_combox->setCurrentSelection(ss);
     vote_data_model->set_vote_items(vote_history.vote_items);
-
     this->set_frozon(false);
 }
 
@@ -369,12 +370,18 @@ void VotePage::set_frozon(bool enable) {
 
 
 void VotePage::refresh_vote_history_impl() {
-    auto&     current_user_info = ClientSingleton::get_cache_user_info_instance();
-    QUrlQuery query;
-    query.addQueryItem("voter_id", QString::number(current_user_info.user_id));
-    QNetworkReply* reply = send_http_req_with_form_data(
-        query, ClientSingleton::get_http_urls_instance().get_vote_num_url());
-    // this->show_message("查询中(✿◠‿◠)", false);
+    auto&       current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QJsonObject json_data;
+    json_data[GetVoteNumReqKeys::voter_id_key] = current_user_info.user_id;
+
+    QJsonArray select_vote_status;
+    auto       selected = ui->select_vote_status_combox->getCurrentSelectionIndex();
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_status.append(selected[i]);
+    }
+    json_data[GetVoteNumReqKeys::vote_status_key] = select_vote_status;
+    QNetworkReply* reply                          = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_vote_num_url());
 
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         auto document = get_json_document(reply);
@@ -400,14 +407,21 @@ void VotePage::refresh_vote_history_impl() {
     });
 }
 
-void VotePage::get_chunk_vote_data_impl(size_t vote_num, size_t vote_offset) {
-    auto&     current_user_info = ClientSingleton::get_cache_user_info_instance();
-    QUrlQuery query;
-    query.addQueryItem("voter_id", QString::number(current_user_info.user_id));
-    query.addQueryItem("vote_num", QString::number(vote_num));
-    query.addQueryItem("vote_offset", QString::number(vote_offset));
-    QNetworkReply* reply = send_http_req_with_form_data(
-        query, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
+void VotePage::get_chunk_vote_data_impl(int vote_num, int vote_offset) {
+    auto&       current_user_info = ClientSingleton::get_cache_user_info_instance();
+    QJsonObject json_data;
+    json_data[GetChunkVoteReqKeys::voter_id_key]    = current_user_info.user_id;
+    json_data[GetChunkVoteReqKeys::vote_num_key]    = vote_num;
+    json_data[GetChunkVoteReqKeys::vote_offset_key] = vote_offset;
+    QJsonArray select_vote_status;
+    auto       selected = ui->select_vote_status_combox->getCurrentSelectionIndex();
+    for (size_t i = 0; i < selected.size(); ++i) {
+        select_vote_status.append(selected[i]);
+    }
+    json_data[GetChunkVoteReqKeys::vote_status_key] = select_vote_status;
+    // qDebug() << json_data;
+    QNetworkReply* reply = send_http_req_with_json_data(
+        json_data, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
     this->show_message("查询中(✿◠‿◠)", false);
 
     connect(reply, &QNetworkReply::finished, this, [reply, this]() {
@@ -429,12 +443,21 @@ void VotePage::get_chunk_vote_data_impl(size_t vote_num, size_t vote_offset) {
             vote_hisotory.creator     = vote_data["vote_creator"].toString();
             vote_hisotory.create_time = vote_data["vote_create_time"].toString();
             vote_hisotory.vote_topic  = vote_data["vote_topic"].toString();
+            vote_hisotory.vote_status = static_cast<VoteStatus>(vote_data["vote_status"].toInt());
             vote_hisotory.choice_type = static_cast<VoteChoiceType>(vote_data["vote_type"].toInt());
             auto  json_vote_items     = vote_data["vote_items"].toArray();
             auto& vote_items          = vote_hisotory.vote_items;
             vote_items.clear();
+            vote_items.reserve(json_vote_items.size());
             for (size_t i = 0; i < json_vote_items.size(); ++i) {
                 vote_items.push_back(json_vote_items[i].toString());
+            }
+            auto  json_voter_names = vote_data["voter_names"].toArray();
+            auto& voter_names      = vote_hisotory.voters;
+            voter_names.clear();
+            voter_names.reserve(json_voter_names.size());
+            for (size_t i = 0; i < json_voter_names.size(); ++i) {
+                voter_names.push_back(json_voter_names[i].toString());
             }
         }
         vote_history_model->layoutChanged();

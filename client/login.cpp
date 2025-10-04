@@ -15,8 +15,6 @@ Login::Login(QWidget* parent)
     this->setFixedSize(QSize(350, 520));
     this->setWindowTitle("login");
     this->setWindowIcon(QIcon(":/icons/images/changjinglu.svg"));
-
-    // initialize all the connects
     this->initialize_connects();
 }
 
