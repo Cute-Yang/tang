@@ -195,5 +195,26 @@ common::StatusCode parse_send_vote_choices_req(const Json::Value&     json_data,
     return StatusCode::kSuccess;
 }
 
+
+common::StatusCode parse_get_chunk_finished_vote_req(const Json::Value&      json_data,
+                                                     ChunkVoteReqBaseParams& params) {
+    for (auto key : ChunkVoteReqBaseKeys::keys) {
+        if (!json_data.isMember(key)) {
+            return StatusCode::kJsonKeyError;
+        }
+    }
+    auto& json_vote_num = json_data[ChunkVoteReqBaseKeys::vote_num_key];
+    if (!json_vote_num.isUInt()) {
+        return StatusCode::kJsonTypeError;
+    }
+    params.vote_num = json_vote_num.asUInt();
+
+    auto& json_vote_offset = json_data[ChunkVoteReqBaseKeys::vote_offset_key];
+    if (!json_vote_offset.isUInt()) {
+        params.vote_num = json_vote_offset.asUInt();
+    }
+    return StatusCode::kSuccess;
+}
+
 }   // namespace server
 }   // namespace tang

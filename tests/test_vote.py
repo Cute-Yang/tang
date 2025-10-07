@@ -41,7 +41,18 @@ def test_get_participate_vote_num():
     resp = requests.post(url,json=json_data) # tell it we use application/json,fuck!
     print(resp.json())
 
+
+def test_get_chunk_finished_vote_data():
+    json_data = {
+        "vote_num":10,
+        "vote_offset":0
+    }  
+    url = "http://localhost:9000/api/v1/get_chunk_finished_vote_data"
+    resp = requests.post(url,json=json_data) # tell it we use application/json,fuck!
+    print(resp.json())
+
 if __name__ == "__main__":
-    test_create_vote()
+    # test_create_vote()
     # test_get_participate_vote_data()
     # test_get_participate_vote_num()
+    test_get_chunk_finished_vote_data()

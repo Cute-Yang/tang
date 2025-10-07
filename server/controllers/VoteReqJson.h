@@ -5,10 +5,13 @@
 namespace tang {
 namespace server {
 
-struct ChunkVoteReqParams {
-    uint32_t             voter_id;
-    uint32_t             vote_num;
-    uint32_t             vote_offset;
+
+struct ChunkVoteReqBaseParams {
+    uint32_t vote_num;
+    uint32_t vote_offset;
+};
+struct ChunkVoteReqParams : public ChunkVoteReqBaseParams {
+    uint32_t voter_id;
     std::vector<uint8_t> vote_status;
 };
 
@@ -28,8 +31,9 @@ struct ParticipateVoteNumReqParams : public VoteNumReqParams {
 struct SendVoteChoicesParams {
     std::vector<int> voter_choices;
     uint32_t         voter_id;
-    uint32_t vote_id;
+    uint32_t         vote_id;
 };
+
 
 
 common::StatusCode parse_chunk_vote_data_req(const Json::Value&  json_data,
@@ -46,6 +50,9 @@ common::StatusCode parse_get_participate_vote_num_req(const Json::Value&        
 
 common::StatusCode parse_send_vote_choices_req(const Json::Value&     json_dataa,
                                                SendVoteChoicesParams& params);
+
+
+common::StatusCode parse_get_chunk_finished_vote_req(const Json::Value& json_data,ChunkVoteReqBaseParams& params);
 
 }   // namespace server
 }   // namespace tang

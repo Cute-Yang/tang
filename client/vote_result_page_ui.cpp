@@ -34,7 +34,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // limit the width of vote_detail_container!
     // vote_detail_container->setMinimumWidth(420);
     // vote_detail_container->setMaximumWidth(480);
-    vote_detail_container->setFixedWidth(450);
+    vote_detail_container->setFixedWidth(370);
     // not add the vote detail container to the central layout!
     //  central_layout->addWidget(vote_detail_container);
 
@@ -162,13 +162,12 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_view_spliter->setOrientation(Qt::Horizontal);
     central_layout->addWidget(vote_view_spliter);
 
-
     vote_view_spliter->setOpaqueResize(true);
     QWidget* vote_img_container = new QWidget(page);
     // vote_img_container->setMinimumHeight(300);
     // vote_img_container->setMinimumWidth(420);
     // vote_img_container->setMaximumWidth(480);
-    vote_img_container->setFixedWidth(450);
+    vote_img_container->setFixedWidth(370);
     // vote_detail_spliter->addWidget(vote_img_container);
     // central_layout->addWidget(vote_img_container);
     vote_view_spliter->addWidget(vote_img_container);
@@ -182,11 +181,13 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_img_chart->addSeries(vote_img_series);
     vote_img_chart->setTitle("vote stat");
     vote_img_chart->setAnimationOptions(QChart::SeriesAnimations);
+    auto legend_font = font;
+    legend_font.setPointSize(7);
     vote_img_chart->legend()->setAlignment(Qt::AlignRight);
     vote_img_chart->legend()->setBackgroundVisible(false);
     // set the font of chat legend!
-    vote_img_chart->legend()->setFont(font);
-    vote_img_chart->setTitleFont(font);
+    vote_img_chart->legend()->setFont(legend_font);
+    vote_img_chart->setTitleFont(legend_font);
     vote_img_chart->setTheme(QChart::ChartThemeLight);
 
     vote_img_view = new QChartView(page);
@@ -200,15 +201,59 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_img_layout->addWidget(vote_img_view);
 
 
+    QWidget* vote_history_container = new QWidget(page);
+    vote_view_spliter->addWidget(vote_history_container);
+    QVBoxLayout* vote_history_layout = new QVBoxLayout(vote_history_container);
+
+
     // ElaText* vote_history_text = new ElaText(page);
     // vote_history_text->setText("投票纪录");
     // vote_history_text->setFont(font);
     // central_layout->addWidget(vote_history_text);
     vote_history_view = new ElaTableView(page);
+    vote_history_view->verticalHeader()->setHidden(true);
+    vote_history_view->horizontalHeader()->setFont(font);
+    vote_history_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
     // vote_history_view->setMinimumWidth(300);
+    vote_history_view->setFont(font);
     vote_history_view->setMinimumHeight(200);
-    // central_layout->addWidget(vote_history_view);
-    vote_view_spliter->addWidget(vote_history_view);
+    vote_history_layout->addWidget(vote_history_view);
+
+
+    QWidget* vote_page_container = new QWidget(page);
+    vote_history_layout->addWidget(vote_page_container);
+    QHBoxLayout* vote_page_layout = new QHBoxLayout(vote_page_container);
+
+    refresh_page_button = new ElaToolButton(page);
+    refresh_page_button->setText("刷新");
+    refresh_page_button->setFont(font);
+    refresh_page_button->setIcon(QIcon(":icons/images/color_refresh.svg"));
+    refresh_page_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_page_layout->addWidget(refresh_page_button);
+
+    vote_page_layout->addStretch();
+
+    current_history_page = new ElaSpinBox(page);
+    current_history_page->setRange(0, 0);
+    current_history_page->setFont(font);
+    current_history_page->setMaximumHeight(27);
+    vote_page_layout->addWidget(current_history_page);
+    vote_page_layout->addSpacing(9);
+
+    total_history_page = new ElaText(page);
+    total_history_page->setText("总页数");
+    total_history_page->setFont(font);
+
+    vote_page_layout->addWidget(total_history_page);
+    vote_page_layout->addStretch();
+
+    adjust_history_view_button = new ElaToolButton(page);
+    adjust_history_view_button->setFont(font);
+    adjust_history_view_button->setText("调整视图");
+    adjust_history_view_button->setIcon(QIcon(":icons/images/spider.svg"));
+    adjust_history_view_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    vote_page_layout->addWidget(adjust_history_view_button);
+
 
     central_widget->setWindowTitle("~~~Vote result~~~");
     page->addCentralWidget(central_widget);

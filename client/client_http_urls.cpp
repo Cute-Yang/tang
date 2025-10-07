@@ -49,6 +49,12 @@ void ClientHttpUrls::format_http_urls() {
 
     send_vote_choices_http_url =
         QString("http://%1:%2/api/v1/send_vote_choices").arg(host).arg(port);
+
+    finished_vote_num_http_url =
+        QString("http://%1:%2/api/v1/get_finished_vote_num").arg(host).arg(port);
+
+    chunk_finished_vote_data_http_url =
+        QString("http://%1:%2/api/v1/get_chunk_finished_vote_data").arg(host).arg(port);
 }
 
 
@@ -119,6 +125,14 @@ QString ClientHttpUrls::get_ws_chat_client_url(uint32_t user_id, const QString& 
 
 const QString& ClientHttpUrls::get_send_vote_choices_url() {
     return send_vote_choices_http_url;
+}
+
+const QString& ClientHttpUrls::get_finished_vote_num_url() {
+    return finished_vote_num_http_url;
+}
+
+const QString& ClientHttpUrls::get_chunk_finished_vote_data_url() {
+    return chunk_finished_vote_data_http_url;
 }
 
 

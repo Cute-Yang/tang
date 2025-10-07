@@ -26,6 +26,7 @@ void VoteItemCountViewModel::compute_total_count() {
 void VoteItemCountViewModel::set_vote_infos(std::span<VoteItemCountInfo> vote_count_infos_) {
     vote_item_infos = vote_count_infos_;
     compute_total_count();
+    layoutChanged();
 }
 
 QVariant VoteItemCountViewModel::headerData(int section, Qt::Orientation orientation,
@@ -87,9 +88,10 @@ QVariant VoteItemCountViewModel::data(const QModelIndex& index, int role) const 
 }
 
 VoteResultHistoryViewModel::VoteResultHistoryViewModel(const QStringList& header_names_,
-                                                       QObject*           parent)
+                                                       size_t batch_size_, QObject* parent)
     : QAbstractTableModel(parent)
-    , header_names(header_names_) {
+    , header_names(header_names_)
+    , batch_size(batch_size_) {
 
     vote_result_historys = {{3,
                              "周琳",
@@ -181,5 +183,9 @@ std::span<VoteItemCountInfo> VoteResultHistoryViewModel::get_vote_info(size_t i)
     return {p, n};
 }
 
+
+size_t VoteResultHistoryViewModel::get_batch_size() const {
+    return batch_size;
+}
 }   // namespace client
 }   // namespace tang

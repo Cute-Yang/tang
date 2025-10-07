@@ -56,6 +56,7 @@ class VoteResultHistoryViewModel : public QAbstractTableModel {
 private:
     std::vector<VoteResultHistory> vote_result_historys;
     QStringList                    header_names;
+    size_t                         batch_size;
 
 protected:
     int      rowCount(const QModelIndex& parent) const override;
@@ -65,10 +66,15 @@ protected:
                         int role = Qt::DisplayRole) const override;
 
 public:
-    VoteResultHistoryViewModel(const QStringList& header_names_, QObject* parent = nullptr);
+    VoteResultHistoryViewModel(const QStringList& header_names_, size_t batch_size = 8,
+                               QObject* parent = nullptr);
     ~VoteResultHistoryViewModel();
 
+    size_t get_batch_size() const;
+
     VoteResultHistory& at(size_t index);
+
+    void resize(size_t n) { vote_result_historys.resize(n); }
 
     std::span<VoteItemCountInfo> get_vote_info(size_t index);
 };

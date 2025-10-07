@@ -56,7 +56,6 @@ struct GetParticipateVoteReqKeys : public GetChunkVoteReqKeys {
 };
 
 
-
 struct GetVoteNumReqKeys {
     static constexpr const char*                voter_id_key    = "voter_id";
     static constexpr const char*                vote_status_key = "vote_status";
@@ -73,9 +72,15 @@ struct SendVoteChoicesReqKeys {
     static constexpr const char* vote_choices_key = "vote_choices";
     // important!
     static constexpr const char*                vote_id_key = "vote_id";
-    constexpr static std::array<const char*, 3> keys = {vote_id_key, voter_id_key, vote_choices_key};
+    constexpr static std::array<const char*, 3> keys        = {
+        vote_id_key, voter_id_key, vote_choices_key};
 };
 
 
+struct ChunkVoteReqBaseKeys {
+    static constexpr const char*                vote_num_key    = "vote_num";
+    static constexpr const char*                vote_offset_key = "vote_offset";
+    constexpr static std::array<const char*, 2> keys            = {vote_num_key, vote_offset_key};
+};
 }   // namespace common
 }   // namespace tang

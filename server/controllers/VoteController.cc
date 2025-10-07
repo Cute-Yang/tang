@@ -861,3 +861,111 @@ void VoteController::get_participate_vote_num(
         make_response_and_return(StatusCode::kSqlRuntimeError, callback);
     }
 }
+
+void VoteController::get_finshied_vote_num(const HttpRequestPtr&                         req,
+                                          std::function<void(const HttpResponsePtr&)>&& callback) {
+    // just
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+    try {
+        auto cond    = orm::Criteria(VoteData::Cols::_vote_status,
+                                  orm::CompareOperator::EQ,
+                                  static_cast<uint8_t>(VoteStatus::kFinished));
+        auto count   = vote_data_mapper.count(cond);
+        auto ret     = make_json_from_status_code(StatusCode::kSuccess);
+        ret["count"] = count;
+        auto resp    = HttpResponse::newHttpJsonResponse(ret);
+        callback(resp);
+    } catch (const orm::DrogonDbException& ex) {
+        LOG_ERROR << ex.base().what();
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+    }
+}
+
+
+void VoteController::get_chunk_finished_vote_data(
+    const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) {
+
+    auto json_data = req->jsonObject();
+    if (json_data == nullptr) {
+        make_response_and_return(StatusCode::kJsonParamIsNull, callback);
+    }
+
+    ChunkVoteReqBaseParams params;
+    if (auto ret = parse_get_chunk_finished_vote_req(*json_data, params);
+        ret != StatusCode::kSuccess) {
+        make_response_and_return(ret, callback);
+    }
+
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+    vote_data_mapper.limit(params.vote_num)
+        .offset(params.vote_offset)
+        .orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
+    orm::Mapper<VoteItem> vote_item_mapper(db_client_ptr);
+
+    try {
+        auto cond         = orm::Criteria(VoteData::Cols::_vote_status,
+                                  orm::CompareOperator::EQ,
+                                  static_cast<uint8_t>(VoteStatus::kFinished));
+        auto vote_results = vote_data_mapper.findBy(cond);
+        // then find the vote_items
+        auto n_vote = vote_results.size();
+
+        auto ret = make_json_from_status_code(StatusCode::kSuccess);
+
+        Json::Value json_vote_datas(Json::arrayValue);
+        if (n_vote > 0) {
+            std::vector<uint32_t> vote_ids(n_vote, 0);
+            for (size_t i = 0; i < n_vote; ++i) {
+                vote_ids[i] = vote_results[i].getValueOfVoteId();
+            }
+
+            cond = orm::Criteria(VoteItem::Cols::_vote_id, orm::CompareOperator::In, vote_ids);
+            auto vote_item_results = vote_item_mapper.findBy(cond);
+
+            std::map<uint32_t, std::vector<size_t>> group_by_vote_ids;
+
+            for (size_t i = 0; i < vote_item_results.size(); ++i) {
+                auto vote_id = vote_item_results[i].getValueOfVoteId();
+                group_by_vote_ids[vote_id].push_back(i);
+            }
+
+            for (size_t i = 0; i < n_vote; ++i) {
+                auto        json_vote_data = vote_results[i].toJson();
+                Json::Value json_vote_items(Json::arrayValue);
+                auto        vote_id = vote_results[i].getValueOfVoteId();
+                if (group_by_vote_ids.contains(vote_id)) {
+                    auto& indexes = group_by_vote_ids.at(vote_id);
+                    for (auto index : indexes) {
+                        Json::Value json_vote_item;
+                        json_vote_item["vote_item"] = vote_item_results[index].getValueOfVoteItem();
+                        json_vote_item["vote_item_count"] =
+                            vote_item_results[index].getValueOfVoteItemCount();
+                        json_vote_item["vote_item_status"] =
+                            vote_item_results[index].getValueOfVoteItemStatus();
+                        json_vote_items.append(json_vote_item);
+                    }
+                    json_vote_data["vote_items"] = json_vote_items;
+                }
+                json_vote_datas.append(json_vote_data);
+            }
+        }
+        // warp data
+        ret["vote_datas"] = json_vote_datas;
+        auto resp         = HttpResponse::newHttpJsonResponse(ret);
+        callback(resp);
+
+    } catch (const orm::DrogonDbException& ex) {
+        LOG_ERROR << ex.base().what();
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+    }
+}

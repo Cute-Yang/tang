@@ -81,6 +81,12 @@ public:
     void get_chunk_participate_vote_data(const HttpRequestPtr&                         req,
                                          std::function<void(const HttpResponsePtr&)>&& callback);
 
+    void get_finshied_vote_num(const HttpRequestPtr&                         req,
+                               std::function<void(const HttpResponsePtr&)>&& callback);
+
+    void get_chunk_finished_vote_data(const HttpRequestPtr&                         req,
+                                      std::function<void(const HttpResponsePtr&)>&& callback);
+
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(VoteController::create_vote, "/api/v1/create_vote", Post);
     ADD_METHOD_TO(VoteController::remove_vote, "/api/v1/remove_vote", Post);
@@ -92,7 +98,10 @@ public:
                   "/api/v1/get_chunk_participate_vote_data", Post);
     ADD_METHOD_TO(VoteController::get_participate_vote_num, "/api/v1/get_participate_vote_num",
                   Post);
-
+    ADD_METHOD_TO(VoteController::get_finshied_vote_num, "/api/v1/get_finished_vote_num", Get,
+                  Post);
+    ADD_METHOD_TO(VoteController::get_chunk_finished_vote_data,
+                  "/api/v1/get_chunk_finished_vote_data", Post);
     // use METHOD_ADD to add your custom processing function here;
     // METHOD_ADD(VoteController::get, "/{2}/{1}", Get); // path is /VoteController/{arg2}/{arg1}
     // METHOD_ADD(VoteController::your_method_name, "/{1}/{2}/list", Get); // path is
