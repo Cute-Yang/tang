@@ -34,7 +34,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // limit the width of vote_detail_container!
     // vote_detail_container->setMinimumWidth(420);
     // vote_detail_container->setMaximumWidth(480);
-    vote_detail_container->setFixedWidth(370);
+    vote_detail_container->setFixedWidth(400);
     // not add the vote detail container to the central layout!
     //  central_layout->addWidget(vote_detail_container);
 
@@ -141,6 +141,21 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // QSplitter* spliter = new QSplitter(page);
     // central_layout->addWidget(spliter);
 
+    QWidget* vote_count_container = new QWidget(page);
+    vote_detail_spliter->addWidget(vote_count_container);
+    QVBoxLayout* vote_count_layout = new QVBoxLayout(vote_count_container);
+
+    vote_count_view_text = new ElaText(page);
+    vote_count_view_text->setFont(font);
+    vote_count_view_text->setText("投票统计");
+    QHBoxLayout* t1 = new QHBoxLayout();
+    t1->addStretch();
+    t1->addWidget(vote_count_view_text);
+    t1->addStretch();
+
+    vote_count_layout->addLayout(t1);
+
+
     vote_stat_view = new ElaTableView(page);
     // vote_stat_view->setMinimumWidth(160);
     // vote_stat_view->setMaximumWidth(480);
@@ -151,11 +166,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_stat_view->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     vote_stat_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     vote_stat_view->setFont(font);
-    // spliter->addWidget(vote_stat_view);
-    // this is a table view,contains vote options,vote values
-    // central_layout->addWidget(vote_stat_view);
-    // add it to the vote detail spliter!
-    vote_detail_spliter->addWidget(vote_stat_view);
+    vote_count_layout->addWidget(vote_stat_view);
 
 
     QSplitter* vote_view_spliter = new QSplitter(page);
@@ -167,7 +178,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // vote_img_container->setMinimumHeight(300);
     // vote_img_container->setMinimumWidth(420);
     // vote_img_container->setMaximumWidth(480);
-    vote_img_container->setFixedWidth(370);
+    vote_img_container->setMinimumSize({400, 400});
     // vote_detail_spliter->addWidget(vote_img_container);
     // central_layout->addWidget(vote_img_container);
     vote_view_spliter->addWidget(vote_img_container);
@@ -176,10 +187,11 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_img_layout->setContentsMargins({0, 0, 0, 0});
 
     vote_img_series = new QPieSeries(page);
+    vote_img_series->setLabelsPosition(QPieSlice::LabelOutside);
     // how to set the parent of chart?
     vote_img_chart = new QChart();
     vote_img_chart->addSeries(vote_img_series);
-    vote_img_chart->setTitle("vote stat");
+    vote_img_chart->setTitle("投票统计图");
     vote_img_chart->setAnimationOptions(QChart::SeriesAnimations);
     auto legend_font = font;
     legend_font.setPointSize(7);
@@ -187,8 +199,12 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_img_chart->legend()->setBackgroundVisible(false);
     // set the font of chat legend!
     vote_img_chart->legend()->setFont(legend_font);
-    vote_img_chart->setTitleFont(legend_font);
+
+    auto title_font = font;
+    title_font.setPointSize(12);
+    vote_img_chart->setTitleFont(title_font);
     vote_img_chart->setTheme(QChart::ChartThemeLight);
+
 
     vote_img_view = new QChartView(page);
     // auto policy = vote_img_view->sizePolicy();
@@ -201,15 +217,27 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_img_layout->addWidget(vote_img_view);
 
 
+
+
     QWidget* vote_history_container = new QWidget(page);
     vote_view_spliter->addWidget(vote_history_container);
     QVBoxLayout* vote_history_layout = new QVBoxLayout(vote_history_container);
 
 
+    vote_history_view_text = new ElaText(page);
+    vote_history_view_text->setFont(font);
+    vote_history_view_text->setText("投票历史记录");
+    QHBoxLayout* t2 = new QHBoxLayout();
+    t2->addStretch();
+    t2->addWidget(vote_history_view_text);
+    t2->addStretch();
+    vote_history_layout->addLayout(t2);
+
     // ElaText* vote_history_text = new ElaText(page);
     // vote_history_text->setText("投票纪录");
     // vote_history_text->setFont(font);
     // central_layout->addWidget(vote_history_text);
+
     vote_history_view = new ElaTableView(page);
     vote_history_view->verticalHeader()->setHidden(true);
     vote_history_view->horizontalHeader()->setFont(font);

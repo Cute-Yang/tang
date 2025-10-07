@@ -47,6 +47,10 @@ public:
     ElaSpinBox*    current_history_page;
     ElaText*       total_history_page;
 
+
+    ElaText* vote_count_view_text;
+    ElaText*  vote_history_view_text;
+
     void setup_ui(ElaScrollPage* page = nullptr);
 };
 
