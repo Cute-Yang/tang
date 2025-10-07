@@ -2,7 +2,7 @@
 #include "ElaMessageBar.h"
 #include "client_global_config.h"
 #include "client_singleton.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 #include "response_validator.h"
 #include "util.h"
 #include "workspace_page_ui.h"

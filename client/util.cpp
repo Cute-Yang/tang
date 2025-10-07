@@ -89,23 +89,6 @@ QNetworkReply* send_http_req_with_form_data(const QUrlQuery& query, const QStrin
     return reply;
 }
 
-std::string format_time(const std::chrono::system_clock::time_point& tp) {
-    // 转换为 time_t
-    std::time_t t = std::chrono::system_clock::to_time_t(tp);
-
-    // 转换为本地时间的 tm 结构
-    std::tm tm_snapshot;
-#ifdef _WIN32
-    localtime_s(&tm_snapshot, &t);
-#else
-    localtime_r(&tt, &tm_snapshot);   // POSIX
-#endif
-    // 使用 stringstream 和 put_time 格式化
-    std::ostringstream oss;
-    oss << std::put_time(&tm_snapshot, "%Y-%m-%d %H:%M:%S");
-
-    return oss.str();
-}
 
 QString get_vote_status_display_str(common::VoteStatus status) {
     switch (status) {
@@ -138,5 +121,17 @@ QString get_vote_priority_display_str(common::VotePriority prioirty) {
     default: return QString("");
     }
 }
+QString get_current_time_str() {
+    return QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+}
+
+QString get_vote_item_status_display_str(common::VoteItemStatus item_status) {
+    switch (item_status) {
+    case tang::common::VoteItemStatus::kNotSelected: return QString("未选中");
+    case tang::common::VoteItemStatus::kSelected: return QString("选中啦");
+    default: return QString("未知");
+    }
+}
+
 }   // namespace client
 }   // namespace tang

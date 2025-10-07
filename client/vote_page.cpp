@@ -3,7 +3,7 @@
 #include "ElaMessageBar.h"
 #include "client_global_config.h"
 #include "client_singleton.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 #include "util.h"
 #include "vote_item_view_model.h"
 #include <QJsonArray>
@@ -116,6 +116,7 @@ void VotePage::adjust_vote_history_view() {
 void VotePage::clear_vote_data() {
     // key,value is a better choice!
     // ui->vote_creator_value->clear();
+    ui->vote_creator_value->setText(ClientSingleton::get_cache_user_info_instance().user_name);
     ui->vote_topic_line_edit->clear();
     // ui->voters_combox->clearEditText();
     ui->voters_combox->setCurrentSelection(0);
@@ -243,7 +244,7 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
         return false;
     }
     auto& vote_items = vote_data_model->get_vote_items();
-    qDebug() << "the vote_item is " << vote_items;
+    // qDebug() << "the vote_item is " << vote_items;
     if (vote_items.empty()) {
         this->show_message("还没有添加投票项哦§(*￣▽￣*)§");
         return false;
@@ -275,7 +276,7 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     QJsonArray  json_voter_ids;
     QJsonArray  json_voter_names;
     QStringList voters_names;
-    for (size_t i = 0; i < select_voter_indexes.size(); ++i) {
+    for (auto i : select_voter_indexes) {
         // qDebug() << select_voter_indexes;
         // qDebug() << online_voters.size();
         if (i >= online_voters.size()) {
@@ -283,6 +284,9 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
             return false;
         }
         // not supported unsigned!
+        qDebug() << "voter_name:" << online_voters[i].voter_name
+                 << "voter_id:" << online_voters[i].voter_id;
+
         voters_names.push_back(online_voters[i].voter_name);
         json_voter_ids.append(static_cast<int>(online_voters[i].voter_id));
         json_voter_names.append(online_voters[i].voter_name);
@@ -295,7 +299,7 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
                                         : VoteChoiceType::kMultiChoice;
     json_data["vote_choice_type"] = static_cast<int>(vote_choice_type);
     vote_history.creator          = current_user_info.user_name;
-    vote_history.create_time      = QString(format_time(now).c_str());
+    vote_history.create_time      = get_current_time_str();
     vote_history.vote_topic       = vote_topic;
     vote_history.vote_items       = vote_items;
     vote_history.voters           = voters_names;

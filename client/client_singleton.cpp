@@ -45,5 +45,6 @@ QString& ClientSingleton::get_cache_file_dir() {
     return cache_path;
 }
 
+
 }   // namespace client
 }   // namespace tang

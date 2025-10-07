@@ -30,8 +30,8 @@ void NewDirUi::setup_ui(QWidget* parent) {
 
 
     button_layout->addStretch();
-    ok_button               = new ElaToolButton(parent);
-    QString ok_button_style = R"(
+    ok_button                       = new ElaToolButton(parent);
+    QString         ok_button_style = R"(
         QToolButton#ok_button{
             background-color:#20B2AA;
             font-size: 12px;
@@ -43,13 +43,13 @@ void NewDirUi::setup_ui(QWidget* parent) {
             padding-left: 15px;
         }
     )";
-    constexpr QSize button_size(80,30);
+    constexpr QSize button_size(80, 30);
     ok_button->setFixedSize(button_size);
     ok_button->setText("确定");
     ok_button->setObjectName("ok_button");
     ok_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     ok_button->setStyleSheet(ok_button_style);
-        ok_button->setFont(font);
+    ok_button->setFont(font);
 
     button_layout->addWidget(ok_button);
 

@@ -5,18 +5,24 @@ namespace tang {
 namespace client {
 VoteResultPage::VoteResultPage(QWidget* parent)
     : ElaScrollPage(parent)
-    , ui(new VoteResultPageUi())
-    , vote_result_model(new VoteResultViewModel("投票项", "计数","percent", this)) {
+    , ui(new VoteResultPageUi()) {
+
     ui->setup_ui(this);
     this->setTitleVisible(false);
-    ui->vote_stat_view->setModel(vote_result_model);
+
+    vote_count_model = new VoteItemCountViewModel();
+    ui->vote_stat_view->setModel(vote_count_model);
+
+    vote_result_history_model =
+        new VoteResultHistoryViewModel({"vote id", "创建者", "创建时间", "主题", "类型", "查看"});
+    ui->vote_history_view->setModel(vote_result_history_model);
+
     this->set_test_data();
 }
 
 VoteResultPage::~VoteResultPage() {
     delete ui;
 }
-
 
 void VoteResultPage::set_test_data() {
     // colors for plot
@@ -30,13 +36,21 @@ void VoteResultPage::set_test_data() {
     };
 
     // set datas
-    QList<int> plot_values = {3, 2, 4, 5, 3};
+    QList<uint32_t> plot_values = {3, 2, 4, 5, 3};
 
     // set plot labels
     QList<QString> plot_labels = {"香蕉", "苹果", "橘子", "樱桃", "菠萝"};
 
-    this->vote_result_model->set_vote_items(plot_labels);
-    this->vote_result_model->set_vote_counts(plot_values);
+    auto                                  n = plot_labels.size();
+    static std::vector<VoteItemCountInfo> vote_count_infos;
+    for (size_t i = 0; i < plot_labels.size(); ++i) {
+        VoteItemCountInfo vote_count_info = {
+            plot_labels[i],
+            plot_values[i],
+            i == 3 ? common::VoteItemStatus::kSelected : common::VoteItemStatus::kNotSelected};
+        vote_count_infos.push_back(vote_count_info);
+    }
+    vote_count_model->set_vote_infos({vote_count_infos.data(), vote_count_infos.size()});
     // add series
     ui->vote_img_series->setLabelsVisible(true);
     ui->vote_img_series->setLabelsPosition(QPieSlice::LabelInsideHorizontal);

@@ -1,7 +1,7 @@
 #include "WorkspaceController.h"
 #include "../models/TestVoteUser.h"
 #include "ChatClient.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 #include "common/status.h"
 #include "drogon/utils/Utilities.h"
 #include "util.h"

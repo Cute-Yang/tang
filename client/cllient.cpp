@@ -2,10 +2,13 @@
 #include "client.h"
 #include "client_global_config.h"
 #include "client_singleton.h"
+#include "common/chat_data.h"
 #include "util.h"
 #include <QJsonObject>
 #include <QTimer>
 
+
+using namespace tang::common;
 
 namespace tang {
 namespace client {
@@ -63,6 +66,12 @@ void Client::init_connects() {
         &QWebSocket::textFrameReceived,
         client_main_window.get(),
         [this](const QString& message) { this->process_message_from_other_client(message); });
+
+    QObject::connect(
+        client_main_window->chat_room,
+        &ChatRoom::send_chat_message,
+        client_main_window->chat_room,
+        [this](const QByteArray& message) { this->ws_chat_client->sendBinaryMessage(message); });
 }
 
 
@@ -72,9 +81,22 @@ void Client::process_message_from_other_client(const QString& message) {
         return;
     }
     auto json_data = json_doc->object();
-    qDebug() << "connect from chat " << json_data;
+    if (!json_data.contains(ChatJsonKeys::message_kind_key) ||
+        !json_data[ChatJsonKeys::message_kind_key].isDouble()) {
+        return;
+    }
+    ChatMessageKind message_kind =
+        static_cast<ChatMessageKind>(json_data[ChatJsonKeys::message_kind_key].toInt());
 
-    this->show_message(QString("您收到一条消息 %1").arg(qDebug().toString(json_data)), false);
+    // normal chat msg
+    if (message_kind == ChatMessageKind::kNormalChat) {
+        ChatMessage chat_msg;
+        chat_msg.message   = json_data[NormalChatJsonKeys::message_key].toString();
+        chat_msg.nickname  = json_data[NormalChatJsonKeys::send_user_key].toString();
+        chat_msg.send_time = json_data[NormalChatJsonKeys::send_time_key].toString();
+        this->client_main_window->chat_room->append_chat_message(chat_msg);
+    }
+    // this->show_message(QString("您收到一条消息 %1").arg(qDebug().toString(json_data)), false);
 }
 
 

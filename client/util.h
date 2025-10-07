@@ -38,12 +38,15 @@ QNetworkReply* send_http_req_with_json_data(const QJsonObject& json_data, const 
 
 QNetworkReply* send_http_req_with_form_data(const QUrlQuery& query, const QString& url);
 
-std::string format_time(const std::chrono::system_clock::time_point& tp);
 QString     get_vote_status_display_str(common::VoteStatus status);
 QString get_vote_process_status_display_str(common::VoteProcessStatus status);
 
 QString get_choice_type_display_str(common::VoteChoiceType choice_type);
 
 QString get_vote_priority_display_str(common::VotePriority prioirty);
+
+QString get_current_time_str();
+
+QString get_vote_item_status_display_str(common::VoteItemStatus item_status);
 }   // namespace client
 }   // namespace tang

@@ -1,4 +1,6 @@
 #include "main_window.h"
+#include "ElaDockWidget.h"
+#include "chat_room.h"
 #include "client_singleton.h"
 #include "participate_vote_page.h"
 #include "util.h"
@@ -7,10 +9,10 @@
 #include "workspace_page.h"
 
 
-
 using namespace tang::common;
 namespace tang {
 namespace client {
+
 ClientMainWindow::ClientMainWindow(QWidget* parent)
     : ElaWindow(parent) {
     this->init_page();
@@ -46,6 +48,14 @@ void ClientMainWindow::init_page() {
 
     VoteResultPage* vote_result_page = new VoteResultPage(this);
     addPageNode("投票结果", vote_result_page, ElaIconType::Joystick);
+
+    ElaDockWidget* chat_dock = new ElaDockWidget(QString("聊天室"), this);
+    // chat_dock->setDockLocation(Qt::DockWidgetArea::RightDockWidgetArea);
+     chat_room = new ChatRoom(this);
+
+    chat_dock->setWidget(chat_room);
+    this->addDockWidget(Qt::RightDockWidgetArea, chat_dock);
+    this->resizeDocks({chat_dock}, {300}, Qt::Horizontal);
 }
 }   // namespace client
 }   // namespace tang

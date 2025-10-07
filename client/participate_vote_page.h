@@ -19,9 +19,11 @@ private:
 
     void refresh_participate_vote_history_impl();
 
-    void get_chunk_participate_vote_data_impl(int vote_num, int vote_offset) ;
+    void get_chunk_participate_vote_data_impl(int vote_num, int vote_offset);
 
     void show_message(const QString& message, bool error = true);
+
+    void send_vote_choices_impl();
 
 public:
     ParticipateVotePage(QWidget* parent = nullptr);

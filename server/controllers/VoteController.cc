@@ -3,7 +3,6 @@
 #include "../models/TestVoteItem.h"
 #include "../models/TestVoteParticipateInfo.h"
 #include "../models/TestVoteUser.h"
-#include "ChatClient.h"
 #include "VoteReqJson.h"
 #include "util.h"
 #include <mutex>
@@ -93,55 +92,6 @@ struct VoteJsonValidator {
     }
 };
 
-// make sure ends with \0 for some C function!
-struct SendVoteChoiceJsonValidator {
-    static constexpr const char* user_id_key      = "user_id";
-    static constexpr const char* user_name_key    = "user_name";
-    static constexpr const char* vote_choices_key = "vote_choices";
-    // important!
-    static constexpr const char* vote_id_key = "vote_id";
-
-    static constexpr size_t                           key_num   = 4;
-    static constexpr std::array<const char*, key_num> json_keys = {
-        user_id_key, user_name_key, vote_choices_key, vote_id_key};
-    static StatusCode validate_vote_data(const Json::Value& json_data) {
-
-        for (size_t i = 0; i < json_keys.size(); ++i) {
-            if (!json_data.isMember(json_keys[i])) {
-                {
-                    LOG_ERROR << "Missing expected json:" << json_keys[i];
-                    return StatusCode::kJsonKeyError;
-                }
-            }
-        }
-
-        // valide the type!
-        if (!json_data[user_id_key].isInt()) {
-            return StatusCode::kJsonTypeError;
-        }
-
-        if (!json_data[user_name_key].isString()) {
-            return StatusCode::kJsonTypeError;
-        }
-
-        if (!json_data[vote_choices_key].isArray()) {
-            return StatusCode::kJsonTypeError;
-        }
-
-        for (auto& item : json_data[vote_choices_key]) {
-            if (!item.isInt()) {
-                return StatusCode::kJsonTypeError;
-            }
-        }
-
-        if (!json_data[vote_id_key].isInt()) {
-            return StatusCode::kJsonTypeError;
-        }
-
-        return StatusCode::kSuccess;
-    }
-};
-
 
 bool parse_create_vote_params(const Json::Value& json_data, CreateVoteReqParams& params) {
     params.vote_topic = json_data[VoteJsonValidator::vote_topic_key].asString();
@@ -204,10 +154,11 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
     auto          n_items = params.vote_items.size();
     vote_cache_info.vote_item_ids.reserve(n_items);
     // construct
-    auto& voter_choices = vote_cache_info.voter_choices;
-    auto& voter_ids     = params.voter_ids;
+    auto& voter_infos = vote_cache_info.voter_infos;
+    auto& voter_ids   = params.voter_ids;
     for (auto voter_id : voter_ids) {
-        voter_choices.emplace(voter_id, VoterInfo{{}, true});
+        VoterInfo voter_info{{}, 0, VoteProcessStatus::kReady};
+        voter_infos.emplace(voter_id, voter_info);
     }
     vote_cache_info.vote_creator_id = params.vote_creator_id;
     //*************************************************************** */
@@ -236,23 +187,26 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
         auto& vote_item_ids = vote_cache_info.vote_item_ids;
         vote_item_ids.resize(n_items, 0);
         auto& vote_items = params.vote_items;
+        // for the vote items...
         for (size_t i = 0; i < n_items; ++i) {
             VoteItem insert_vote_item;
             insert_vote_item.setVoteItem(vote_items[i]);
             insert_vote_item.setVoteId(vote_id);
-            insert_vote_item.setVoteCount(0);
+            insert_vote_item.setVoteItemCount(0);
             vote_item_mapper.insert(insert_vote_item);
-            vote_item_ids[i] = insert_vote_item.getValueOfVoteId();
+            vote_item_ids[i] = insert_vote_item.getValueOfId();
         }
-
+        // for the voters...
         size_t n_voter = params.voter_ids.size();
-
         for (size_t i = 0; i < n_voter; ++i) {
             VoteParticipateInfo insert_participate;
             insert_participate.setVoteId(vote_id);
             insert_participate.setVoterId(params.voter_ids[i]);
             insert_participate.setVoterName(params.voter_names[i]);
             vote_participate_mapper.insert(insert_participate);
+            auto  participate_id      = insert_participate.getValueOfId();
+            auto& voter_info          = vote_cache_info.voter_infos.at(params.voter_ids[i]);
+            voter_info.participate_id = participate_id;
         }
 
         if (auto ret = this->add_vote_data_to_cache(std::move(vote_cache_info), vote_id);
@@ -265,12 +219,7 @@ void VoteController::create_vote(const HttpRequestPtr&                         r
         ret["vote_id"] = vote_id;
         auto resp      = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
-        // the notify
-        auto&       chat_client = ChatClientCollections::get_instance();
-        Json::Value gg;
-        gg["creator"]    = params.vote_creator;
-        gg["vote_topic"] = params.vote_topic;
-        chat_client.send_message(gg);
+
     } catch (const orm::DrogonDbException& ex) {
         LOG_ERROR << "Fail to insert data with error:" << ex.base().what();
         trans->rollback();
@@ -355,82 +304,88 @@ void VoteController::remove_vote(const HttpRequestPtr&                         r
     // change to vote_status is better!
 }
 
-void VoteController::push_vote_choice(const HttpRequestPtr&                         req,
-                                      std::function<void(const HttpResponsePtr&)>&& callback) {
+
+SendChoicesProcessResult VoteController::process_voter_choices_impl(
+    const SendVoteChoicesParams& params) {
+    SendChoicesProcessResult    process_result;
+    std::lock_guard<std::mutex> guard(this->vote_mt);
+    if (!vote_datas.contains(params.vote_id)) {
+        LOG_ERROR << "The vote_id:" << params.vote_id << " is not exist!";
+        process_result.ret = StatusCode::KVoteIdNotFound;
+        return process_result;
+    }
+    auto& vote_cache_info = vote_datas[params.vote_id];
+    if (vote_cache_info.choice_type == VoteChoiceType::kSingleChoice &&
+        params.voter_choices.size() != 1) {
+        LOG_ERROR << "The vote data,vote_id:" << params.vote_id
+                  << " is single choice type,but get multi choices which is unexpeced!";
+        process_result.ret = StatusCode::kVoteChoceTypeMismatch;
+        return process_result;
+    }
+    int n_vote_item = vote_cache_info.vote_item_ids.size();
+    for (auto choice : params.voter_choices) {
+        if (choice < 0 || choice >= n_vote_item) {
+            process_result.ret = StatusCode::kInvalidVoteChoice;
+            return process_result;
+        }
+    }
+    if (!vote_cache_info.voter_infos.contains(params.voter_id)) {
+        LOG_ERROR << "the voter is not valid!";
+        process_result.ret = StatusCode::kVoterIsNotInclude;
+        return process_result;
+    }
+    LOG_INFO << "add to cache...";
+    auto& voter_infos = vote_cache_info.voter_infos;
+    if (!voter_infos.contains(params.voter_id)) {
+        process_result.ret = StatusCode::kVoterIsNotInclude;
+        return process_result;
+    }
+    auto& voter_info   = voter_infos[params.voter_id];
+    voter_info.choices = std::move(params.voter_choices);
+    vote_cache_info.n_finished++;
+    process_result.participate_id = voter_info.participate_id;
+    process_result.finished = vote_cache_info.n_finished == vote_cache_info.voter_infos.size();
+    return process_result;
+}
+
+void VoteController::send_vote_choices(const HttpRequestPtr&                         req,
+                                       std::function<void(const HttpResponsePtr&)>&& callback) {
     auto json_data = req->getJsonObject();
     if (json_data == nullptr) {
         LOG_ERROR << "Fail to get json data";
         make_response_and_return(StatusCode::kJsonParamIsNull, callback);
     }
-    // valid data the json
-    if (auto ret = SendVoteChoiceJsonValidator::validate_vote_data(*json_data);
-        ret != StatusCode::kSuccess) {
+    SendVoteChoicesParams params;
+    if (auto ret = parse_send_vote_choices_req(*json_data, params); ret != StatusCode::kSuccess) {
         make_response_and_return(ret, callback);
     }
 
-    std::vector<int> vote_choices;
-    uint32_t         vote_id;
-    uint32_t         voter_id;
-    try {
-        // std::string user_name =
-        // (*json_data)[SendVoteChoiceJsonValidator::user_name_key].asString();
-        voter_id = (*json_data)[SendVoteChoiceJsonValidator::user_id_key].asUInt();
-
-        vote_id = (*json_data)[SendVoteChoiceJsonValidator::vote_id_key].asInt();
-        if (vote_id <= 0) {
-            LOG_ERROR << "invalid vote id:" << vote_id;
-            make_response_and_return(StatusCode::kInvalidVoteid, callback);
-        }
-        auto n_choice = (*json_data)[SendVoteChoiceJsonValidator::vote_choices_key].size();
-        if (n_choice == 0) {
-            LOG_ERROR << "empty choices for vote_id:" << vote_id << "???";
-            make_response_and_return(StatusCode::kEmptyVoteChoice, callback);
-        }
-
-        vote_choices.reserve(n_choice);
-        for (auto& item : (*json_data)[SendVoteChoiceJsonValidator::vote_choices_key]) {
-            vote_choices.push_back(item.asInt());
-        }
-
-    } catch (const Json::Exception& ex) {
-        LOG_ERROR << "Json parse error:" << ex.what();
-        make_response_and_return(StatusCode::kParseJsonError, callback);
+    auto process_ret = process_voter_choices_impl(params);
+    if (process_ret.ret != StatusCode::kSuccess) {
+        make_response_and_return(process_ret.ret, callback);
     }
-    bool vote_is_finished = false;
-    {
-        std::lock_guard<std::mutex> guard(this->vote_mt);
-        if (!vote_datas.contains(vote_id)) {
-            LOG_ERROR << "The vote_id:" << vote_id << " is not exist!";
-            make_response_and_return(StatusCode::KVoteIdNotFound, callback);
-        }
-        auto& vote_data = vote_datas[vote_id];
-        if (vote_data.choice_type == VoteChoiceType::kSingleChoice && vote_choices.size() != 1) {
-            LOG_ERROR << "The vote data,vote_id:" << vote_id
-                      << " is single choice type,but get multi choices which is unexpeced!";
-            make_response_and_return(StatusCode::kVoteChoceTypeMismatch, callback);
-        }
-        int n_vote_item = vote_data.vote_item_ids.size();
-        for (auto choice : vote_choices) {
-            if (choice < 0 || choice >= n_vote_item) {
-                make_response_and_return(StatusCode::kInvalidVoteChoice, callback);
-            }
-        }
-        if (!vote_data.voter_choices.contains(voter_id)) {
-            LOG_ERROR << "the voter is not valid!";
-            make_response_and_return(StatusCode::kVoterIsNotInclude, callback);
-        }
-        vote_data.voter_choices[voter_id].choices = std::move(vote_choices);
-        vote_data.n_finished++;
-        vote_is_finished = (vote_data.n_finished == vote_data.voter_choices.size());
+    // then update
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+    orm::Mapper<VoteParticipateInfo> participate_info_mapper(db_client_ptr);
+    try {
+        LOG_INFO << "update the participate id to processed ..." << process_ret.participate_id;
+        participate_info_mapper.updateBy({VoteParticipateInfo::Cols::_vote_process_status},
+                                         orm::Criteria(VoteParticipateInfo::Cols::_id,
+                                                       orm::CompareOperator::EQ,
+                                                       process_ret.participate_id),
+                                         static_cast<int>(VoteProcessStatus::kProcessed));
+    } catch (const orm::DrogonDbException& ex) {
+        LOG_ERROR << ex.base().what();
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
     }
     make_response_only(StatusCode::kSuccess, callback);
-
-    // do somework while finished!
-    if (vote_is_finished) {
-        call_when_vote_finished(vote_id);
+    if (process_ret.finished) {
+        call_when_vote_finished(params.vote_id);
     }
 }
-
 
 StatusCode VoteController::add_vote_data_to_cache(VoteCacheInfo&& cache_info,
                                                   uint32_t        vote_id) noexcept {
@@ -465,7 +420,7 @@ bool VoteController::compute_vote_result(const VoteCacheInfo& cache_info,
         LOG_ERROR << "the db client is nullptr!";
         return false;
     }
-    auto n_voter = cache_info.voter_choices.size();
+    auto n_voter = cache_info.voter_infos.size();
     if (n_voter == 0) {
         return false;
     }
@@ -473,7 +428,7 @@ bool VoteController::compute_vote_result(const VoteCacheInfo& cache_info,
     std::vector<uint32_t> voter_ids;
     voter_ids.reserve(n_voter);
     // for query
-    for (auto& [k, _] : cache_info.voter_choices) {
+    for (auto& [k, _] : cache_info.voter_infos) {
         voter_ids.push_back(k);
     }
 
@@ -491,10 +446,11 @@ bool VoteController::compute_vote_result(const VoteCacheInfo& cache_info,
         return false;
     }
 
-    auto& vote_counts = vote_result.counts;
-    auto& ret         = vote_result.ret;
-    auto  n_items     = cache_info.vote_item_ids.size();
+    auto& vote_counts       = vote_result.counts;
+    auto& vote_items_status = vote_result.vote_items_status;
+    auto  n_items           = cache_info.vote_item_ids.size();
     vote_counts.resize(n_items, 0);
+    vote_items_status.resize(n_items, static_cast<uint8_t>(VoteItemStatus::kNotSelected));
     auto   vip_vote_counts    = vote_counts;
     size_t n_maximum_priority = 0;
     for (size_t i = 0; i < n_voter; ++i) {
@@ -506,14 +462,14 @@ bool VoteController::compute_vote_result(const VoteCacheInfo& cache_info,
             continue;
         }
 
-        auto& vote_cache_info = cache_info.voter_choices.at(voter_id);
+        auto& voter_info = cache_info.voter_infos.at(voter_id);
         // vip
-        for (auto& choice : vote_cache_info.choices) {
+        for (auto& choice : voter_info.choices) {
             vote_counts[choice]++;
         }
         if (vote_priority == static_cast<uint8_t>(VotePriority::kMaximum)) {
             ++n_maximum_priority;
-            for (auto& choice : vote_cache_info.choices) {
+            for (auto& choice : voter_info.choices) {
                 vip_vote_counts[choice]++;
             }
         }
@@ -531,11 +487,12 @@ bool VoteController::compute_vote_result(const VoteCacheInfo& cache_info,
     // maybe many max values!
     for (size_t i = 0; i < vote_counts.size(); ++i) {
         if (vote_counts[i] == max_count) {
-            ret.push_back(i);
+            vote_items_status[i] = static_cast<uint8_t>(VoteItemStatus::kSelected);
         }
     }
     return true;
 }
+
 
 bool VoteController::call_when_vote_finished(uint32_t vote_id) {
     VoteResult            vote_result;
@@ -568,17 +525,17 @@ bool VoteController::call_when_vote_finished(uint32_t vote_id) {
     orm::Mapper<VoteItem> vote_item_mapper(trans);
     try {
         auto cond = orm::Criteria(VoteData::Cols::_vote_id, orm::CompareOperator::EQ, vote_id);
-        auto n    = vote_data_mapper.updateBy(
+        vote_data_mapper.updateBy(
             {VoteData::Cols::_vote_status}, cond, static_cast<uint8_t>(VoteStatus::kFinished));
-        if (n != 1) {
-            LOG_ERROR << "fail to update vote...";
-            return false;
-        }
+        // update the status
         for (size_t i = 0; i < vote_item_ids.size(); ++i) {
             auto cond =
                 orm::Criteria(VoteItem::Cols::_id, orm::CompareOperator::EQ, vote_item_ids[i]);
-            auto n = vote_item_mapper.updateBy(
-                {VoteItem::Cols::_vote_count}, cond, vote_result.counts[i]);
+            vote_item_mapper.updateBy(
+                {VoteItem::Cols::_vote_item_count, VoteItem::Cols::_vote_item_status},
+                cond,
+                vote_result.counts[i],
+                vote_result.vote_items_status[i]);
         }
     } catch (const orm::DrogonDbException& ex) {
         LOG_ERROR << ex.base().what();
@@ -783,11 +740,16 @@ void VoteController::get_chunk_participate_vote_data(
         make_response_and_return(StatusCode::kInvalidDatabase, callback);
     }
 
-    // 2.update vote finished!
-    orm::Mapper<VoteData>            vote_data_mapper(db_client_ptr);
+
+    LOG_INFO << "the select voter id is " << params.voter_id;
+    orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
+    vote_data_mapper.orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
     orm::Mapper<VoteItem>            vote_item_mapper(db_client_ptr);
     orm::Mapper<VoteParticipateInfo> vote_participate_mapper(db_client_ptr);
-    vote_participate_mapper.limit(params.vote_num).offset(params.vote_offset);
+    vote_participate_mapper.orderBy(VoteParticipateInfo::Cols::_vote_id, orm::SortOrder::DESC)
+        .limit(params.vote_num)
+        .offset(params.vote_offset);
+
     auto        ret = make_json_from_status_code(StatusCode::kSuccess);
     Json::Value json_vote_datas(Json::arrayValue);
     try {
@@ -797,7 +759,7 @@ void VoteController::get_chunk_participate_vote_data(
             orm::Criteria(VoteParticipateInfo::Cols::_vote_status,
                           orm::CompareOperator::In,
                           params.vote_status) &&
-            orm::Criteria(VoteParticipateInfo::Cols::_processed,
+            orm::Criteria(VoteParticipateInfo::Cols::_vote_process_status,
                           orm::CompareOperator::In,
                           params.vote_process_status);
 
@@ -833,9 +795,11 @@ void VoteController::get_chunk_participate_vote_data(
             auto json_vote_data  = vote_datas[i].toJson();
             auto json_vote_items = Json::Value(Json::arrayValue);
 
-            auto vote_id                          = vote_datas[i].getValueOfVoteId();
-            auto index                            = vote_id_2_related.at(vote_id);
-            json_vote_data["vote_process_status"] = related_vote_datas[index].getValueOfProcessed();
+            auto vote_id = vote_datas[i].getValueOfVoteId();
+            LOG_INFO << vote_id;
+            auto index = vote_id_2_related.at(vote_id);
+            json_vote_data["vote_process_status"] =
+                related_vote_datas[index].getValueOfVoteProcessStatus();
 
             if (group_by_vote_ids.contains(vote_id)) {
                 auto& vv = group_by_vote_ids.at(vote_id);
@@ -874,6 +838,7 @@ void VoteController::get_participate_vote_num(
     }
 
     orm::Mapper<VoteParticipateInfo> vote_mapper(db_client_ptr);
+    LOG_INFO << "ggggggggggg" << params.voter_id;
 
     try {
         auto cond =
@@ -882,7 +847,7 @@ void VoteController::get_participate_vote_num(
             orm::Criteria(VoteParticipateInfo::Cols::_vote_status,
                           orm::CompareOperator::In,
                           params.vote_status) &&
-            orm::Criteria(VoteParticipateInfo::Cols::_processed,
+            orm::Criteria(VoteParticipateInfo::Cols::_vote_process_status,
                           orm::CompareOperator::In,
                           params.vote_process_status);
         auto count        = vote_mapper.count(cond);

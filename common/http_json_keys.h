@@ -63,8 +63,19 @@ struct GetVoteNumReqKeys {
     static constexpr std::array<const char*, 2> keys            = {voter_id_key, vote_status_key};
 };
 
-struct GetParticipateNumReqKeys:public GetVoteNumReqKeys{
+struct GetParticipateNumReqKeys : public GetVoteNumReqKeys {
     static constexpr const char* vote_process_status_key = "vote_process_status";
 };
+
+
+struct SendVoteChoicesReqKeys {
+    static constexpr const char* voter_id_key     = "voter_id";
+    static constexpr const char* vote_choices_key = "vote_choices";
+    // important!
+    static constexpr const char*                vote_id_key = "vote_id";
+    constexpr static std::array<const char*, 3> keys = {vote_id_key, voter_id_key, vote_choices_key};
+};
+
+
 }   // namespace common
 }   // namespace tang

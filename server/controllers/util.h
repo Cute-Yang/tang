@@ -37,13 +37,13 @@ common::FileKind get_file_kind(const std::filesystem::path& fp);
 
 void to_lower(char* s, size_t len);
 
+std::string get_current_time_str();
+std::string format_time(const std::chrono::system_clock::time_point& tp);
 std::string get_file_last_time_str(const std::filesystem::directory_entry& p);
 
 
 [[nodiscard]]
 common::StatusCode get_full_path(const std::string& file_path, std::filesystem::path& full_path);
-
-
 
 template<class T>
 [[nodiscard]]

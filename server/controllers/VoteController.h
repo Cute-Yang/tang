@@ -1,20 +1,24 @@
 #pragma once
 
+#include "VoteReqJson.h"
 #include "common/status.h"
 #include <drogon/HttpController.h>
 #include <map>
+
 
 using namespace drogon;
 
 
 struct VoterInfo {
     std::vector<int> choices;
-    bool             valid{true};
+    // need use this to update datq
+    uint64_t                        participate_id;
+    tang::common::VoteProcessStatus process_status;
 };
 
 struct VoteResult {
-    std::vector<int> counts;
-    std::vector<int> ret;
+    std::vector<int>     counts;
+    std::vector<uint8_t> vote_items_status;
 };
 
 struct VoteItemInfo {
@@ -26,8 +30,8 @@ struct VoteItemInfo {
 struct VoteCacheInfo {
     std::vector<uint64_t> vote_item_ids;
     // k = voter_id cache the voter name and their choice!
-    std::map<uint32_t, VoterInfo> voter_choices;
-    uint32_t vote_creator_id;
+    std::map<uint32_t, VoterInfo> voter_infos;
+    uint32_t                      vote_creator_id;
     uint32_t                      n_finished{0};
     tang::common::VoteChoiceType  choice_type;
     // tang::common::VoteStatus      vote_status;
@@ -44,6 +48,11 @@ struct CreateVoteReqParams {
     tang::common::VoteChoiceType choice_type;
 };
 
+struct SendChoicesProcessResult {
+    tang::common::StatusCode ret;
+    uint64_t                 participate_id;
+    bool                     finished;
+};
 
 // the database should add one column
 //  means wheter the vote is valid!
@@ -55,8 +64,8 @@ public:
     void remove_vote(const HttpRequestPtr&                         req,
                      std::function<void(const HttpResponsePtr&)>&& callback);
 
-    void push_vote_choice(const HttpRequestPtr&                         req,
-                          std::function<void(const HttpResponsePtr&)>&& callback);
+    void send_vote_choices(const HttpRequestPtr&                         req,
+                           std::function<void(const HttpResponsePtr&)>&& callback);
 
     void get_online_voters(const HttpRequestPtr&                         req,
                            std::function<void(const HttpResponsePtr&)>&& callback);
@@ -75,7 +84,7 @@ public:
     METHOD_LIST_BEGIN
     ADD_METHOD_TO(VoteController::create_vote, "/api/v1/create_vote", Post);
     ADD_METHOD_TO(VoteController::remove_vote, "/api/v1/remove_vote", Post);
-    ADD_METHOD_TO(VoteController::push_vote_choice, "/api/v1/push_vote_choice", Post);
+    ADD_METHOD_TO(VoteController::send_vote_choices, "/api/v1/send_vote_choices", Post);
     ADD_METHOD_TO(VoteController::get_online_voters, "/api/v1/get_online_voters", Get, Post);
     ADD_METHOD_TO(VoteController::get_vote_num, "/api/v1/get_vote_num", Post);
     ADD_METHOD_TO(VoteController::get_chunk_vote_data, "/api/v1/get_chunk_vote_data", Post);
@@ -109,4 +118,8 @@ private:
                              VoteResult&          vote_result) const noexcept;
 
     bool call_when_vote_finished(uint32_t vote_id);
+
+
+    SendChoicesProcessResult process_voter_choices_impl(
+        const tang::server::SendVoteChoicesParams& params);
 };

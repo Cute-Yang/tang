@@ -1,13 +1,18 @@
 #pragma once
 #include "ElaWindow.h"
+#include "chat_room.h"
+
 namespace tang {
 namespace client {
+class Client;
 class ClientMainWindow : public ElaWindow {
     Q_OBJECT
 private:
-    void init_page();
+    ChatRoom* chat_room;
+    void      init_page();
 
 public:
+    friend class Client;
     ClientMainWindow(QWidget* parent = nullptr);
     ~ClientMainWindow() {}
 

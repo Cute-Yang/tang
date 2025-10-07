@@ -26,6 +26,7 @@ private:
     QString participate_vote_num_http_url;
     QString chunk_participate_vote_data_http_url;
     QString ws_chat_client_url;
+    QString send_vote_choices_http_url;
 
 
     void format_http_urls();
@@ -54,6 +55,8 @@ public:
     const QString& get_participate_chunk_vote_data_url();
 
     QString get_ws_chat_client_url(uint32_t user_id, const QString& user_name);
+
+    const QString& get_send_vote_choices_url();
 };
 }   // namespace client
 }   // namespace tang

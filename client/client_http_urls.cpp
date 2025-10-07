@@ -46,6 +46,9 @@ void ClientHttpUrls::format_http_urls() {
         QString("http://%1:%2/api/v1/get_chunk_participate_vote_data").arg(host).arg(port);
 
     ws_chat_client_url = QString("ws://localhost:9000/api/v1/chat?user_id=%1&user_name=%2");
+
+    send_vote_choices_http_url =
+        QString("http://%1:%2/api/v1/send_vote_choices").arg(host).arg(port);
 }
 
 
@@ -113,6 +116,11 @@ const QString& ClientHttpUrls::get_participate_chunk_vote_data_url() {
 QString ClientHttpUrls::get_ws_chat_client_url(uint32_t user_id, const QString& user_name) {
     return ws_chat_client_url.arg(user_id).arg(user_name);
 }
+
+const QString& ClientHttpUrls::get_send_vote_choices_url() {
+    return send_vote_choices_http_url;
+}
+
 
 }   // namespace client
 }   // namespace tang

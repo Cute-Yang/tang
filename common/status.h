@@ -167,5 +167,8 @@ enum class VotePriority : uint8_t {
 
 constexpr std::string_view public_workspace_name = "公共空间";
 
+
+enum class VoteItemStatus : uint8_t { kNotSelected = 0, kSelected = 1, count };
+
 }   // namespace common
 }   // namespace tang

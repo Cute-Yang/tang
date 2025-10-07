@@ -1,7 +1,6 @@
 #include "VoteReqJson.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 // #include "json/json.h"
-
 
 using namespace tang::common;
 namespace tang {
@@ -165,7 +164,36 @@ common::StatusCode parse_get_participate_vote_num_req(const Json::Value&        
     }
     return StatusCode::kSuccess;
 }
+common::StatusCode parse_send_vote_choices_req(const Json::Value&     json_data,
+                                               SendVoteChoicesParams& params) {
+    for (auto key : SendVoteChoicesReqKeys::keys) {
+        if (!json_data.isMember(key)) {
+            return StatusCode::kJsonKeyError;
+        }
+    }
+    auto& json_vote_id = json_data[SendVoteChoicesReqKeys::vote_id_key];
+    if (!json_vote_id.isUInt()) {
+        return StatusCode::kJsonTypeError;
+    }
+    params.vote_id = json_vote_id.asUInt();
 
+    auto& json_voter_id = json_data[SendVoteChoicesReqKeys::voter_id_key];
+    if (!json_voter_id.isUInt()) {
+        return StatusCode::kJsonTypeError;
+    }
+    params.voter_id = json_voter_id.asUInt();
+
+    auto& json_voter_choices = json_data[SendVoteChoicesReqKeys::vote_choices_key];
+    if (!json_voter_choices.isArray()) {
+        return StatusCode::kJsonTypeError;
+    }
+    auto& voter_choices = params.voter_choices;
+    voter_choices.reserve(json_voter_choices.size());
+    for (auto& c : json_voter_choices) {
+        voter_choices.push_back(c.asUInt());
+    }
+    return StatusCode::kSuccess;
+}
 
 }   // namespace server
 }   // namespace tang

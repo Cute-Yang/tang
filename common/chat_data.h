@@ -3,21 +3,18 @@
 // this header define the chat data between sever and client!
 namespace tang {
 namespace common {
-enum class ChatMessageKind {
-    // only notify other some one create a new vote!
-    kCreateNewVoteAndNotifyAll = 0,
-    // notify and send the vote item to other people!
-    kCreateNewVote = 1,
-    // the creator remove the vote!
-    kRemoveVoteAndNotifyAll = 2,
-    // and set disabled to client this is invalid...
-    kRemoveVote                 = 3,
-    kVoteIsFinishedAndNotifyAll = 4,
-    kVoteIsFinished             = 5,
-    kFriendIsOnline             = 7,
-    kFriendIsOffline            = 8,
+enum class ChatMessageKind { kNormalChat = 0, kNotifyOtherVoter = 1, kNotifyUserStatus = 2 };
+
+struct ChatJsonKeys {
+    static constexpr const char* message_kind_key = "message_kind";
+};
+
+struct NormalChatJsonKeys : public ChatJsonKeys {
+    static constexpr const char* message_key = "message";
+    static constexpr const char* send_user_key = "send_user";
+    static constexpr const char* send_time_key = "send_time";
 };
 
 
-}
+}   // namespace common
 }   // namespace tang

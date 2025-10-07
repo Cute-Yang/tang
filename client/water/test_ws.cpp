@@ -24,6 +24,5 @@ int main(int argc, char* argv[]) {
 
     // 连接到测试服务器（回显服务）
     socket.open(QUrl("ws://localhost:9000/api/v1/chat?user_id=32&user_name=戈薇"));
-
     return app.exec();
 }

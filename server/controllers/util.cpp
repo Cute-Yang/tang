@@ -1,6 +1,7 @@
 #include "util.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 #include "drogon/utils/Utilities.h"
+#include "common/status.h"
 
 
 using namespace tang::common;
@@ -63,7 +64,6 @@ void to_lower(char* s, size_t len) {
     }
 }
 
-
 common::FileKind get_file_kind(const std::filesystem::path& fp) {
     // only file_entry has the file...
     std::error_code ec;
@@ -105,23 +105,34 @@ common::FileKind get_file_kind(const std::filesystem::path& fp) {
     return common::FileKind::kOthers;
 }
 
+
+std::string get_current_time_str() {
+    auto now = std::chrono::system_clock::now();
+    return format_time(now);
+}
+
 std::string get_file_last_time_str(const std::filesystem::directory_entry& p) {
     auto file_time = p.last_write_time();
-    auto sys_time  = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+    auto tp        = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
         file_time - std::filesystem::file_time_type::clock::now() +
         std::chrono::system_clock::now());
-    std::time_t tt = std::chrono::system_clock::to_time_t(sys_time);
+    return format_time(tp);
+}
+std::string format_time(const std::chrono::system_clock::time_point& tp) {
+    // 转换为 time_t
+    std::time_t t = std::chrono::system_clock::to_time_t(tp);
 
-    // 使用 localtime_s (Windows) 或 localtime_r (Linux) 进行线程安全转换
+    // 转换为本地时间的 tm 结构
     std::tm tm_snapshot;
 #ifdef _WIN32
-    localtime_s(&tm_snapshot, &tt);
+    localtime_s(&tm_snapshot, &t);
 #else
     localtime_r(&tt, &tm_snapshot);   // POSIX
 #endif
-
+    // 使用 stringstream 和 put_time 格式化
     std::ostringstream oss;
-    oss << std::put_time(&tm_snapshot, "%Y-%m-%d %H:%M:%S");   // 格式：2025-09-18 20:52:00
+    oss << std::put_time(&tm_snapshot, "%Y-%m-%d %H:%M:%S");
+
     return oss.str();
 }
 

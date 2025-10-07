@@ -142,12 +142,12 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // central_layout->addWidget(spliter);
 
     vote_stat_view = new ElaTableView(page);
-    vote_stat_view->setMinimumWidth(160);
-    vote_stat_view->setMaximumWidth(480);
+    // vote_stat_view->setMinimumWidth(160);
+    // vote_stat_view->setMaximumWidth(480);
     vote_stat_view->verticalHeader()->setFont(font);
     vote_stat_view->setAlternatingRowColors(true);
     vote_stat_view->horizontalHeader()->setFont(font);
-    vote_stat_view->setIconSize(QSize(21,21));
+    vote_stat_view->setIconSize(QSize(21, 21));
     vote_stat_view->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     vote_stat_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     vote_stat_view->setFont(font);

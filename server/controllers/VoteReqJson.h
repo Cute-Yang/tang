@@ -25,6 +25,13 @@ struct ParticipateVoteNumReqParams : public VoteNumReqParams {
     std::vector<uint8_t> vote_process_status;
 };
 
+struct SendVoteChoicesParams {
+    std::vector<int> voter_choices;
+    uint32_t         voter_id;
+    uint32_t vote_id;
+};
+
+
 common::StatusCode parse_chunk_vote_data_req(const Json::Value&  json_data,
                                              ChunkVoteReqParams& params);
 common::StatusCode parse_chunk_participate_vote_data_req(const Json::Value&             json_data,
@@ -32,7 +39,13 @@ common::StatusCode parse_chunk_participate_vote_data_req(const Json::Value&     
 common::StatusCode parse_get_vote_num_req(const Json::Value& json_data, VoteNumReqParams& params);
 
 
-common::StatusCode parse_get_participate_vote_num_req(const Json::Value& json_data, ParticipateVoteNumReqParams& params);
+common::StatusCode parse_get_participate_vote_num_req(const Json::Value&           json_data,
+                                                      ParticipateVoteNumReqParams& params);
+
+
+
+common::StatusCode parse_send_vote_choices_req(const Json::Value&     json_dataa,
+                                               SendVoteChoicesParams& params);
 
 }   // namespace server
 }   // namespace tang

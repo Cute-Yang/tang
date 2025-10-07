@@ -1,6 +1,6 @@
 #include "SignController.h"
 #include "../models/TestVoteUser.h"
-#include "common/response_keys.h"
+#include "common/http_json_keys.h"
 #include "common/status.h"
 #include "util.h"
 
@@ -9,7 +9,6 @@ using namespace tang::common;
 using namespace tang::server::utils;
 using VoteUser = drogon_model::vote::TestVoteUser;
 // Add definition of your processing function here
-
 
 void try_to_create_workspace(uint32_t user_id) {
     // try to create a workspace dir!

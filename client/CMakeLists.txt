@@ -90,6 +90,10 @@ set(
     "water/test_client.cpp"
     "water/test_pie_plot.cpp"
     "water/test_ws.cpp"
+    "water/test_chat_ui.cpp"
+    "water/test_chat_ui_v2.cpp"
+    # "water/test_chat_ui_v3.cpp"
+    "water/test_chat.cpp"
 )
 
 foreach(source ${client_test_sources})

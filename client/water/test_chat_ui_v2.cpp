@@ -1,0 +1,176 @@
+#include <QApplication>
+#include <QDateTime>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QListWidget>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QTextEdit>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QWidget>
+
+
+// 每条消息的自定义控件
+class ChatMessageWidget : public QWidget {
+    Q_OBJECT
+
+public:
+    ChatMessageWidget(const QString& nickname, const QString& text, const QString& avatarPath,
+                      bool isSelf, QWidget* parent = nullptr)
+        : QWidget(parent) {
+
+        // 主布局
+        QHBoxLayout* mainLayout = new QHBoxLayout(this);
+        mainLayout->setContentsMargins(8, 4, 8, 4);
+        mainLayout->setSpacing(8);
+
+        // 头像
+        QLabel* avatarLabel = new QLabel;
+
+        avatarLabel->setFixedSize(36, 36);
+        avatarLabel->setStyleSheet("QLabel { border-radius: 18px; border: 1px solid #ddd; }");
+        QPixmap avatar(avatarPath);
+        if (!avatar.isNull()) {
+            avatarLabel->setPixmap(
+                avatar.scaled(36, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        } else {
+            avatarLabel->setText("A");
+            avatarLabel->setAlignment(Qt::AlignCenter);
+        }
+
+        // 右侧：时间 + 昵称 + 气泡
+        QVBoxLayout* rightLayout = new QVBoxLayout;
+        rightLayout->setSpacing(2);
+
+        QLabel* timeLabel = new QLabel(QDateTime::currentDateTime().toString("HH:mm"));
+        timeLabel->setStyleSheet("color: #999; font-size: 10px;");
+        timeLabel->setMaximumWidth(120);
+
+        QLabel* nameLabel = new QLabel(nickname);
+        nameLabel->setStyleSheet("color: #555; font-size: 12px;");
+        nameLabel->setMaximumWidth(120);
+
+        QTextEdit* bubble = new QTextEdit;
+        bubble->setPlainText(text);
+        bubble->setReadOnly(true);
+        bubble->setFrameStyle(QFrame::NoFrame);
+        bubble->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        bubble->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        bubble->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+        // 设置最大宽度以控制换行（微信气泡最大宽度约 240）
+        bubble->document()->setTextWidth(240);
+        QSizeF docSize = bubble->document()->size();
+        bubble->setFixedHeight(docSize.height() + 10);   // + padding
+
+        // 微信绿色
+        QString bgColor   = isSelf ? "#07C160" : "#f0f0f0";
+        QString textColor = isSelf ? "white" : "black";
+
+        bubble->setStyleSheet(QString(R"(
+            QTextEdit {
+                background-color: %1;
+                color: %2;
+                padding: 8px;
+                border-radius: 8px;
+                font-size: 14px;
+                border: none;
+            }
+        )")
+                                  .arg(bgColor, textColor));
+
+        rightLayout->addWidget(timeLabel);
+        rightLayout->addWidget(nameLabel);
+        rightLayout->addWidget(bubble);
+
+        if (isSelf) {
+            mainLayout->addStretch();
+            mainLayout->addLayout(rightLayout);
+            mainLayout->addWidget(avatarLabel);
+        } else {
+            mainLayout->addWidget(avatarLabel);
+            mainLayout->addLayout(rightLayout);
+            mainLayout->addStretch();
+        }
+
+        // ⚠️ 关键：强制布局更新，确保 sizeHint 正确
+        this->adjustSize();
+        this->setMinimumWidth(100);
+    }
+
+    // 提供正确大小提示
+    QSize sizeHint() const override {
+        QSize sz = QWidget::sizeHint();
+        return QSize(sz.width(), qMax(sz.height(), 60));   // 最小高度
+    }
+};
+
+int main(int argc, char* argv[]) {
+    QApplication app(argc, argv);
+
+    QWidget window;
+    window.resize(380, 600);
+    window.setWindowTitle("微信风格聊天界面 - 终极优化版");
+    window.setStyleSheet("background: white;");
+
+    auto* listWidget = new QListWidget(&window);
+    listWidget->setStyleSheet("QListWidget { background: white; border: none; }"
+                              "QListWidget::item { border: none; }");
+    listWidget->setVerticalScrollMode(QListWidget::ScrollPerPixel);
+    listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    auto* button = new QPushButton("发送新消息", &window);
+
+    auto* layout = new QVBoxLayout(&window);
+    layout->addWidget(listWidget);
+    layout->addWidget(button);
+
+    window.setLayout(layout);
+
+    // 添加消息函数
+    auto addMessage = [&](const QString& nick,
+                          const QString& text,
+                          const QString& avatar,
+                          bool           isSelf) {
+        auto* item = new QListWidgetItem(listWidget);
+        item->setFlags(Qt::NoItemFlags);   // 禁用选中样式
+
+        auto* widget = new ChatMessageWidget(nick, text, avatar, isSelf);
+        listWidget->setItemWidget(item, widget);
+
+        // ⚠️ 关键：更新 item 高度
+        QTimer::singleShot(0, [=]() {
+            widget->adjustSize();                                   // 确保布局完成
+            item->setSizeHint(widget->sizeHint() + QSize(0, 10));   // 留点边距
+            listWidget->verticalScrollBar()->setValue(listWidget->verticalScrollBar()->maximum());
+        });
+    };
+
+    // 测试消息
+    addMessage("小明", "你好啊，今天过得怎么样？", ":/avatar_other.png", false);
+    addMessage("我",
+               "我很好，谢谢！000这是第二行第三行测试长文本是否自动换行并保持美观。",
+               ":/icons/images/wuwu.svg",
+               true);
+    addMessage("小明",
+               "这是一段很长的文本，用来测试自动换行和布局稳定性，看看效果如何。",
+               ":/avatar_other.png",
+               false);
+    addMessage("我", "收到！", ":/icons/images/wuwu.svg", true);
+
+    QObject::connect(button, &QPushButton::clicked, [&]() {
+        static int n = 0;
+        addMessage(
+            "我",
+            QString("第 %1 条消息\n换行测试\n长文本自动换行正常显示\n第四行\n第五行").arg(++n),
+            ":/icons/images/wuwu.svg",
+            true);
+    });
+
+    window.show();
+
+    return app.exec();
+}
+
+#include "test_chat_ui_v2.moc"   // 必须添加，因为使用了 Q_OBJECT
