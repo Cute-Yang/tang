@@ -27,6 +27,8 @@
 #include <algorithm>
 
 
+static QByteArray data_bytes;
+static QBuffer    buffer;
 
 using namespace tang::common;
 namespace tang {
@@ -406,9 +408,14 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
             this->show_message("文件下载失败😫😫😫...");
             return;
         }
-        auto data_bytes = reply->readAll();
+        //open from the file is ok!
+        //the buffer can not be scope var
+        // because the load maybe lazy
+        // if move the func scope,the buffer and data bytes will be released
+        // so the program will be crash...
+        data_bytes = reply->readAll();
         reply->deleteLater();
-        QBuffer buffer(&data_bytes);
+        buffer.setBuffer(&data_bytes);
         buffer.open(QIODevice::ReadOnly);
         // this is important,must seek to start!
         buffer.seek(0);

@@ -1,8 +1,10 @@
 .cache
 .vscode
 bin
+.vs
 bin_debug
 build
 lib
 uploads
 .github
+out

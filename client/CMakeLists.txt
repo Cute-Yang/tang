@@ -5,6 +5,16 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+option(JUST_FOR_TEST "jsut for test..." ON)
+if(JUST_FOR_TEST)
+    set(CMAKE_PREFIX_PATH "D:/dev_libs/ela_widget/debug_test/ElaWidgetTools/lib")
+    include_directories("D:/work/tang")
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/lib)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+endif(JUST_FOR_TEST)
 
 set(QT_SDK_DIR "" CACHE PATH "Qt sdk dir" FORCE)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)
@@ -101,8 +111,3 @@ set(
 foreach(source ${client_test_sources})
     add_client_test(${source})
 endforeach()
-
-
-
-
-
