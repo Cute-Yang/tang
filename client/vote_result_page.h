@@ -16,7 +16,7 @@ private:
     void show_message(const QString& message, bool error = true);
     void adjust_vote_result_histroy_view();
     void init_connects();
-    void get_finished_vote_num_impl();
+    void refresh_finished_vote_impl();
     void get_chunk_finished_vote_data_impl(int vote_num, int vote_offset);
 
     void display_result_history_impl(size_t i);

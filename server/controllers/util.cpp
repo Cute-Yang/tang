@@ -154,6 +154,26 @@ common::StatusCode get_full_path(const std::string& file_path, std::filesystem::
     return common::StatusCode::kSuccess;
 }
 
+
+void try_to_create_workspace(const std::string& workspace_name) {
+    // try to create a workspace dir!
+    std::filesystem::path full_workspace_path;
+    if (auto ret = get_full_path(workspace_name, full_workspace_path);
+        ret != StatusCode::kSuccess) {
+        LOG_ERROR << "Fail to get workspace path";
+        return;
+    }
+    try {
+        if (!std::filesystem::exists(full_workspace_path)) {
+            if (std::filesystem::create_directories(full_workspace_path)) {
+                LOG_INFO << "Successfully create the workspace path:" << full_workspace_path;
+            }
+        }
+    } catch (const std::filesystem::filesystem_error& ex) {
+        LOG_ERROR << "Fail to create workspace by error:" << ex.what();
+    }
+}
+
 }   // namespace utils
 }   // namespace server
 }   // namespace tang

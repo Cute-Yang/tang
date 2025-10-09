@@ -69,7 +69,6 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_creator_value = new ElaText(page);
     vote_creator_value->setFont(font);
     vote_creator_value->setMidLineWidth(vote_value_width);
-    vote_creator_value->setText("戈薇");
     vote_creator_layout->addWidget(vote_creator_value);
     vote_creator_layout->addStretch();
 
@@ -88,7 +87,7 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_create_time_value = new ElaText(page);
     vote_create_time_value->setFont(font);
     vote_create_time_value->setMinimumWidth(vote_value_width);
-    vote_create_time_value->setText("2021-05-27 13:21:48");
+    // vote_create_time_value->setText("2021-05-27 13:21:48");
     vote_create_time_layout->addWidget(vote_create_time_value);
     vote_create_time_layout->addStretch();
 
@@ -105,7 +104,7 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     vote_type_value = new ElaText(page);
     vote_type_value->setFont(font);
     vote_type_value->setMinimumWidth(vote_key_width);
-    vote_type_value->setText("单选");
+    // vote_type_value->setText("单选");
     vote_type_layout->addWidget(vote_type_value);
     vote_type_layout->addStretch();
 
@@ -147,13 +146,11 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
 
     vote_item_combox = new ElaComboBox(page);
     vote_item_combox->setFont(font);
-    vote_item_combox->addItems({"大鱼", "小鱼"});
     vote_item_combox->setMinimumWidth(vote_value_width);
     combox_stacked_container->addWidget(vote_item_combox);
 
     vote_item_multi_combox = new ElaMultiSelectComboBox(page);
     vote_item_multi_combox->setFont(font);
-    vote_item_multi_combox->addItems({"小鱼", "小虾"});
     vote_item_multi_combox->setMinimumWidth(vote_value_width);
     vote_item_multi_combox->setMinimumWidth(400);
     combox_stacked_container->addWidget(vote_item_multi_combox);
@@ -215,11 +212,13 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     select_vote_status_combox->setMaximumHeight(30);
     select_vote_status_combox->setFont(font);
     // the order must keep same with the xx
-    size_t n_status = static_cast<size_t>(VoteStatus::count);
+    size_t     n_status = static_cast<size_t>(VoteStatus::count);
+    QList<int> ss;
     for (size_t i = 0; i < n_status; ++i) {
+        ss.append(i);
         select_vote_status_combox->addItem(get_vote_status_display_str(static_cast<VoteStatus>(i)));
     }
-    select_vote_status_combox->setCurrentSelection(0);
+    select_vote_status_combox->setCurrentSelection(ss);
     page_info_layout->addWidget(select_vote_status_combox);
 
     page_info_layout->addSpacing(8);
@@ -233,11 +232,13 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     select_vote_process_status_combox->setFixedHeight(27);
     select_vote_process_status_combox->setFont(font);
 
+    ss.clear();
     for (size_t i = 0; i < static_cast<size_t>(VoteProcessStatus::count); ++i) {
+        ss.append(i);
         select_vote_process_status_combox->addItem(
             get_vote_process_status_display_str(static_cast<VoteProcessStatus>(i)));
     }
-    select_vote_process_status_combox->setCurrentSelection(0);
+    select_vote_process_status_combox->setCurrentSelection(ss);
     page_info_layout->addWidget(select_vote_process_status_combox);
     page_info_layout->addStretch();
 

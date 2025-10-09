@@ -1,3 +1,4 @@
+#pragma once
 #include "ElaScrollPage.h"
 #include "participate_view_model.h"
 #include "participate_vote_page_ui.h"
@@ -28,6 +29,7 @@ private:
 public:
     ParticipateVotePage(QWidget* parent = nullptr);
     ~ParticipateVotePage();
+    void refresh_for_once();
 };
 }   // namespace client
 }   // namespace tang

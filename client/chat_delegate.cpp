@@ -66,7 +66,6 @@ void ChatDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option,
     QColor other_info_color = QColor("#999999");
     QRect  rect             = option.rect;
     int    header_y         = rect.top() + 5;
-    // qDebug() << rect;
     QPoint other_header_pos(rect.left() + 10, header_y);
     QPoint self_header_pos(rect.right() - 50, header_y);
     QPoint avatarPos = is_self ? self_header_pos : other_header_pos;

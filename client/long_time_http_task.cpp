@@ -18,9 +18,6 @@ LongtimeHttpTask::~LongtimeHttpTask() {}
 
 void LongtimeHttpTask::download_large_file(const QString& src_file_path,
                                            const QString& save_file_path) {
-    // test long long time!
-    // qDebug() << "Start download file...............";
-    // qDebug() << "maybe cost 8 sec...";
     QUrl url(ClientSingleton::get_http_urls_instance().get_download_file_url(), QUrl::StrictMode);
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -86,20 +83,13 @@ void LongtimeHttpTask::download_large_file(const QString& src_file_path,
     });
 }
 
-
-
 void LongtimeHttpTask::upload_files(const QStringList& upload_files, const QString& save_dir) {
-
-    // test sleep 8s
-    qDebug() << "Start sleep for 8s...";
-    QThread::sleep(8);
-
-    qDebug() << "Finish sleep for 8s...";
     QHttpMultiPart* multi_part = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     // add params!
     QHttpPart text_part;
     text_part.setHeader(QNetworkRequest::ContentDispositionHeader,
                         QString("form-data; name=\"save_dir\""));
+    qDebug() << "save -> " << save_dir;
     text_part.setBody(save_dir.toUtf8());
     multi_part->append(text_part);
 
@@ -109,6 +99,7 @@ void LongtimeHttpTask::upload_files(const QStringList& upload_files, const QStri
     for (size_t i = 0; i < upload_files.size(); ++i) {
         QFile* file = new QFile(upload_files[i]);
         if (!file->open(QIODevice::ReadOnly)) {
+            qDebug() << "fail to open " << upload_files[i];
             delete file;
             n_failed++;
             continue;
@@ -124,14 +115,21 @@ void LongtimeHttpTask::upload_files(const QStringList& upload_files, const QStri
     }
 
     QUrl            url(ClientSingleton::get_http_urls_instance().get_upload_file_url());
+    qDebug() << url;
     QNetworkRequest request(url);
     QNetworkReply*  reply = manager->post(request, multi_part);
 
+    qDebug() << upload_files;
+
     connect(reply, &QNetworkReply::finished, this, [reply, this, n_success, n_failed]() {
         if (reply->error() != QNetworkReply::NoError) {
+            qDebug() << reply->error();
             emit finish_upload_files(0, n_success + n_failed);
+            reply->deleteLater();
+            return;
         }
         emit finish_upload_files(n_success, n_failed);
+        reply->deleteLater();
     });
 
     connect(reply, &QNetworkReply::uploadProgress, this, [this](qint64 n_recv, qint64 n_total) {

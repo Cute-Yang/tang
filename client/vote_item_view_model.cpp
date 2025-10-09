@@ -5,7 +5,7 @@ namespace tang {
 namespace client {
 
 // define a icon
-static QIcon prefer_icon(":icons/images/feng_leaf.svg");
+static QIcon prefer_icon(":icons/images/shanhu.svg");
 
 VoteItemViewModel::VoteItemViewModel(const QString& vote_column_, QObject* parent)
     : QAbstractTableModel(parent)
@@ -100,8 +100,6 @@ void VoteItemViewModel::swap_item(int i, int j) {
         return;
     }
     std::swap(vote_items[i], vote_items[j]);
-    qDebug() << "i:" << i << " j:" << j;
-    // this->layoutChanged();
 }
 
 void VoteItemViewModel::delete_item(int i) {

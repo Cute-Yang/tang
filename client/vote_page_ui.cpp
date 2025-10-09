@@ -88,7 +88,11 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
 
     vote_choice_type_combox = new ElaComboBox(page);
     vote_choice_type_combox->setFixedHeight(30);
-    vote_choice_type_combox->addItems({"单选", "多选"});
+    for (size_t i = 0; i < static_cast<size_t>(VoteChoiceType::count); ++i) {
+        vote_choice_type_combox->addItem(
+            get_choice_type_display_str(static_cast<VoteChoiceType>(i)));
+    }
+
     vote_choice_type_combox->setMinimumWidth(48);
     vote_choice_type_combox->setFont(value_font);
     vote_choice_type_layout->addWidget(vote_choice_type_combox);
@@ -111,7 +115,7 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     voters_combox->setFont(value_font);
 
     // test datas
-    voters_combox->addItems({"小鱼", "柯南", "犬夜叉", "戈薇", "桔梗", "小鱼", "柯南"});
+    // voters_combox->addItems({"小鱼", "柯南", "犬夜叉", "戈薇", "桔梗", "小鱼", "柯南"});
     // voters_combox->setCurrentSelection(3);
     start_vote_layout->addWidget(voters_combox);
 
@@ -253,10 +257,13 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     select_vote_status_combox->setFont(value_font);
     // the order must keep same with the xx
     size_t n_status = static_cast<size_t>(VoteStatus::count);
+
+    QList<int> ss;
     for (size_t i = 0; i < n_status; ++i) {
         select_vote_status_combox->addItem(get_vote_status_display_str(static_cast<VoteStatus>(i)));
+        ss.append(i);
     }
-    select_vote_status_combox->setCurrentSelection(0);
+    select_vote_status_combox->setCurrentSelection(ss);
     vote_page_layout->addWidget(select_vote_status_combox);
     vote_page_layout->addSpacing(16);
 

@@ -49,28 +49,34 @@ VotePage::VotePage(QWidget* parent)
     this->setTitleVisible(false);
     ui->vote_item_view->setModel(vote_data_model);
 
-    QStringList vote_history_cols = {"id", "创建者", "创建时间", "主题", "状态", "类型", "check"};
+    QStringList vote_history_cols = {"id", "发起人", "发起时间", "主题", "状态", "类型", "check"};
     vote_history_model            = new VoteHistoryViewModel(vote_history_cols, 10, this);
     ui->vote_history_view->setModel(vote_history_model);
-
     // only for test!
-    QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
-    vote_data_model->add_vote_items(items);
-
-
+    // QStringList items = {"钓鱼", "打球", "爬山", "LOL", "游泳", "骑自行车"};
+    // vote_data_model->add_vote_items(items);
     // some initialzie work!
-    auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
-    ui->vote_creator_value->setText(current_user_info.user_name);
-
-    this->get_online_voters_impl();
-
     this->initialize_connects();
+
+    // must invoke after initizlize the connect!
 }
+
 
 VotePage::~VotePage() {
     delete ui;
-    delete vote_data_model;
     delete vote_item_right_menu;
+}
+
+
+void VotePage::refresh_for_once() {
+    auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
+    ui->vote_creator_value->setText(current_user_info.user_name);
+    this->get_online_voters_impl();
+    this->refresh_vote_history_impl();
+
+    if (vote_history_model->size() > 0) {
+        this->display_vote_history_impl(vote_history_model->at(0));
+    }
 }
 
 
@@ -123,8 +129,6 @@ void VotePage::clear_vote_data() {
     ui->vote_choice_type_combox->setCurrentIndex(0);
     vote_data_model->clear();
     this->set_frozon(true);
-    // flush
-    this->get_online_voters_impl();
 }
 
 void VotePage::initialize_connects() {
@@ -137,7 +141,10 @@ void VotePage::initialize_connects() {
             this,
             &VotePage::adjust_vote_history_view);
 
-    connect(ui->new_vote_button, &ElaToolButton::clicked, this, &VotePage::clear_vote_data);
+    connect(ui->new_vote_button, &ElaToolButton::clicked, this, [this]() {
+        this->clear_vote_data();
+        this->get_online_voters_impl();
+    });
 
     connect(ui->vote_item_view,
             &ElaTableView::customContextMenuRequested,
@@ -216,7 +223,6 @@ void VotePage::get_online_voters_impl() {
             this->show_message(json_data[PublicResponseJsonKeys::message_key].toString());
             return;
         }
-        qDebug() << json_data;
 
         auto voter_infos = json_data["voter_infos"].toArray();
         this->online_voters.resize(voter_infos.size());
@@ -230,8 +236,6 @@ void VotePage::get_online_voters_impl() {
         this->ui->voters_combox->clear();
         this->ui->voters_combox->addItems(voter_names);
         this->ui->voters_combox->setCurrentSelection(0);
-        // qDebug() << "******" << ui->voters_combox->getCurrentSelection() << " "
-        //          << ui->voters_combox->getCurrentSelectionIndex();
         this->show_message("在线列表更新成功(●'◡'●)", false);
     });
 }
@@ -244,7 +248,6 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
         return false;
     }
     auto& vote_items = vote_data_model->get_vote_items();
-    // qDebug() << "the vote_item is " << vote_items;
     if (vote_items.empty()) {
         this->show_message("还没有添加投票项哦§(*￣▽￣*)§");
         return false;
@@ -277,16 +280,10 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     QJsonArray  json_voter_names;
     QStringList voters_names;
     for (auto i : select_voter_indexes) {
-        // qDebug() << select_voter_indexes;
-        // qDebug() << online_voters.size();
         if (i >= online_voters.size()) {
             this->show_message("越界啦§(*￣▽￣*)§");
             return false;
         }
-        // not supported unsigned!
-        qDebug() << "voter_name:" << online_voters[i].voter_name
-                 << "voter_id:" << online_voters[i].voter_id;
-
         voters_names.push_back(online_voters[i].voter_name);
         json_voter_ids.append(static_cast<int>(online_voters[i].voter_id));
         json_voter_names.append(online_voters[i].voter_name);
@@ -305,7 +302,6 @@ bool VotePage::prepare_vote_json_data(QJsonObject& json_data, VoteHistory& vote_
     vote_history.voters           = voters_names;
     vote_history.vote_status      = VoteStatus::kReady;
     vote_history.choice_type      = vote_choice_type;
-
     this->show_message(
         QString("%1 成功发起了投票 %2 (✿◠‿◠)").arg(current_user_info.user_name, vote_topic), false);
     return true;
@@ -337,6 +333,7 @@ void VotePage::create_vote_impl() {
         _vote_history.vote_id = vote_id;
         // then push back to the table!
         vote_history_model->append(std::move(_vote_history));
+        this->clear_vote_data();
     };
     connect(reply, &QNetworkReply::finished, this, std::move(reply_callback));
 }
@@ -393,7 +390,6 @@ void VotePage::refresh_vote_history_impl() {
             return;
         }
         auto json_data = document->object();
-        qDebug() << json_data;
         VALIDATE_JSON_RESP_IS_OK(json_data);
         int vote_count = json_data["vote_count"].toInteger();
         if (vote_count < 0) {
@@ -401,8 +397,7 @@ void VotePage::refresh_vote_history_impl() {
             return;
         }
         size_t batch_size = vote_history_model->get_batch_size();
-        qDebug() << "the batch size is" << batch_size;
-        size_t n = (vote_count + batch_size - 1) / batch_size;
+        size_t n          = (vote_count + batch_size - 1) / batch_size;
         ui->total_vote_history_pages->setText(
             QString(" / %1(pages) (total:%2)").arg(n).arg(vote_count));
 
@@ -423,11 +418,9 @@ void VotePage::get_chunk_vote_data_impl(int vote_num, int vote_offset) {
         select_vote_status.append(selected[i]);
     }
     json_data[GetChunkVoteReqKeys::vote_status_key] = select_vote_status;
-    // qDebug() << json_data;
-    QNetworkReply* reply = send_http_req_with_json_data(
+    QNetworkReply* reply                            = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
     this->show_message("查询中(✿◠‿◠)", false);
-
     connect(reply, &QNetworkReply::finished, this, [reply, this]() {
         auto document = get_json_document(reply);
         if (!document) {
@@ -437,8 +430,7 @@ void VotePage::get_chunk_vote_data_impl(int vote_num, int vote_offset) {
         VALIDATE_JSON_RESP_IS_OK(json_data);
 
         QJsonArray vote_datas = json_data["vote_datas"].toArray();
-        qDebug() << vote_datas;
-        size_t n = vote_datas.size();
+        size_t     n          = vote_datas.size();
         vote_history_model->resize(n);
         for (size_t i = 0; i < n; ++i) {
             auto  vote_data           = vote_datas[i].toObject();

@@ -43,7 +43,9 @@ struct CacheWorkspaceData {
     void               set_workspace_show_names(const QStringList& names);
     std::span<QString> get_workspace_show_names();
 
-    size_t size();
+    size_t workspace_size(){
+        return workspaces.size();
+    }
 
     QString& get_workspace(size_t i);
     QString& get_workspace_show_name(size_t i);

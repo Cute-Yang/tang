@@ -1,5 +1,6 @@
 #include "vote_result_page.h"
 #include "ElaMessageBar.h"
+#include "ElaTheme.h"
 #include "client_global_config.h"
 #include "client_singleton.h"
 #include "common/http_json_keys.h"
@@ -8,6 +9,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QUrl>
+
 
 
 
@@ -29,12 +31,11 @@ VoteResultPage::VoteResultPage(QWidget* parent)
         new VoteResultHistoryViewModel({"vote id", "创建者", "创建时间", "主题", "类型", "查看"});
     ui->vote_history_view->setModel(vote_result_history_model);
     this->init_connects();
+    this->refresh_finished_vote_impl();
 }
 
 VoteResultPage::~VoteResultPage() {
     delete ui;
-    delete vote_count_model;
-    delete vote_result_history_model;
 }
 
 
@@ -113,7 +114,7 @@ void VoteResultPage::init_connects() {
     connect(ui->refresh_page_button,
             &ElaToolButton::clicked,
             this,
-            &VoteResultPage::get_finished_vote_num_impl);
+            &VoteResultPage::refresh_finished_vote_impl);
     connect(ui->vote_history_view,
             &ElaTableView::doubleClicked,
             this,
@@ -127,19 +128,24 @@ void VoteResultPage::init_connects() {
             &ElaToolButton::clicked,
             this,
             &VoteResultPage::adjust_vote_result_histroy_view);
+
+    connect(eTheme, &ElaTheme::themeModeChanged, this, [this](ElaThemeType::ThemeMode theme_mode) {
+        ui->vote_img_chart->setTheme(theme_mode == ElaThemeType::Light ? QChart::ChartThemeLight
+                                                                       : QChart::ChartThemeDark);
+    });
 }
 
 void VoteResultPage::adjust_vote_result_histroy_view() {
     constexpr std::array<float, 6> width_percents = {0.1f, 0.1f, 0.3f, 0.3f, 0.1f, 0.1f};
     auto                           width          = ui->vote_history_view->width();
-    for (size_t i = 0; i < width; ++i) {
+    for (size_t i = 0; i < width_percents.size(); ++i) {
         auto w = static_cast<int>(width * width_percents[i]);
         ui->vote_history_view->setColumnWidth(i, w);
     }
 }
 
 
-void VoteResultPage::get_finished_vote_num_impl() {
+void VoteResultPage::refresh_finished_vote_impl() {
     auto url(ClientSingleton::get_http_urls_instance().get_finished_vote_num_url());
     auto reply =
         ClientSingleton::get_network_manager_instance().post(QNetworkRequest(url), nullptr);
@@ -186,9 +192,7 @@ void VoteResultPage::get_chunk_finished_vote_data_impl(int vote_num, int vote_of
         }
 
         auto& json_data = json_doc.value();
-        qDebug() << json_data;
         VALIDATE_JSON_RESP_IS_OK(json_data);
-
         QJsonArray json_vote_datas = json_data["vote_datas"].toArray();
         auto       n               = json_vote_datas.size();
         vote_result_history_model->resize(n);

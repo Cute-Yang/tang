@@ -8,7 +8,6 @@ int main(int argc,char* argv[]){
     eApp->init();
     // TangPdfWidget w;
     tang::client::ClientMainWindow w;
-    // qDebug() << "the main thread is " << QThread::currentThreadId() << " main" << QThread::isMainThread();
     w.show();
     return app.exec();
 }

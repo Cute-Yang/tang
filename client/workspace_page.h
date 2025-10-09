@@ -80,16 +80,20 @@ private:
 
     void workspace_content_double_clicked_impl(const RemoteFileInfo& file_info);
 
+    void refresh_workspace_name_impl();
+
     void upload_file_impl();
+
+    void change_workspace_impl(size_t i);
 
 public:
     RemoteWorkspacePage(QWidget* parent = nullptr);
     ~RemoteWorkspacePage();
+    void refresh_for_once();
 
 public slots:
     // workspace
     void on_workspace_item_clicked(const QModelIndex& index);
-    void on_flush_workspace_name_button_clicked();
     void on_view_tiling_button_clicked();
     void on_view_detail_button_clicked();
     void on_back_button_clicked();

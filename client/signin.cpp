@@ -101,7 +101,7 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         return;
     }
     // then set the data!
-    auto& cache_user_info = ClientSingleton::get_cache_user_info_instance();
+    auto& cache_user_info     = ClientSingleton::get_cache_user_info_instance();
     cache_user_info.user_name = json_data[LoginResponseJsonKeys::user_name_key].toString();
     cache_user_info.email     = json_data[LoginResponseJsonKeys::email_key].toString();
     cache_user_info.user_id =

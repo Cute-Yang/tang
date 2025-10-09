@@ -51,6 +51,8 @@ bool convert_str(std::string_view data, T& ret) {
     auto r = std::from_chars(data.data(), data.data() + data.size(), ret);
     return r.ec == std::errc();
 }
+
+void try_to_create_workspace(const std::string& workspace_name) ;
 }   // namespace utils
 }   // namespace server
 }   // namespace tang

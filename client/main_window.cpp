@@ -1,12 +1,17 @@
 #include "main_window.h"
+#include "ElaContentDialog.h"
 #include "ElaDockWidget.h"
 #include "chat_room.h"
 #include "client_singleton.h"
+#include "common/http_json_keys.h"
 #include "participate_vote_page.h"
+#include "setting_page.h"
 #include "util.h"
 #include "vote_page.h"
 #include "vote_result_page.h"
 #include "workspace_page.h"
+#include <QUrlQuery>
+
 
 
 using namespace tang::common;
@@ -37,25 +42,58 @@ void ClientMainWindow::init_user_display_info() {
 }
 
 void ClientMainWindow::init_page() {
-    RemoteWorkspacePage* remote_file_page = new RemoteWorkspacePage(this);
-    addPageNode("工作空间", remote_file_page, ElaIconType::CabinetFiling);
+    close_dialog = new ElaContentDialog(this);
+    connect(close_dialog, &ElaContentDialog::rightButtonClicked, this, [this]() {
+        // then set offline!
+        auto      url       = ClientSingleton::get_http_urls_instance().get_logout_url();
+        auto&     user_info = ClientSingleton::get_cache_user_info_instance();
+        QUrlQuery query;
+        query.addQueryItem("user_id", QString::number(user_info.user_id));
+        auto reply = send_http_req_with_form_data(query, url);
+        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+            auto json_doc = get_json_document(reply);
+            if (!json_doc) {
+                return;
+            }
+            auto& json_data = json_doc.value();
+            // VALIDATE_JSON_RESP_IS_OK(json_data);
+            if (json_data[PublicResponseJsonKeys::status_key].toInt() ==
+                static_cast<uint8_t>(StatusCode::kSuccess)) {
+                this->closeWindow();
+            }
+        });
+    });
+    connect(close_dialog, &ElaContentDialog::middleButtonClicked, this, [this]() {
+        close_dialog->close();
+        showMinimized();
+        this->showMinimized();
+    });
+    this->setIsDefaultClosed(false);
 
-    VotePage* vote_page = new VotePage(this);
-    addPageNode("发起投票", vote_page, ElaIconType::FaceKiss);
+    connect(this, &ClientMainWindow::closeButtonClicked, this, [=]() { close_dialog->exec(); });
+    remote_workspace_page = new RemoteWorkspacePage(this);
+    addPageNode("工作空间", remote_workspace_page, ElaIconType::ChessQueen);
 
-    ParticipateVotePage* participate_vote_page = new ParticipateVotePage(this);
-    addPageNode("开始投票", participate_vote_page, ElaIconType::Clouds);
+    vote_page = new VotePage(this);
+    addPageNode("发起投票", vote_page, ElaIconType::CommentSmile);
 
-    VoteResultPage* vote_result_page = new VoteResultPage(this);
-    addPageNode("投票结果", vote_result_page, ElaIconType::Joystick);
+    participate_vote_page = new ParticipateVotePage(this);
+    addPageNode("开始投票", participate_vote_page, ElaIconType::Crow);
 
+    vote_result_page = new VoteResultPage(this);
+    addPageNode("投票结果", vote_result_page, ElaIconType::ChartMixed);
+
+    // chat page!
     ElaDockWidget* chat_dock = new ElaDockWidget(QString("聊天室"), this);
-    // chat_dock->setDockLocation(Qt::DockWidgetArea::RightDockWidgetArea);
-     chat_room = new ChatRoom(this);
-
+    chat_room                = new ChatRoom(this);
     chat_dock->setWidget(chat_room);
     this->addDockWidget(Qt::RightDockWidgetArea, chat_dock);
-    this->resizeDocks({chat_dock}, {300}, Qt::Horizontal);
+    this->resizeDocks({chat_dock}, {132}, Qt::Horizontal);
+
+
+    // setting page!
+    T_Setting* setting_page = new T_Setting(this);
+    addFooterNode("设置", setting_page, setting_key, 0, ElaIconType::GearComplex);
 }
 }   // namespace client
 }   // namespace tang

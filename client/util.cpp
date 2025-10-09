@@ -37,7 +37,6 @@ std::optional<QJsonDocument> get_json_document(const QString& json_str) {
 
 std::optional<QJsonDocument> get_json_document(QNetworkReply* reply) {
     if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << reply->errorString();
         reply->deleteLater();
         return {};
     }

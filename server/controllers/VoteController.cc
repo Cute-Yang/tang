@@ -8,8 +8,6 @@
 #include <mutex>
 
 
-
-
 // Add definition of your processing function here
 using namespace tang::common;
 using namespace tang::server::utils;
@@ -345,6 +343,7 @@ SendChoicesProcessResult VoteController::process_voter_choices_impl(
     vote_cache_info.n_finished++;
     process_result.participate_id = voter_info.participate_id;
     process_result.finished = vote_cache_info.n_finished == vote_cache_info.voter_infos.size();
+    process_result.ret      = StatusCode::kSuccess;
     return process_result;
 }
 
@@ -371,7 +370,7 @@ void VoteController::send_vote_choices(const HttpRequestPtr&                    
     }
     orm::Mapper<VoteParticipateInfo> participate_info_mapper(db_client_ptr);
     try {
-        LOG_INFO << "update the participate id to processed ..." << process_ret.participate_id;
+        // LOG_INFO << "update the participate id to processed ..." << process_ret.participate_id;
         participate_info_mapper.updateBy({VoteParticipateInfo::Cols::_vote_process_status},
                                          orm::Criteria(VoteParticipateInfo::Cols::_id,
                                                        orm::CompareOperator::EQ,
@@ -863,7 +862,7 @@ void VoteController::get_participate_vote_num(
 }
 
 void VoteController::get_finshied_vote_num(const HttpRequestPtr&                         req,
-                                          std::function<void(const HttpResponsePtr&)>&& callback) {
+                                           std::function<void(const HttpResponsePtr&)>&& callback) {
     // just
     auto db_client_ptr = app().getDbClient(get_db_client_name());
     if (db_client_ptr == nullptr) {

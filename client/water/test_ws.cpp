@@ -10,13 +10,11 @@ int main(int argc, char* argv[]) {
 
     // 连接成功信号
     QObject::connect(&socket, &QWebSocket::connected, [&]() {
-        qDebug() << "Connected!";
         socket.sendTextMessage("Hello from Qt!");
     });
 
     // 接收消息
     QObject::connect(&socket, &QWebSocket::textMessageReceived, [&](const QString& msg) {
-        qDebug() << "Received:" << msg;
 
         // 收到消息后退出（可选）
         // QCoreApplication::quit();

@@ -64,6 +64,10 @@ int RemoteFileInfoViewModel::columnCount(const QModelIndex& parent) const {
 }
 
 RemoteFileInfo& RemoteFileInfoViewModel::get_file_info(size_t i) {
+    // qDebug() << this->file_infos.size() <<  " " << i;
+    if (i >= this->file_infos.size()) {
+        throw std::out_of_range("the index is out of range!");
+    }
     return this->file_infos[i];
 }
 

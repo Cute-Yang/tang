@@ -14,6 +14,7 @@
 #include <QHeaderView>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMessageBox>
 #include <QNetworkReply>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -25,47 +26,11 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
+
+
 using namespace tang::common;
 namespace tang {
 namespace client {
-
-void add_test() {
-    QList<QString> test_workspaces = {
-        "唐远志", "lazydog", "Arics", "jack", "Moris", "Moon", "work"};
-    // take care the life circle!
-    QList<RemoteFileInfo> file_infos_data = {
-        {"images", 4096, FileKind::kFolder, "2023-04-05 12:32:51"},
-        {"report.docx", 1024, FileKind::kWord, "2023-04-05 12:32:51"},
-
-        {"simulation.py", 1024, FileKind::kPython, "2021-05-05 13:32:51"},
-
-        {"mat.cpp", 1024, FileKind::kCpp, "2023-04-05 12:32:51"},
-        {"sunny", 1024, FileKind::kFolder, "2023-04-05 12:32:51"},
-        {"show.ppt", 1024, FileKind::kPpt, "2023-04-05 12:32:51"},
-        {"pay_for_month_9.pdf", 1024, FileKind::kPdf, "2023-04-05 12:32:51"},
-
-        {"simulation.xls", 1024, FileKind::kExcel, "2021-05-05 13:32:51"},
-
-        {"mat_gemm.cpp", 21305, FileKind::kCpp, "2023-04-05 12:32:51"},
-        {"pipeline.txt", 1024, FileKind::kTxt, "2023-04-05 12:32:51"},
-        {"works", 1024, FileKind::kFolder, "2023-04-05 12:32:51"},
-        {"guassian_blur.cpp", 1024, FileKind::kCpp, "2023-04-05 12:32:51"},
-
-        {"test_gradient.py", 1024, FileKind::kPython, "2021-05-05 13:32:51"},
-
-        {"canny_test.cpp", 1024, FileKind::kCpp, "2023-04-05 12:32:51"},
-        {"fish", 1024, FileKind::kFolder, "2023-04-05 12:32:51"},
-        {"data_process", 1024, FileKind::kFolder, "2023-04-05 12:32:51"},
-        {"transform.cpp", 1024, FileKind::kCpp, "2023-04-05 12:32:51"},
-        {"merge_result.xls", 1024, FileKind::kExcel, "2021-05-05 13:32:51"}};
-
-    // if you reset the data of cache worspace,remember to set the workspace names!because they
-    // are views!
-    auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
-    workspace_data_cache.set_file_infos("唐远志", std::move(file_infos_data));
-    workspace_data_cache.set_workspace_show_names(test_workspaces);
-    workspace_data_cache.set_workspaces(test_workspaces);
-}
 
 RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     : ElaScrollPage(parent)
@@ -84,11 +49,6 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     ui->workspace_content_list_view->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->workspace_content_table_view->setContextMenuPolicy(Qt::CustomContextMenu);
     this->setTitleVisible(false);
-    // this is not enabled!
-    // this->setWindowTitle("workspace");
-    // only for test
-    add_test();
-    // set models
     workspace_model = new RemoteWorkspaceInfoModel({}, ui->workspace_content_list_view);
     workspace_model->set_workspace_names(
         ClientSingleton::get_cache_workspace_data_instance().get_workspace_show_names());
@@ -113,6 +73,15 @@ RemoteWorkspacePage::RemoteWorkspacePage(QWidget* parent)
     this->new_dir_dialog->hide();
 }
 
+void RemoteWorkspacePage::refresh_for_once() {
+    // heihei
+    this->refresh_workspace_name_impl();
+    auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
+    if (workspace_data_cache.workspace_size() > 1) {
+        this->change_workspace_impl(1);
+    }
+}
+
 // should use the std::unique_ptr to manage them!
 RemoteWorkspacePage::~RemoteWorkspacePage() {
     delete ui;
@@ -126,6 +95,7 @@ RemoteWorkspacePage::~RemoteWorkspacePage() {
 }
 
 void RemoteWorkspacePage::show_message(const QString& message, bool error) {
+    // std::cout << message.toStdString() << "\n";
     if (error) {
         ElaMessageBar::warning(ElaMessageBarType::TopLeft,
                                "workspace",
@@ -176,12 +146,16 @@ void RemoteWorkspacePage::set_workspace_data(std::span<QString> workspace) {
     this->workspace_model->layoutChanged();
 }
 
-void RemoteWorkspacePage::on_flush_workspace_name_button_clicked() {
+void RemoteWorkspacePage::refresh_workspace_name_impl() {
     if (!ui->show_all_workspaces->getIsToggled()) {
         show_message("仅显示私人workspace", false);
         auto& workspace_data_cache = ClientSingleton::get_cache_workspace_data_instance();
-        workspace_data_cache.set_workspaces({public_workspace_name.data(), "9"});
-        workspace_data_cache.set_workspace_show_names({public_workspace_name.data(), "周琳"});
+
+        auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
+        workspace_data_cache.set_workspaces(
+            {QString(public_workspace_name.data()), QString::number(current_user_info.user_id)});
+        workspace_data_cache.set_workspace_show_names(
+            {QString(public_workspace_name.data()), current_user_info.user_name});
         this->set_workspace_data(workspace_data_cache.get_workspace_show_names());
         return;
     }
@@ -269,7 +243,7 @@ bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
 
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  file_infos_json      = json_data[WorkspaceContentResponse::file_infos_key].toArray();
-
+    // qDebug() << file_infos_json;
     QList<RemoteFileInfo> file_infos;
     file_infos.resize(file_infos_json.size());
     for (size_t i = 0; i < file_infos_json.size(); ++i) {
@@ -326,49 +300,48 @@ void RemoteWorkspacePage::send_get_workspace_content_req(const QString&         
     query.addQueryItem("folder_path", folder_path);
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
-    show_message("正在查询服务器😴😴😴...", false);
-    connect(
-        reply,
-        &QNetworkReply::finished,
-        this,
-        [this, reply, c1 = std::move(success_callback), c2 = std::move(failed_callback)] {
-            if (this->process_workspace_content_response(reply)) {
-                if (c1) {
-                    c1();
-                }
-                this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
-            } else {
-                if (c2) {
-                    c2();
-                }
-                this->path_helper.pop_back_safe();
+    this->show_message("正在查询服务器😴😴😴...", false);
+    auto cb = [this, reply, c1 = std::move(success_callback), c2 = std::move(failed_callback)] {
+        if (this->process_workspace_content_response(reply)) {
+            if (c1) {
+                c1();
             }
-        });
+            this->ui->directory_line_edit->setText(this->path_helper.get_workspace_show_path());
+        } else {
+            if (c2) {
+                c2();
+            }
+            this->path_helper.pop_back_safe();
+        }
+    };
+    connect(reply, &QNetworkReply::finished, this, std::move(cb));
 }
 
 void RemoteWorkspacePage::on_workspace_item_clicked(const QModelIndex& index) {
     if (!index.isValid()) {
         return;
     }
-    int   row                  = index.row();
-    int   col                  = index.column();
+    int row = index.row();
+    this->change_workspace_impl(row);
+}
+
+void RemoteWorkspacePage::change_workspace_impl(size_t i) {
     auto& cache_workspace_data = ClientSingleton::get_cache_workspace_data_instance();
     auto  workspaces           = cache_workspace_data.get_workspaces();
-    if (row < 0 || row >= workspaces.size()) {
+    auto  workspace_show_names = cache_workspace_data.get_workspace_show_names();
+    if (i >= workspaces.size()) {
         // out of index!
         return;
     }
-    auto workspace_show_names = cache_workspace_data.get_workspace_show_names();
-
-    auto workspace      = workspaces[row];
-    auto workspace_name = workspace_show_names[row];
-    show_message(QString("切换工作区 %1 (●'◡'●)").arg(workspace_name), false);
+    auto workspace      = workspaces[i];
+    auto workspace_name = workspace_show_names[i];
+    this->show_message(QString("切换工作区 -> %1 (●'◡'●)").arg(workspace_name), false);
     path_helper.clear();
     path_helper.set_workspace(workspace);
     path_helper.set_workspace_show_name(workspace_name);
     ui->directory_line_edit->setText(path_helper.get_workspace_show_path());
-    this->set_workspace_content_data({});
-    this->get_workspace_content_impl(false);
+    // this->set_workspace_content_data({});
+    this->get_workspace_content_impl(true);
 }
 
 void RemoteWorkspacePage::on_view_detail_button_clicked() {
@@ -447,7 +420,6 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
     connect(reply, &QNetworkReply::downloadProgress, this, [this](qint64 s1, qint64 s2) {
         this->ui->download_file_progress_bar->setRange(0, s2);
         this->ui->download_file_progress_bar->setValue(s1);
-        // qDebug() << "Call download progress func in " << QThread::currentThreadId();
     });
 }
 
@@ -506,7 +478,11 @@ void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
                                                   const QPoint&      global_pos) {
     QAction* selected   = right_menu->menu->exec(global_pos);
     int      file_index = index.row();
+    if (!index.isValid()) {
+        return;
+    }
     if (selected == right_menu->rename_action) {
+        // qDebug() << "start to rename file" << " the index is " << file_index;
         emit start_rename_file(file_index);
     } else if (selected == right_menu->delete_action) {
         emit start_delete_file(file_index);
@@ -515,14 +491,11 @@ void RemoteWorkspacePage::display_right_menu_impl(const QModelIndex& index,
 
 void RemoteWorkspacePage::display_right_menu_for_table_view(const QPoint& pos) {
     QModelIndex index = ui->workspace_content_table_view->indexAt(pos);
-    qDebug() << "the index is " << index;
     this->display_right_menu_impl(index, this->ui->workspace_content_table_view->mapToGlobal(pos));
 }
 
 void RemoteWorkspacePage::display_right_menu_for_list_view(const QPoint& pos) {
     QModelIndex index = ui->workspace_content_list_view->indexAt(pos);
-    qDebug() << "the index is " << index;
-
     this->display_right_menu_impl(index, this->ui->workspace_content_list_view->mapToGlobal(pos));
 }
 
@@ -582,8 +555,7 @@ void RemoteWorkspacePage::rename_file_impl(const QString& src_filename,
     auto        dst               = QString("%1/%2").arg(folder_path, dst_filename);
     json_data["source_file_path"] = src;
     json_data["target_file_path"] = dst;
-    // qDebug() << json_data;
-    auto reply = send_http_req_with_json_data(
+    auto reply                    = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_rename_file_url());
     connect(reply, &QNetworkReply::finished, this, [this, src_filename, dst_filename, reply]() {
         auto document = get_json_document(reply);

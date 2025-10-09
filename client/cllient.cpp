@@ -42,6 +42,9 @@ void Client::init_connects() {
             this->login->close();
             this->client_main_window->init_user_display_info();
             this->client_main_window->show();
+            this->client_main_window->vote_page->refresh_for_once();
+            this->client_main_window->participate_vote_page->refresh_for_once();
+            this->client_main_window->remote_workspace_page->refresh_for_once();
             auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
             auto  url = ClientSingleton::get_http_urls_instance().get_ws_chat_client_url(
                 current_user_info.user_id, current_user_info.user_name);
@@ -96,7 +99,6 @@ void Client::process_message_from_other_client(const QString& message) {
         chat_msg.send_time = json_data[NormalChatJsonKeys::send_time_key].toString();
         this->client_main_window->chat_room->append_chat_message(chat_msg);
     }
-    // this->show_message(QString("您收到一条消息 %1").arg(qDebug().toString(json_data)), false);
 }
 
 

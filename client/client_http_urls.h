@@ -10,6 +10,8 @@ private:
     int     port;
     // store all the url,avoid re format!!
     QString login_http_url;
+    QString logout_http_url;
+
     QString signup_http_url;
     QString workspace_http_url;
     QString workspace_content_http_url;
@@ -39,6 +41,8 @@ public:
     void set_server_value(const QString& host_, int port_);
     // heng, only get const ref?
     const QString& get_login_url();
+    const QString& get_logout_url();
+
     const QString& get_signup_url();
     const QString& get_workspace_url();
     const QString& get_workspace_content_url();

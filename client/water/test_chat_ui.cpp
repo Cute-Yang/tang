@@ -36,7 +36,6 @@ public:
         temp.setPlainText(text);
         temp.setFrameStyle(QFrame::NoFrame);
         temp.setStyleSheet("QTextEdit { background: transparent; }");
-        qDebug() << text; 
         temp.document()->setTextWidth(isSelf ? 240 : 240);   // 最大宽度
 
         QSize size   = temp.document()->size().toSize();

@@ -12,9 +12,9 @@ Login::Login(QWidget* parent)
     login_setting->hide();
     setup_ui();
     this->moveToCenter();
-    this->setFixedSize(QSize(350, 520));
+    this->setFixedSize(QSize(400, 520));
     this->setWindowTitle("login");
-    this->setWindowIcon(QIcon(":/icons/images/changjinglu.svg"));
+    this->setWindowIcon(QIcon(":/icons/images/green_leaf.svg"));
     this->initialize_connects();
 }
 
@@ -81,8 +81,8 @@ void Login::transfer_to_signup() {
 
 void Login::on_setting_button_clicked() {
     // set the show pos and size!
-    int w = 320;
-    int h = 427;
+    int w = 350;
+    int h = 460;
     this->login_setting->setFixedSize(QSize(w, h));
     auto p = this->geometry();
     int  x = p.x() + p.width() + 32;

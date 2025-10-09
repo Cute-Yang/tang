@@ -10,25 +10,6 @@ using namespace tang::server::utils;
 using VoteUser = drogon_model::vote::TestVoteUser;
 // Add definition of your processing function here
 
-void try_to_create_workspace(uint32_t user_id) {
-    // try to create a workspace dir!
-    std::filesystem::path full_workspace_path;
-    if (auto ret = get_full_path(std::to_string(user_id), full_workspace_path);
-        ret != StatusCode::kSuccess) {
-        LOG_ERROR << "Fail to get workspace path";
-        return;
-    }
-    try {
-        if (!std::filesystem::exists(full_workspace_path)) {
-            if (std::filesystem::create_directories(full_workspace_path)) {
-                LOG_INFO << "Successfully create the workspace path:" << full_workspace_path;
-            }
-        }
-    } catch (const std::filesystem::filesystem_error& ex) {
-        LOG_ERROR << "Fail to create workspace by error:" << ex.what();
-    }
-}
-
 
 void SignController::login(const HttpRequestPtr&                         req,
                            std::function<void(const HttpResponsePtr&)>&& callback) {
@@ -83,6 +64,7 @@ void SignController::login(const HttpRequestPtr&                         req,
         ret[LoginResponseJsonKeys::vote_priority_key] = result.getValueOfVotePriority();
         auto resp                                     = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
+        try_to_create_workspace(std::to_string(result.getValueOfId()));
     };
 
 
@@ -98,6 +80,31 @@ void SignController::login(const HttpRequestPtr&                         req,
         c2,
         orm::Criteria(VoteUser::Cols::_id, orm::CompareOperator::EQ, result.getValueOfId()),
         VoteUserStatus::kActive);
+}
+void SignController::logout(const HttpRequestPtr&                         req,
+                            std::function<void(const HttpResponsePtr&)>&& callback) {
+    std::string user_id_str = req->getParameter("user_id");
+
+    uint32_t user_id;
+    if (!convert_str(user_id_str, user_id)) {
+        make_response_and_return(StatusCode::kUserisInvalid, callback);
+    }
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+    if (db_client_ptr == nullptr) {
+        // make_response_with_invalid_db(callback);
+        make_response_and_return(StatusCode::kInvalidDatabase, callback);
+    }
+
+    orm::Mapper<VoteUser> user_mapper(db_client_ptr);
+    try {
+        user_mapper.updateBy({VoteUser::Cols::_user_status},
+                             orm::Criteria(VoteUser::Cols::_id, orm::CompareOperator::EQ, user_id),
+                             static_cast<uint8_t>(VoteUserStatus::kOffline));
+        make_response_and_return(StatusCode::kSuccess, callback);
+    } catch (const orm::DrogonDbException& ex) {
+        LOG_ERROR << ex.base().what();
+        make_response_and_return(StatusCode::kSqlRuntimeError, callback);
+    }
 }
 
 
@@ -137,8 +144,7 @@ void SignController::signup(const HttpRequestPtr&                         req,
         LOG_INFO << "add new user with user_id = " << vote_user.getValueOfId()
                  << " user_name = " << vote_user.getValueOfUserName();
         make_response_and_return(StatusCode::kSuccess, callback);
-        // try to create the workspace for this user!
-        try_to_create_workspace(vote_user.getValueOfId());
+        try_to_create_workspace(std::to_string(vote_user.getValueOfId()));
     };
 
     auto c2 = [callback](const orm::DrogonDbException& ex) {

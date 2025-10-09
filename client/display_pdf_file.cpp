@@ -122,10 +122,8 @@ void DisplayPdf::init_connects() {
 
     connect(ui->hide_left_button, &ElaToolButton::clicked, this, [this](bool hide) {
         if (hide) {
-            // qDebug() << "hide";
             ui->tab_container->setMaximumWidth(12);
         } else {
-            // qDebug() << "not hide";
             ui->tab_container->setMaximumWidth(320);
         }
     });
@@ -192,10 +190,8 @@ void DisplayPdf::bookmark_selected(const QModelIndex& index) {
 
 // attention,the page is start from 0
 void DisplayPdf::page_selected(int page) {
-    // qDebug() << "current page is " << page;
     int total_page = document->pageCount();
     if (page <= 0 || page > total_page) {
-        // show_message(QString("页数:%1 不正确 🤣🤣🤣...").arg(page));
         return;
     }
     if (page == 1) {
@@ -279,7 +275,6 @@ void DisplayPdf::search_result_selected(const QModelIndex& current, const QModel
 }
 
 void DisplayPdf::on_continous_switch_checked(bool checked) {
-    // qDebug() << checked ;
     ui->pdf_show_page->setPageMode(checked ? QPdfView::PageMode::MultiPage
                                            : QPdfView::PageMode::SinglePage);
 }
@@ -293,7 +288,7 @@ void DisplayPdf::on_search_button_clicked() {
     if (search_text.isEmpty()) {
         return;
     }
-    // qDebug() << "search text " << ui->search_line_edit->text();
+    //  << "search text " << ui->search_line_edit->text();
     search_model->setSearchString(search_text);
     ui->switch_tabs->setCurrentWidget(ui->search_result_container);
     previous_search_text = search_text;

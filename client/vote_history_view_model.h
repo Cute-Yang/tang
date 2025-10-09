@@ -16,7 +16,7 @@ struct VoteHistory {
     QString                      vote_topic;
     QStringList                  vote_items;
     QStringList                  voters;
-    tang::common::VoteStatus vote_status;
+    tang::common::VoteStatus     vote_status;
     tang::common::VoteChoiceType choice_type;
 };
 
@@ -41,9 +41,9 @@ private:
 public:
     VoteHistoryViewModel(const QStringList& col_names, size_t batch_size_ = 10,
                          QObject* parent = nullptr);
-    void append(VoteHistory&& item);
-    void append(const VoteHistory& item);
-
+    void         append(VoteHistory&& item);
+    void         append(const VoteHistory& item);
+    size_t       size() const { return vote_history.size(); }
     void         resize(size_t n) { vote_history.resize(n); }
     VoteHistory& at(size_t i);
 

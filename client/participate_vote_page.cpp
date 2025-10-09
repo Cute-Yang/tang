@@ -22,16 +22,21 @@ ParticipateVotePage::ParticipateVotePage(QWidget* parent)
     QStringList headers = {
         "vote id", "创建者", "创建时间", "主题", "类型", "状态", "check", "进度"};
 
-
     view_model = new ParticipateViewModel(8, headers, this);
     ui->vote_todo_list->setModel(view_model);
-
     this->initialize_connects();
 }
+
 ParticipateVotePage::~ParticipateVotePage() {
     delete ui;
 }
 
+void ParticipateVotePage::refresh_for_once() {
+    this->refresh_participate_vote_history_impl();
+    if (view_model->size() > 0) {
+        this->display_vote_data(view_model->at(0));
+    }
+}
 void ParticipateVotePage::show_message(const QString& message, bool error) {
     if (error) {
         ElaMessageBar::warning(ElaMessageBarType::TopLeft,
@@ -185,7 +190,6 @@ void ParticipateVotePage::refresh_participate_vote_history_impl() {
 
     QJsonArray select_vote_status;
     auto       selected = ui->select_vote_status_combox->getCurrentSelectionIndex();
-    qDebug() << selected;
     if (selected.size() == 0) {
         this->show_message("请至少选择一个投票的状态哦(✿◠‿◠)");
         return;
@@ -197,8 +201,6 @@ void ParticipateVotePage::refresh_participate_vote_history_impl() {
 
     QJsonArray select_vote_process_status;
     selected = ui->select_vote_process_status_combox->getCurrentSelectionIndex();
-    qDebug() << selected;
-    qDebug() << "******************************";
     if (selected.size() == 0) {
         this->show_message("请至少选择一个处理的状态哦(✿◠‿◠)");
         return;
@@ -216,7 +218,6 @@ void ParticipateVotePage::refresh_participate_vote_history_impl() {
             return;
         }
         auto json_data = document->object();
-        qDebug() << json_data;
         VALIDATE_JSON_RESP_IS_OK(json_data);
         int vote_count = json_data["vote_count"].toInteger();
         if (vote_count < 0) {
@@ -224,8 +225,7 @@ void ParticipateVotePage::refresh_participate_vote_history_impl() {
             return;
         }
         size_t batch_size = view_model->get_batch_size();
-        qDebug() << "the batch size is" << batch_size;
-        size_t n = (vote_count + batch_size - 1) / batch_size;
+        size_t n          = (vote_count + batch_size - 1) / batch_size;
         ui->totoal_todo_list_page->setText(
             QString(" / %1(pages) (total:%2)").arg(n).arg(vote_count));
 
@@ -269,8 +269,7 @@ void ParticipateVotePage::get_chunk_participate_vote_data_impl(int vote_num, int
         select_vote_process_status.append(selected[i]);
     }
     json_data[GetParticipateVoteReqKeys::vote_process_status_key] = select_vote_process_status;
-    // qDebug() << json_data;
-    QNetworkReply* reply = send_http_req_with_json_data(
+    QNetworkReply* reply                                          = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_participate_chunk_vote_data_url());
     this->show_message("查询中(✿◠‿◠)", false);
 

@@ -57,7 +57,7 @@ void RemoteWorkspacePage::initialize_connects() {
     connect(ui->flush_workspace_name_button,
             &ElaToolButton::clicked,
             this,
-            &RemoteWorkspacePage::on_flush_workspace_name_button_clicked);
+            &RemoteWorkspacePage::refresh_workspace_name_impl);
 
     connect(ui->flush_workspace_content_button, &ElaToolButton::clicked, this, [this]() {
         this->refresh_workspace_content_impl();
@@ -87,7 +87,6 @@ void RemoteWorkspacePage::initialize_connects() {
             this,
             [this](bool success, const QString& message, const QString& save_path) {
                 this->show_message(message, !success);
-                qDebug() << message;
                 if (success) {
                     this->pdf_displayer->load_pdf(save_path);
                     show_and_raise(this->pdf_displayer);
@@ -317,7 +316,7 @@ void RemoteWorkspacePage::initialize_connects() {
     });
 
     connect(this, &RemoteWorkspacePage::start_rename_file, this, [this](int file_index) {
-        // qDebug() << "rename file...";
+        qDebug() << this->rename_file_dialog;
         auto& file_info = file_info_table_model->get_file_info(file_index);
         this->rename_file_dialog->previous_filename_value->setText(file_info.file_name);
         // QAQ

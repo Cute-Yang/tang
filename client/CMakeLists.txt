@@ -1,8 +1,10 @@
+cmake_minimum_required(VERSION 3.15)
 set(client_lib_name "client")
 # for qt!
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+
 
 set(QT_SDK_DIR "" CACHE PATH "Qt sdk dir" FORCE)
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets)

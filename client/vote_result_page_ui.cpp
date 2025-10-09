@@ -58,7 +58,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_creator_layout->addWidget(vote_creator_text);
 
     vote_creator_name_text = new ElaText(page);
-    vote_creator_name_text->setText("ゴウェイ");
+    // vote_creator_name_text->setText("ゴウェイ");
     vote_creator_name_text->setFont(font);
     vote_creator_layout->addWidget(vote_creator_name_text);
     vote_creator_layout->addStretch();
@@ -77,7 +77,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_create_time_value = new ElaText(page);
     vote_create_time_value->setFont(font);
     vote_create_time_value->setMinimumWidth(value_text_width);
-    vote_create_time_value->setText("2025-08-27 19:27:31");
+    // vote_create_time_value->setText("2025-08-27 19:27:31");
     vote_create_time_layout->addWidget(vote_create_time_value);
     vote_create_time_layout->addStretch();
 
@@ -94,7 +94,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_topic_layout->addWidget(vote_topic_text);
 
     vote_topic_value = new ElaText(page);
-    vote_topic_value->setText("今天活动安排");
+    // vote_topic_value->setText("今天活动安排");
     vote_topic_value->setMinimumWidth(value_text_width);
     vote_topic_value->setFont(font);
     vote_topic_layout->addWidget(vote_topic_value);
@@ -113,7 +113,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
 
     vote_choice_type_value = new ElaText(page);
     vote_choice_type_value->setFont(font);
-    vote_choice_type_value->setText("单选");
+    // vote_choice_type_value->setText("单选");
     vote_choice_type_layout->addWidget(vote_choice_type_value);
     vote_choice_type_layout->addStretch();
 
@@ -129,17 +129,12 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_result_layout->addWidget(vote_result_text);
 
     vote_result_value = new ElaText(page);
-    vote_result_value->setText("爬山");
-    vote_result_value->setFont(font);
+    auto result_font  = font;
+    result_font.setPointSize(11);
+    // vote_result_value->setText("爬山");
+    vote_result_value->setFont(result_font);
     vote_result_layout->addWidget(vote_result_value);
     vote_result_layout->addStretch();
-
-    // ElaText* vote_img_text = new ElaText(page);
-    // vote_img_text->setText("投票统计");
-    // vote_img_text->setFont(font);
-    // central_layout->addWidget(vote_img_text);
-    // QSplitter* spliter = new QSplitter(page);
-    // central_layout->addWidget(spliter);
 
     QWidget* vote_count_container = new QWidget(page);
     vote_detail_spliter->addWidget(vote_count_container);
@@ -170,19 +165,13 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
 
 
     QSplitter* vote_view_spliter = new QSplitter(page);
+    // vote_view_spliter->setOpaqueResize(true);
     vote_view_spliter->setOrientation(Qt::Horizontal);
     central_layout->addWidget(vote_view_spliter);
 
-    vote_view_spliter->setOpaqueResize(true);
     QWidget* vote_img_container = new QWidget(page);
-    // vote_img_container->setMinimumHeight(300);
-    // vote_img_container->setMinimumWidth(420);
-    // vote_img_container->setMaximumWidth(480);
     vote_img_container->setMinimumSize({400, 400});
-    // vote_detail_spliter->addWidget(vote_img_container);
-    // central_layout->addWidget(vote_img_container);
     vote_view_spliter->addWidget(vote_img_container);
-
     QVBoxLayout* vote_img_layout = new QVBoxLayout(vote_img_container);
     vote_img_layout->setContentsMargins({0, 0, 0, 0});
 
@@ -207,24 +196,18 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
 
 
     vote_img_view = new QChartView(page);
-    // auto policy = vote_img_view->sizePolicy();
-    // policy.setHorizontalPolicy(QSizePolicy::Expanding);
-    // vote_img_view->setSizePolicy(policy);
-    // I don't know the time to release the vote_img_chart!
     vote_img_view->setChart(vote_img_chart);
+    vote_img_view->setContentsMargins({0, 0, 0, 0});
     vote_img_view->setRenderHint(QPainter::Antialiasing);
     // add
     vote_img_layout->addWidget(vote_img_view);
 
-
-
-
     QWidget* vote_history_container = new QWidget(page);
     vote_view_spliter->addWidget(vote_history_container);
+
+
     QVBoxLayout* vote_history_layout = new QVBoxLayout(vote_history_container);
-
-
-    vote_history_view_text = new ElaText(page);
+    vote_history_view_text           = new ElaText(page);
     vote_history_view_text->setFont(font);
     vote_history_view_text->setText("投票历史记录");
     QHBoxLayout* t2 = new QHBoxLayout();
@@ -245,6 +228,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     // vote_history_view->setMinimumWidth(300);
     vote_history_view->setFont(font);
     vote_history_view->setMinimumHeight(200);
+    vote_history_view->setMinimumWidth(300);
     vote_history_layout->addWidget(vote_history_view);
 
 

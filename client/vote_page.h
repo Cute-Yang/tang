@@ -49,7 +49,7 @@ public:
     VotePage(QWidget* parent = nullptr);
     ~VotePage();
 
-    // void set_test_model();
+    void refresh_for_once();
 };
 }   // namespace client
 }   // namespace tang
