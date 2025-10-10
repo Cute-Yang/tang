@@ -10,10 +10,6 @@
 #include <QJsonObject>
 #include <QUrl>
 
-
-
-
-
 using namespace tang::common;
 namespace tang {
 namespace client {
@@ -42,11 +38,11 @@ VoteResultPage::~VoteResultPage() {
 void VoteResultPage::plot_impl(std::span<VoteItemCountInfo> vote_item_infos) {
     // colors for plot
     static QStringList const colors = {
+        "#84D1EF",
         "#6480D6",
         "#A1DC85",
         "#FFAD25",
         "#FF7777",
-        "#84D1EF",
         "#4CB383",
     };
 

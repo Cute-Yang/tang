@@ -10,6 +10,8 @@ Login::Login(QWidget* parent)
     signup        = new SignUp(this);
     login_setting = new LoginSetting();
     login_setting->hide();
+    this->setWindowButtonFlags(ElaAppBarType::CloseButtonHint | ElaAppBarType::MinimizeButtonHint);
+
     setup_ui();
     this->moveToCenter();
     this->setFixedSize(QSize(400, 520));

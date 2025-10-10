@@ -12,9 +12,10 @@ LoginSetting::LoginSetting(QWidget* parent)
     ui->setup_ui(this);
     // this->setFixedSize(QSize(350, 520));
     this->setWindowTitle("setting");
-    this->setWindowIcon(QIcon(":/icons/images/xiaoxiong.svg"));
+    this->setWindowIcon(QIcon(":/icons/images/yellow_butterfly.svg"));
     this->moveToCenter();
     this->initialize_connects();
+    this->setWindowButtonFlags(ElaAppBarType::CloseButtonHint | ElaAppBarType::MinimizeButtonHint);
 }
 
 

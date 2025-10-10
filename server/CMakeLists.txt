@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(server CXX)
+project(vote_server CXX)
 
 include(CheckIncludeFileCXX)
 

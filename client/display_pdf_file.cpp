@@ -133,13 +133,13 @@ void DisplayPdf::init_connects() {
 void DisplayPdf::show_message(const QString& message, bool error) {
     if (error) {
         ElaMessageBar::warning(ElaMessageBarType::TopLeft,
-                               "Display PDF",
+                               "display PDF",
                                message,
                                ClientGlobalConfig::error_show_time,
                                this);
     } else {
         ElaMessageBar::success(ElaMessageBarType::TopLeft,
-                               "Display PDF",
+                               "display PDF",
                                message,
                                ClientGlobalConfig::message_show_time,
                                this);

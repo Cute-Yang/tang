@@ -1,6 +1,16 @@
 #include "ChatClient.h"
+#include "../models/TestVoteUser.h"
+#include "drogon/HttpAppFramework.h"
+#include "drogon/orm/Mapper.h"
 #include "trantor/utils/Logger.h"
+#include "util.h"
 
+
+
+using VoteUser = drogon_model::vote::TestVoteUser;
+
+using namespace tang::server::utils;
+using namespace drogon;
 using namespace tang::common;
 namespace tang {
 namespace server {
@@ -37,13 +47,26 @@ std::pair<common::StatusCode, std::string> ChatClientCollections::remove_connect
 std::pair<common::StatusCode, std::string> ChatClientCollections::remove_connection(
     const drogon::WebSocketConnectionPtr& conn_ptr) {
     // foreach???
+    auto db_client_ptr = app().getDbClient(get_db_client_name());
+
     for (auto& [k, conn_info] : connected_clients) {
         if (conn_info.conn_ptr == conn_ptr) {
-            LOG_INFO << "remove key:" << k << " from websocket client cache!";
+            LOG_INFO << "remove key:" << k << " user:" << conn_info.user_name
+                     << " from websocket client cache!";
             connected_clients.erase(k);
-            return {StatusCode::kSuccess, conn_info.user_name};
+            if (db_client_ptr != nullptr) {
+                orm::Mapper<VoteUser> user_mapper(db_client_ptr);
+                try {
+                    user_mapper.updateBy(
+                        {VoteUser::Cols::_user_status},
+                        orm::Criteria(VoteUser::Cols::_id, orm::CompareOperator::EQ, k),
+                        static_cast<uint8_t>(VoteUserStatus::kOffline));
+                } catch (const orm::DrogonDbException& ex) {
+                    LOG_ERROR << ex.base().what();
+                }
+            }
 
-            break;
+            return {StatusCode::kSuccess, conn_info.user_name};
         }
     }
     return {StatusCode::kWebSocketKeyNotExsit, ""};

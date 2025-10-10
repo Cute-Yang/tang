@@ -8,14 +8,17 @@
 #include "long_time_http_task.h"
 #include "new_dir.h"
 #include "workspace_delete.h"
+#include "workspace_helper.h"
 #include "workspace_rename_file.h"
 #include "workspace_right_menu.h"
 #include "workspace_view_model.h"
+#include <QBuffer>
+#include <QByteArray>
 #include <QFile>
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QThread>
-#include "workspace_helper.h"
+
 
 namespace tang {
 namespace client {
@@ -40,6 +43,8 @@ private:
     WorkspaceRenameFile* rename_file_dialog;
     WorkspaceDeleteFile* delete_file_dialog;
 
+    QByteArray temp_data_bytes;
+    QBuffer    temp_io_buffer;
 
     // some helper functions...
     //  process workspace names
@@ -73,7 +78,7 @@ private:
     void delete_file_impl(QString const& file_name);
     bool delete_cache_file_info_impl(size_t index);
 
-    
+
 
     void rename_file_impl(QString const& src_filename, QString const& dst_filename);
     void refresh_workspace_content_impl();

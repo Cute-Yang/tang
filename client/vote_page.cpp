@@ -367,6 +367,7 @@ void VotePage::set_frozon(bool enable) {
     ui->start_vote_button->setEnabled(enable);
     ui->add_vote_item_line_edit->setEnabled(enable);
     ui->flush_voters_button->setEnabled(enable);
+    ui->vote_item_view->setEnabled(enable);
 }
 
 
@@ -420,7 +421,6 @@ void VotePage::get_chunk_vote_data_impl(int vote_num, int vote_offset) {
     json_data[GetChunkVoteReqKeys::vote_status_key] = select_vote_status;
     QNetworkReply* reply                            = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_chunk_vote_data_url());
-    this->show_message("查询中(✿◠‿◠)", false);
     connect(reply, &QNetworkReply::finished, this, [reply, this]() {
         auto document = get_json_document(reply);
         if (!document) {

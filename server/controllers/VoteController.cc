@@ -332,7 +332,6 @@ SendChoicesProcessResult VoteController::process_voter_choices_impl(
         process_result.ret = StatusCode::kVoterIsNotInclude;
         return process_result;
     }
-    LOG_INFO << "add to cache...";
     auto& voter_infos = vote_cache_info.voter_infos;
     if (!voter_infos.contains(params.voter_id)) {
         process_result.ret = StatusCode::kVoterIsNotInclude;
@@ -519,14 +518,17 @@ bool VoteController::call_when_vote_finished(uint32_t vote_id) {
     }
 
     // 2.update vote finished!
-    auto                  trans = db_client_ptr->newTransaction();
-    orm::Mapper<VoteData> vote_data_mapper(trans);
-    orm::Mapper<VoteItem> vote_item_mapper(trans);
+    auto                             trans = db_client_ptr->newTransaction();
+    orm::Mapper<VoteData>            vote_data_mapper(trans);
+    orm::Mapper<VoteItem>            vote_item_mapper(trans);
+    orm::Mapper<VoteParticipateInfo> vote_participate_mapper(trans);
     try {
         auto cond = orm::Criteria(VoteData::Cols::_vote_id, orm::CompareOperator::EQ, vote_id);
+        // iupdate vote status...
         vote_data_mapper.updateBy(
             {VoteData::Cols::_vote_status}, cond, static_cast<uint8_t>(VoteStatus::kFinished));
-        // update the status
+
+        // update vote items...
         for (size_t i = 0; i < vote_item_ids.size(); ++i) {
             auto cond =
                 orm::Criteria(VoteItem::Cols::_id, orm::CompareOperator::EQ, vote_item_ids[i]);
@@ -536,6 +538,12 @@ bool VoteController::call_when_vote_finished(uint32_t vote_id) {
                 vote_result.counts[i],
                 vote_result.vote_items_status[i]);
         }
+        cond =
+            orm::Criteria(VoteParticipateInfo::Cols::_vote_id, orm::CompareOperator::EQ, vote_id);
+
+        vote_participate_mapper.updateBy({VoteParticipateInfo::Cols::_vote_status},
+                                         cond,
+                                         static_cast<uint8_t>(VoteStatus::kFinished));
     } catch (const orm::DrogonDbException& ex) {
         LOG_ERROR << ex.base().what();
         trans->rollback();
@@ -738,9 +746,6 @@ void VoteController::get_chunk_participate_vote_data(
         LOG_ERROR << "Fail to get database ptr!";
         make_response_and_return(StatusCode::kInvalidDatabase, callback);
     }
-
-
-    LOG_INFO << "the select voter id is " << params.voter_id;
     orm::Mapper<VoteData> vote_data_mapper(db_client_ptr);
     vote_data_mapper.orderBy(VoteData::Cols::_vote_id, orm::SortOrder::DESC);
     orm::Mapper<VoteItem>            vote_item_mapper(db_client_ptr);
@@ -793,10 +798,8 @@ void VoteController::get_chunk_participate_vote_data(
         for (size_t i = 0; i < vote_datas.size(); ++i) {
             auto json_vote_data  = vote_datas[i].toJson();
             auto json_vote_items = Json::Value(Json::arrayValue);
-
-            auto vote_id = vote_datas[i].getValueOfVoteId();
-            LOG_INFO << vote_id;
-            auto index = vote_id_2_related.at(vote_id);
+            auto vote_id         = vote_datas[i].getValueOfVoteId();
+            auto index           = vote_id_2_related.at(vote_id);
             json_vote_data["vote_process_status"] =
                 related_vote_datas[index].getValueOfVoteProcessStatus();
 
@@ -835,10 +838,7 @@ void VoteController::get_participate_vote_num(
         LOG_ERROR << "Fail to get database ptr!";
         make_response_and_return(StatusCode::kInvalidDatabase, callback);
     }
-
     orm::Mapper<VoteParticipateInfo> vote_mapper(db_client_ptr);
-    LOG_INFO << "ggggggggggg" << params.voter_id;
-
     try {
         auto cond =
             orm::Criteria(

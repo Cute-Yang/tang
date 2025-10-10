@@ -1,6 +1,7 @@
 #include "main_window.h"
 #include "ElaContentDialog.h"
 #include "ElaDockWidget.h"
+#include "ElaMessageBar.h"
 #include "chat_room.h"
 #include "client_singleton.h"
 #include "common/http_json_keys.h"
@@ -13,7 +14,6 @@
 #include <QUrlQuery>
 
 
-
 using namespace tang::common;
 namespace tang {
 namespace client {
@@ -24,14 +24,15 @@ ClientMainWindow::ClientMainWindow(QWidget* parent)
     this->setFocusPolicy(Qt::StrongFocus);
     this->resize(QSize(1200, 600));
     this->moveToCenter();
-    this->setWindowTitle("Butterfly");
+    this->setWindowIcon(QIcon(":/icons/images/yellow_butterfly.svg"));
+
     // left info
 
     // setUserInfoCardVisible(false);
     // 设置窗口标题
 }
 void ClientMainWindow::init_user_display_info() {
-    // setUserInfoCardPixmap(QPixmap(":/Resource/Image/Cirno.jpg"));
+    setUserInfoCardPixmap(QPixmap(":icons/images/relax.png"));
     auto& current_user_info = ClientSingleton::get_cache_user_info_instance();
     this->setUserInfoCardTitle(QString("%1 (%2)")
                                    .arg(current_user_info.user_name)
@@ -52,15 +53,16 @@ void ClientMainWindow::init_page() {
         auto reply = send_http_req_with_form_data(query, url);
         connect(reply, &QNetworkReply::finished, this, [this, reply]() {
             auto json_doc = get_json_document(reply);
-            if (!json_doc) {
-                return;
+            if (json_doc) {
+                auto& json_data = json_doc.value();
+                // VALIDATE_JSON_RESP_IS_OK(json_data);
+                if (json_data[PublicResponseJsonKeys::status_key].toInt() ==
+                    static_cast<uint8_t>(StatusCode::kSuccess)) {
+                    this->closeWindow();
+                }
+                ElaMessageBar::success(ElaMessageBarType::TopLeft, "注销", "(✿◠‿◠)", 520, this);
             }
-            auto& json_data = json_doc.value();
-            // VALIDATE_JSON_RESP_IS_OK(json_data);
-            if (json_data[PublicResponseJsonKeys::status_key].toInt() ==
-                static_cast<uint8_t>(StatusCode::kSuccess)) {
-                this->closeWindow();
-            }
+            this->closeWindow();
         });
     });
     connect(close_dialog, &ElaContentDialog::middleButtonClicked, this, [this]() {
@@ -70,7 +72,9 @@ void ClientMainWindow::init_page() {
     });
     this->setIsDefaultClosed(false);
 
-    connect(this, &ClientMainWindow::closeButtonClicked, this, [=]() { close_dialog->exec(); });
+    connect(this, &ClientMainWindow::closeButtonClicked, this, [this]() { close_dialog->exec(); });
+
+
     remote_workspace_page = new RemoteWorkspacePage(this);
     addPageNode("工作空间", remote_workspace_page, ElaIconType::ChessQueen);
 

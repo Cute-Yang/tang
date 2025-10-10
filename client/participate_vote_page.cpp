@@ -209,6 +209,7 @@ void ParticipateVotePage::refresh_participate_vote_history_impl() {
         select_vote_process_status.append(selected[i]);
     }
     json_data[GetParticipateVoteReqKeys::vote_process_status_key] = select_vote_process_status;
+    qDebug() << json_data;
     QNetworkReply* reply                                          = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_participate_vote_num_url());
 
@@ -271,7 +272,6 @@ void ParticipateVotePage::get_chunk_participate_vote_data_impl(int vote_num, int
     json_data[GetParticipateVoteReqKeys::vote_process_status_key] = select_vote_process_status;
     QNetworkReply* reply                                          = send_http_req_with_json_data(
         json_data, ClientSingleton::get_http_urls_instance().get_participate_chunk_vote_data_url());
-    this->show_message("查询中(✿◠‿◠)", false);
 
     connect(reply, &QNetworkReply::finished, this, [reply, this]() {
         auto document = get_json_document(reply);

@@ -5,7 +5,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-option(JUST_FOR_TEST "jsut for test..." ON)
+option(JUST_FOR_TEST "jsut for test..." OFF)
 if(JUST_FOR_TEST)
     set(CMAKE_PREFIX_PATH "D:/dev_libs/ela_widget/debug_test/ElaWidgetTools/lib")
     include_directories("D:/work/tang")
@@ -28,6 +28,8 @@ find_package(
         Network
         WebSockets
 )
+
+
 find_package(ElaWidgetTools REQUIRED)
 # find all the files...
 file(GLOB_RECURSE RES_PATHS *.png *.jpg *.svg *.ico *.ttf *.webp *.js)
@@ -106,8 +108,15 @@ set(
     "water/test_chat_ui_v2.cpp"
     # "water/test_chat_ui_v3.cpp"
     "water/test_chat.cpp"
+    "water/vote_client.cpp"
 )
 
 foreach(source ${client_test_sources})
     add_client_test(${source})
 endforeach()
+
+
+set_target_properties(vote_client PROPERTIES
+    WIN32_EXECUTABLE TRUE
+    MACOSX_BUNDLE TRUE
+)

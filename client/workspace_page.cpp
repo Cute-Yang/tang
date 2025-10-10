@@ -26,10 +26,6 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
-
-static QByteArray data_bytes;
-static QBuffer    buffer;
-
 using namespace tang::common;
 namespace tang {
 namespace client {
@@ -207,7 +203,6 @@ void RemoteWorkspacePage::process_workspace_response(QNetworkReply* reply) {
         workspace_show_names[i] = workspace_show_names_json[i].toString();
     }
     // then set new span!
-    show_message("成功获取workspace ヾ(≧▽≦*)o...", false);
     this->set_workspace_data(cache_workspace_data.get_workspace_show_names());
 }
 
@@ -217,7 +212,6 @@ void RemoteWorkspacePage::send_get_workspace_req() {
     // no need any params!
     auto&          manager = ClientSingleton::get_network_manager_instance();
     QNetworkReply* reply   = manager.get(request);
-    show_message("正在查询服务器😴😴😴...", false);
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         this->process_workspace_response(reply);
     });
@@ -226,20 +220,18 @@ void RemoteWorkspacePage::send_get_workspace_req() {
 bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* reply) {
     auto document = get_json_document(reply);
     if (!document) {
-        show_message("网络异常😒😒😒...");
         return false;
     }
     auto&       document_value = document.value();
     QJsonObject json_data      = document_value.object();
     if (json_data[PublicResponseJsonKeys::status_key].toInt() !=
         static_cast<int>(StatusCode::kSuccess)) {
-        show_message(QString("获取失败😂😂😂 (reason:%1)")
+        show_message(QString("Failed (reason:%1)")
                          .arg(json_data[PublicResponseJsonKeys::message_key].toString()));
         return false;
     }
 
     if (!WorkspaceContentResJsonValidator::validate(json_data)) {
-        show_message("返回数据验证失败😒😒😒...");
         return false;
     }
 
@@ -272,8 +264,6 @@ bool RemoteWorkspacePage::process_workspace_content_response(QNetworkReply* repl
     cache_workspace_data.set_file_infos(folder_path, std::move(file_infos));
     auto file_infos_view = cache_workspace_data.get_file_infos(folder_path);
     this->set_workspace_content_data(file_infos_view);
-    show_message("获取workspace成功😊😊😊", false);
-    // here need to design!
     return true;
 }
 
@@ -284,7 +274,6 @@ void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
     if (refresh || file_infos.empty()) {
         this->send_get_workspace_content_req(folder_path);
     } else {
-        show_message("从缓存获取(you can refresh) 😊😊😊", false);
         ui->directory_line_edit->setText(folder_path);
         this->set_workspace_content_data(file_infos);
     }
@@ -302,7 +291,6 @@ void RemoteWorkspacePage::send_get_workspace_content_req(const QString&         
     query.addQueryItem("folder_path", folder_path);
     QByteArray     query_data = query.toString(QUrl::FullyEncoded).toUtf8();
     QNetworkReply* reply      = manager.post(request, query_data);
-    this->show_message("正在查询服务器😴😴😴...", false);
     auto cb = [this, reply, c1 = std::move(success_callback), c2 = std::move(failed_callback)] {
         if (this->process_workspace_content_response(reply)) {
             if (c1) {
@@ -372,6 +360,7 @@ void RemoteWorkspacePage::workspace_content_double_clicked_impl(const RemoteFile
     } else if (file_info.file_type == FileKind::kPdf) {
         this->display_pdf_impl(file_info.file_name, file_info.file_size);
     } else {
+        this->show_message("抱歉,暂不支持该类型的文件预览§(*￣▽￣*)§", true);
     }
 }
 
@@ -408,19 +397,22 @@ void RemoteWorkspacePage::display_pdf_from_buffer_impl(const QString& file_name)
             this->show_message("文件下载失败😫😫😫...");
             return;
         }
-        //open from the file is ok!
-        //the buffer can not be scope var
-        // because the load maybe lazy
-        // if move the func scope,the buffer and data bytes will be released
-        // so the program will be crash...
-        data_bytes = reply->readAll();
+        // open from the file is ok!
+        // the buffer can not be scope var
+        //  because the load maybe lazy
+        //  if move the func scope,the buffer and data bytes will be released
+        //  so the program will be crash...
+        if (temp_io_buffer.isOpen()) {
+            temp_io_buffer.close();
+        }
+        temp_data_bytes = reply->readAll();
         reply->deleteLater();
-        buffer.setBuffer(&data_bytes);
-        buffer.open(QIODevice::ReadOnly);
+
+        temp_io_buffer.setBuffer(&temp_data_bytes);
+        temp_io_buffer.open(QIODevice::ReadOnly);
         // this is important,must seek to start!
-        buffer.seek(0);
-        this->show_message("下载完成,正在渲染远程PDF文件😊😊😊", false);
-        this->pdf_displayer->load_pdf(&buffer);
+        temp_io_buffer.seek(0);
+        this->pdf_displayer->load_pdf(&temp_io_buffer);
         show_and_raise(this->pdf_displayer);
     });
 
@@ -582,7 +574,7 @@ void RemoteWorkspacePage::rename_file_impl(const QString& src_filename,
             path_helper.get_workspace_path());
         auto index = this->rename_file_dialog->get_file_index();
         if (file_infos.empty() || this->rename_file_dialog->get_file_index() >= file_infos.size()) {
-            this->show_message("发生了错误,文件信息获取失败😫😫😫");
+            this->show_message("发生了错误,文件信息获取失败§(*￣▽￣*)§");
             return;
         }
         file_infos[index].file_name = dst_filename;

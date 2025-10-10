@@ -3,17 +3,19 @@
 #include <filesystem>
 
 
-int main() {
-    // Set HTTP listener address and port
-    //  drogon::app().addListener("0.0.0.0", 5555);
-    std::string config_json_file = "D:/work/tang/server/config.json";
-
+int main(int argc, char* argv[]) {
+    LOG_INFO
+        << "when you use the windows,if contain the chinese charactor,you'd better set chcp 65001";
+    if (argc != 3) {
+        LOG_INFO << "Usage " << argv[0] << " 'config_file'" << " 'workspace_root'";
+        return -1;
+    }
+    std::string config_json_file = argv[1];
+    std::string workspace_root   = argv[2];
+    LOG_INFO << "the config file is " << argv[1] << "the workspace root is " << workspace_root;
     tang::server::utils::get_db_client_name() = "default";
-    std::string workspace_root                = "D:/test_workspace";
     tang::server::utils::get_workspace_root() = workspace_root;
-
     tang::server::utils::try_to_create_workspace(std::string(tang::common::public_workspace_name));
-
 
     if (!std::filesystem::exists(config_json_file)) {
         LOG_ERROR << config_json_file << " is not exist,please specify a valid config file..";
@@ -21,10 +23,6 @@ int main() {
     }
     LOG_INFO << "load config from file " << config_json_file;
     drogon::app().loadConfigFile(config_json_file);
-    // Load config file
-    // drogon::app().loadConfigFile("../config.json");
-    // drogon::app().loadConfigFile("../config.yaml");
-    // Run HTTP framework,the method will block in the internal event loop
     drogon::app().run();
     return 0;
 }
