@@ -274,7 +274,9 @@ void RemoteWorkspacePage::get_workspace_content_impl(bool refresh) {
     if (refresh || file_infos.empty()) {
         this->send_get_workspace_content_req(folder_path);
     } else {
-        ui->directory_line_edit->setText(folder_path);
+        // ui->directory_line_edit->setText(folder_path);
+        auto show_folder_path = this->path_helper.get_workspace_show_path();
+        ui->directory_line_edit->setText(show_folder_path);
         this->set_workspace_content_data(file_infos);
     }
 }

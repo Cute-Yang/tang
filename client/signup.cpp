@@ -9,8 +9,6 @@
 #include <QNetworkReply>
 #include <QUrlQuery>
 
-
-
 using namespace tang::common;
 namespace tang {
 namespace client {
@@ -55,6 +53,7 @@ void SignUp::confirm_password_eye_checked(bool hide) {
 }
 void SignUp::process_signup_response(QNetworkReply* reply) {
     auto show_widget = find_root_widget(this);
+    ui->confirm_button->setEnabled(true);
     // process the response!
     if (reply->error() != QNetworkReply::NoError) {
         ElaMessageBar::error(ElaMessageBarType::TopRight,
@@ -106,6 +105,9 @@ void SignUp::process_signup_response(QNetworkReply* reply) {
 
 void SignUp::send_signup_http_req() {
     // send the http req!
+    auto show_widget = find_root_widget(this);
+
+    ui->confirm_button->setEnabled(false);
     QNetworkRequest reqest(ClientSingleton::get_http_urls_instance().get_signup_url());
     reqest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // set the query params!
@@ -119,6 +121,11 @@ void SignUp::send_signup_http_req() {
     QByteArray     data    = query.toString(QUrl::FullyEncoded).toUtf8();
     auto&          manager = ClientSingleton::get_network_manager_instance();
     QNetworkReply* reply   = manager.post(reqest, data);
+    ElaMessageBar::success(ElaMessageBarType::TopRight,
+                           "signup",
+                           "正在注册中,请勿重复点击 (✿◠‿◠)",
+                           ClientGlobalConfig::message_show_time,
+                           show_widget);
 
     connect(reply, &QNetworkReply::finished, this, [this, reply]() {
         this->process_signup_response(reply);

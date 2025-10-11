@@ -59,8 +59,7 @@ SignIn::~SignIn() {
 
 void SignIn::initialize_connects() {
     connect(ui->password_eye_action, &QAction::toggled, this, &SignIn::password_eye_checked);
-    connect(ui->sign_in_button, &ElaToolButton::clicked, this,
-    &SignIn::on_signin_button_clicked);
+    connect(ui->sign_in_button, &ElaToolButton::clicked, this, &SignIn::on_signin_button_clicked);
 }
 
 void SignIn::password_eye_checked(bool hide) {
@@ -77,6 +76,7 @@ void SignIn::process_login_response(QNetworkReply* reply) {
                              "网络异常/返回格式错误!",
                              ClientGlobalConfig::message_show_time,
                              show_widget);
+        ui->sign_in_button->setEnabled(true);
         return;
     }
 
@@ -86,20 +86,24 @@ void SignIn::process_login_response(QNetworkReply* reply) {
     auto status = json_data[PublicResponseJsonKeys::status_key].toInt();
     if (status != static_cast<int>(StatusCode::kSuccess)) {
         // very nice!
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
+        ElaMessageBar::error(ElaMessageBarType::TopLeft,
                              "login",
-                             QString("登录失败 (reason:%1)")
+                             QString("Failed (reason:%1)")
                                  .arg(json_data[PublicResponseJsonKeys::message_key].toString()),
                              ClientGlobalConfig::message_show_time,
                              show_widget);
+        ui->sign_in_button->setEnabled(true);
+
         return;
     }
     if (!LoginResJsonValidator::validate(json_data)) {
-        ElaMessageBar::error(ElaMessageBarType::TopRight,
+        ElaMessageBar::error(ElaMessageBarType::TopLeft,
                              "login",
-                             QString("登录失败 (reason:服务器返回数据异常)"),
+                             QString("Failed (reason: the format of response is invalid!)"),
                              ClientGlobalConfig::message_show_time,
                              show_widget);
+        ui->sign_in_button->setEnabled(true);
+
         return;
     }
     // then set the data!
@@ -122,6 +126,8 @@ void SignIn::process_login_response(QNetworkReply* reply) {
 }
 
 void SignIn::send_login_http_req() {
+    // disalbe the button!
+    ui->sign_in_button->setDisabled(true);
     auto            show_widget = find_root_widget(this);
     QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_login_url());
     // QNetworkRequest request;

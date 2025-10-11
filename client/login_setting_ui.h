@@ -51,7 +51,7 @@ public:
         constexpr int text_fixed_width = 100;
         server_addr_text->setFont(font);
         server_addr_text->setFixedWidth(text_fixed_width);
-        server_addr_text->setText("服务器地址");
+        server_addr_text->setText("服务器地址:");
         server_addr_layout->addWidget(server_addr_text);
 
         constexpr int line_edit_width = 200;
@@ -62,11 +62,11 @@ public:
         server_addr_line_edit->setFixedWidth(line_edit_width);
         server_addr_layout->addWidget(server_addr_line_edit);
 
-        QRegularExpression ip_regex(
-            R"(^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)");
-        QRegularExpressionValidator* ip_validator =
-            new QRegularExpressionValidator(ip_regex, parent);
-        server_addr_line_edit->setValidator(ip_validator);
+        // QRegularExpression ip_regex(
+        //     R"(^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$)");
+        // QRegularExpressionValidator* ip_validator =
+        //     new QRegularExpressionValidator(ip_regex, parent);
+        // server_addr_line_edit->setValidator(ip_validator);
 
         QWidget*     server_http_port_container = new QWidget(parent);
         QHBoxLayout* server_http_port_layout    = new QHBoxLayout(server_http_port_container);
@@ -75,13 +75,13 @@ public:
         server_http_port_text = new ElaText(parent);
         server_http_port_text->setFont(font);
         server_http_port_text->setFixedWidth(text_fixed_width);
-        server_http_port_text->setText("http端口");
+        server_http_port_text->setText("端口:");
         server_http_port_layout->addWidget(server_http_port_text);
 
         server_http_port_line_edit = new ElaLineEdit(parent);
         server_http_port_line_edit->setFont(font);
         server_http_port_line_edit->setFixedWidth(line_edit_width);
-        server_http_port_line_edit->setPlaceholderText("6027");
+        server_http_port_line_edit->setPlaceholderText("9000");
         QIntValidator* port_validator = new QIntValidator(1, 65535, parent);
         server_http_port_line_edit->setValidator(port_validator);
 

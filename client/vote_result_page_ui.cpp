@@ -14,7 +14,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     _central_layout->addWidget(color_central_widget);
     QVBoxLayout* central_layout = new QVBoxLayout(color_central_widget);
 
-    constexpr int key_text_width         = 60;
+    constexpr int key_text_width         = 80;
     constexpr int value_text_width       = 150;
     constexpr int container_fixed_height = 36;
 
@@ -45,7 +45,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     auto font         = vote_creator_text->font();
     font.setFamily("SimSun");
     font.setBold(true);
-    font.setPointSize(9);
+    font.setPointSize(10);
     vote_creator_text->setText("发起人:");
     vote_creator_text->setFont(font);
     vote_creator_text->setMinimumWidth(key_text_width);
@@ -123,10 +123,7 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     vote_result_layout->addWidget(vote_result_text);
 
     vote_result_value = new ElaText(page);
-    auto result_font  = font;
-    result_font.setPointSize(11);
-    // vote_result_value->setText("爬山");
-    vote_result_value->setFont(result_font);
+    vote_result_value->setFont(font);
     vote_result_layout->addWidget(vote_result_value);
     vote_result_layout->addStretch();
 

@@ -62,7 +62,7 @@ public:
         font.setFamily("SimSun");
         font.setPointSize(10);
 
-        user_text->setText("用户名");
+        user_text->setText("用户名:");
         user_text->setFont(font);
         user_text->setFixedWidth(text_width);
         user_layout->addWidget(user_text);
@@ -85,7 +85,7 @@ public:
         email_layout->addStretch();
         // email!
         email_text = new ElaText(window);
-        email_text->setText("邮箱");
+        email_text->setText("邮箱:");
         email_text->setFont(font);
         email_text->setFixedWidth(text_width);
         email_layout->addWidget(email_text);
@@ -112,7 +112,7 @@ public:
         password_text = new ElaText(window);
         password_text->setFont(font);
         password_text->setFixedWidth(text_width);
-        password_text->setText("密码");
+        password_text->setText("密码:");
         password_layout->addWidget(password_text);
         password_layout->addSpacing(h_space);
 
@@ -140,7 +140,7 @@ public:
 
         confirm_password_text = new ElaText(window);
         confirm_password_text->setFont(font);
-        confirm_password_text->setText("确认密码");
+        confirm_password_text->setText("确认密码:");
         confirm_password_text->setFixedWidth(text_width);
         confirm_password_layout->addWidget(confirm_password_text);
         confirm_password_layout->addSpacing(h_space);
