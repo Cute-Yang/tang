@@ -46,6 +46,7 @@ SignIn::SignIn(QWidget* parent)
     : ElaWidget(parent)
     , ui(new SigninUi) {
     ui->setup_ui(this);
+    this->setObjectName("SignIn");
     this->setWindowTitle("login");
     this->setWindowIcon(QIcon(":/icons/images/xiaoxiong.svg"));
     this->setWindowIconText("~");
@@ -58,7 +59,8 @@ SignIn::~SignIn() {
 
 void SignIn::initialize_connects() {
     connect(ui->password_eye_action, &QAction::toggled, this, &SignIn::password_eye_checked);
-    connect(ui->sign_in_button, &ElaToolButton::clicked, this, &SignIn::on_signin_button_clicked);
+    connect(ui->sign_in_button, &ElaToolButton::clicked, this,
+    &SignIn::on_signin_button_clicked);
 }
 
 void SignIn::password_eye_checked(bool hide) {
@@ -108,7 +110,7 @@ void SignIn::process_login_response(QNetworkReply* reply) {
         static_cast<uint32_t>(json_data[LoginResponseJsonKeys::user_id_key].toInt());
     cache_user_info.vote_prioirty =
         static_cast<uint8_t>(json_data[LoginResponseJsonKeys::vote_priority_key].toInt());
-    // cache_user_info.print_data();
+    cache_user_info.print_data();
 
     ElaMessageBar::success(ElaMessageBarType::TopRight,
                            "login",
@@ -121,8 +123,9 @@ void SignIn::process_login_response(QNetworkReply* reply) {
 
 void SignIn::send_login_http_req() {
     auto            show_widget = find_root_widget(this);
-    QNetworkRequest reqest(ClientSingleton::get_http_urls_instance().get_login_url());
-    reqest.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+    QNetworkRequest request(ClientSingleton::get_http_urls_instance().get_login_url());
+    // QNetworkRequest request;
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
     // set the query params!
     QUrlQuery query;
     auto      user_name = ui->user_line_edit->text();
@@ -132,7 +135,7 @@ void SignIn::send_login_http_req() {
 
     QByteArray     data    = query.toString(QUrl::FullyEncoded).toUtf8();
     auto&          manager = ClientSingleton::get_network_manager_instance();
-    QNetworkReply* reply   = manager.post(reqest, data);
+    QNetworkReply* reply   = manager.post(request, data);
     ElaMessageBar::information(ElaMessageBarType::TopRight,
                                "login",
                                "正在连接服务器,请稍后...",

@@ -17,14 +17,6 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     auto     _central_widget_layout = new QVBoxLayout(central_widget);
     auto     color_central_widget   = new QWidget(page);
     _central_widget_layout->addWidget(color_central_widget);
-
-    color_central_widget->setObjectName("vote_page_central_widget");
-    QString central_widget_style = R"style(
-        QWidget#vote_page_central_widget{
-            background-color:#BEEDC7;
-        }
-        )style";
-    // color_central_widget->setStyleSheet(central_widget_style);
     QVBoxLayout*  central_layout         = new QVBoxLayout(color_central_widget);
     constexpr int text_width             = 160;
     constexpr int combox_key_width       = text_width - 5;
@@ -221,7 +213,7 @@ void VotePageUi::setup_ui(ElaScrollPage* page) {
     adjust_history_view_button->setText("调整视图");
     adjust_history_view_button->setFont(key_font);
     adjust_history_view_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    adjust_history_view_button->setIcon(QIcon(":icons/images/yezi.svg"));
+    adjust_history_view_button->setIcon(QIcon(":icons/images/spider.svg"));
     vote_history_text_layout->addWidget(adjust_history_view_button);
 
 

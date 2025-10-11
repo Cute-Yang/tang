@@ -5,7 +5,6 @@
 #include "signup.h"
 #include <QStackedWidget>
 
-
 namespace tang {
 namespace client {
 class Client;

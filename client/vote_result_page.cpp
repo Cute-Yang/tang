@@ -38,9 +38,15 @@ VoteResultPage::~VoteResultPage() {
 void VoteResultPage::plot_impl(std::span<VoteItemCountInfo> vote_item_infos) {
     // colors for plot
     static QStringList const colors = {
+        "#A1DC85",
+        "#ADFF2F",
+        "#40E0D0",
+        "#98FB98",
         "#84D1EF",
         "#6480D6",
-        "#A1DC85",
+        "#EEE8AA",
+        "#FAFAD2",
+        "#00CED1",
         "#FFAD25",
         "#FF7777",
         "#4CB383",

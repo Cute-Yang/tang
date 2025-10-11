@@ -220,7 +220,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
 
     adjust_content_view_button = new ElaToolButton(page);
     adjust_content_view_button->setToolTip("调整列宽");
-    adjust_content_view_button->setIcon(QIcon(":icons/images/yezi.svg"));
+    adjust_content_view_button->setIcon(QIcon(":icons/images/spider.svg"));
     adjust_content_view_button->setIconSize(other_icon_size);
     navigation_layout->addWidget(adjust_content_view_button);
 
@@ -253,8 +253,8 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     central_layout->addWidget(workspace_spliter);
 
     workspace_view = new ElaListView(page);
-    workspace_view->setMinimumWidth(100);
-    workspace_view->setMaximumWidth(160);
+    workspace_view->setMinimumWidth(150);
+    workspace_view->setMaximumWidth(200);
     workspace_view->setIconSize(
         QSize(ClientGlobalConfig::middle_icon_size, ClientGlobalConfig::middle_icon_size));
     workspace_view->setSpacing(8);
@@ -291,6 +291,7 @@ void RemoteWorkspacePageUi::setup_ui(ElaScrollPage* page) {
     workspace_content_table_view->setSelectionBehavior(QAbstractItemView::SelectRows);
     workspace_content_table_view->horizontalHeader()->setMinimumSectionSize(60);
     workspace_content_table_view->verticalHeader()->setMinimumSectionSize(48);
+    workspace_content_table_view->setMinimumWidth(600);
     stacked_workspace_content_widget->addWidget(workspace_content_table_view);
 
     stacked_workspace_content_widget->setCurrentIndex(1);

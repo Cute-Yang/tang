@@ -18,12 +18,6 @@ void VoteResultPageUi::setup_ui(ElaScrollPage* page) {
     constexpr int value_text_width       = 150;
     constexpr int container_fixed_height = 36;
 
-    // ElaText* vote_detail_text = new ElaText(page);
-    // auto font = vote_detail_text->font();
-    // vote_detail_text->setText("投票详情");
-    // vote_detail_text->setFont(font);
-    // central_layout->addWidget(vote_detail_text);
-
     // horizontal spliter for vote detail and vote plot!
     QSplitter* vote_detail_spliter = new QSplitter(page);
     vote_detail_spliter->setOrientation(Qt::Horizontal);

@@ -1,14 +1,17 @@
 #pragma once
+#include "common/status.h"
 #include "util.h"
 #include <QAbstractListModel>
 #include <QStandardItemModel>
 #include <QString>
 #include <span>
 
+
 namespace tang {
 namespace client {
 
 // define the file type
+constexpr size_t FileTypeCount = static_cast<size_t>(common::FileKind::count);
 
 using data_item_type = RemoteFileInfo;
 // show the workspace,the top level folder!
@@ -18,7 +21,8 @@ using WorkSpaceListViewModel = QStandardItemModel;
 class RemoteFileInfoListViewModel : public QAbstractListModel {
     Q_OBJECT
 private:
-    std::span<data_item_type> file_infos;
+    std::span<data_item_type>        file_infos;
+    std::array<QIcon, FileTypeCount> file_type_icons;
 
 public:
     RemoteFileInfoListViewModel(std::span<data_item_type> file_infos_, QObject* parent = nullptr);
@@ -39,6 +43,8 @@ public:
 class RemoteFileInfoViewModel : public QAbstractTableModel {
     Q_OBJECT
 private:
+    std::array<QIcon, FileTypeCount> file_type_icons;
+
     std::span<data_item_type> file_infos;
     QStringList               header;
 

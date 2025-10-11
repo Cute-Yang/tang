@@ -7,9 +7,7 @@
 #include <QJsonObject>
 #include <QTimer>
 
-
 using namespace tang::common;
-
 namespace tang {
 namespace client {
 Client::Client()

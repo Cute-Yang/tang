@@ -5,12 +5,11 @@
 
 namespace tang {
 namespace client {
-static QIcon vote_item_icon(":icons/images/leaf.svg");
+//this will cause winqtdeploy's exe can not show the icon ...
 VoteItemCountViewModel::VoteItemCountViewModel(const QStringList& header_names_, QObject* parent)
     : QAbstractTableModel(parent)
     , header_names(header_names_)
     , total_count(0) {}
-
 
 // RAII
 VoteItemCountViewModel::~VoteItemCountViewModel() {}
@@ -80,7 +79,7 @@ QVariant VoteItemCountViewModel::data(const QModelIndex& index, int role) const 
             }
         }
     } else if (role == Qt::DecorationRole && col == 0) {
-        return vote_item_icon;
+        return QIcon(":icons/images/leaf.svg");
     } else if (role == Qt::TextAlignmentRole && col == 1) {
         return Qt::AlignCenter;
     }
@@ -158,11 +157,9 @@ QVariant VoteResultHistoryViewModel::data(const QModelIndex& index, int role) co
         } else if (col == 3) {
             icon_file = ":icons/images/guihua.svg";
         } else if (col == 4) {
-
             icon_file = ":icons/images/blue_vote.svg";
-
         } else if (col == 5) {
-            icon_file = ":icons/images/yezi.svg";
+            icon_file = ":icons/images/sunflower.svg";
         }
         if (!icon_file.isEmpty()) {
             return QIcon(icon_file);

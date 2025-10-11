@@ -117,10 +117,6 @@ QVariant VoteHistoryViewModel::headerData(int section, Qt::Orientation orientati
                                           int role) const {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         return col_names[section];
-        // } else if (role == Qt::DecorationRole) {
-        //     static QIcon icon(":icons/images/yezi.svg");
-        //     return icon;
-        // }
     }
     return QAbstractTableModel::headerData(section, orientation, role);
 }

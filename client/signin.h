@@ -5,8 +5,7 @@
 namespace tang {
 namespace client {
 class SignIn : public ElaWidget {
-    Q_OBJECT;
-
+    Q_OBJECT
 public:
     SignIn(QWidget* parent = nullptr);
     SigninUi* ui;

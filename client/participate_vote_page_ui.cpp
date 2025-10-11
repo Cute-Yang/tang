@@ -173,7 +173,7 @@ void ParticipateVotePageUi::setup_ui(ElaScrollPage* page) {
     adjust_content_view_button->setText("调整视图");
     adjust_content_view_button->setFont(font);
     adjust_content_view_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    adjust_content_view_button->setIcon(QIcon(":icons/images/yezi.svg"));
+    adjust_content_view_button->setIcon(QIcon(":icons/images/spider.svg"));
     vote_item_layout->addWidget(adjust_content_view_button);
 
     central_layout->addSpacing(6);

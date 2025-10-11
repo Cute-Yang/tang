@@ -17,7 +17,6 @@ QString get_file_size_str(size_t file_size) {
     }
 }
 
-constexpr size_t                          FileTypeCount     = static_cast<size_t>(FileKind::count);
 static std::array<QString, FileTypeCount> file_type_strings = {
     "文件夹", "PDF", "Word", "Excel", "PPT", "txt", "image", "python", "c++", "其他文件"};
 
@@ -42,14 +41,14 @@ std::array<QIcon, FileTypeCount> initialize_file_icons() {
     return icons;
 }
 
-static std::array<QIcon, FileTypeCount> file_type_icons = initialize_file_icons();
 
 RemoteFileInfoViewModel::RemoteFileInfoViewModel(QStringList               headers_,
                                                  std::span<data_item_type> file_infos_,
                                                  QObject*                  parent)
-    : header(headers_)
+    : QAbstractTableModel(parent)
+    , header(headers_)
     , file_infos(std::move(file_infos_))
-    , QAbstractTableModel(parent) {}
+    , file_type_icons(initialize_file_icons()) {}
 
 void RemoteFileInfoViewModel::set_file_infos(const std::span<data_item_type>& new_file_infos) {
     file_infos = new_file_infos;
@@ -113,7 +112,8 @@ QVariant RemoteFileInfoViewModel::headerData(int section, Qt::Orientation orient
 RemoteFileInfoListViewModel::RemoteFileInfoListViewModel(std::span<data_item_type> file_infos_,
                                                          QObject*                  parent)
     : QAbstractListModel(parent)
-    , file_infos(std::move(file_infos_)) {}
+    , file_infos(std::move(file_infos_))
+    , file_type_icons(initialize_file_icons()) {}
 
 RemoteFileInfoListViewModel::~RemoteFileInfoListViewModel() {}
 
@@ -149,10 +149,6 @@ QVariant RemoteFileInfoListViewModel::data(const QModelIndex& index, int role) c
 }
 
 
-
-static QIcon workspace_icon = QIcon(":/icons/images/workspace.svg");
-
-
 RemoteWorkspaceInfoModel::RemoteWorkspaceInfoModel(std::span<QString> workspace_names_,
                                                    QObject*           parent)
     : workspace_names(workspace_names_)
@@ -170,6 +166,7 @@ QVariant RemoteWorkspaceInfoModel::data(const QModelIndex& index, int role) cons
     if (role == Qt::DisplayRole) {
         return workspace_names[row];
     } else if (role == Qt::DecorationRole) {
+        QIcon workspace_icon = QIcon(":/icons/images/workspace.svg");
         return workspace_icon;
     }
     return QVariant{};

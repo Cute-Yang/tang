@@ -167,7 +167,7 @@ QVariant ParticipateViewModel::data(const QModelIndex& index, int role) const {
                 icon_file = ":icons/images/wuwu.svg";
             }
         } else if (col == check_col) {
-            icon_file = ":icons/images/yezi.svg";
+            icon_file = ":icons/images/sunflower.svg";
         } else if (col == create_time_col) {
             icon_file = ":icons/images/time.svg";
 

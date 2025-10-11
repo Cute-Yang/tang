@@ -17,7 +17,7 @@ DisplayPdf::DisplayPdf(QWidget* parent)
     , document(new QPdfDocument(parent))
     , previous_search_text() {
     ui->setup_ui(this);
-    this->setWindowTitle("sea");
+    this->setWindowTitle("seattle");
     // this->moveToCenter();
     this->resize(QSize(900, 400));
     this->init_connects();

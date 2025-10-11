@@ -1,6 +1,5 @@
 #include "ElaText.h"
 #include "ElaLineEdit.h"
-// #include "ElaPromotionCard.h"
 #include "QLabel"
 #include <QHBoxLayout>
 #include <QToolButton>
@@ -25,18 +24,13 @@ void setup_ui(QWidget* window){
     QVBoxLayout* window_layout = new QVBoxLayout(window);
     window_layout->setContentsMargins({0,0,0,0});
     QWidget* login_container = new QWidget(window);
-
-    //the object name should equal to the style sheet's name
     login_container->setObjectName("login_container");
-    //            background-color:#F5F5DC;
-    // set the background!
     QString login_style = R"style(
         #login_container{
             background-color:#F5F5DC;
         }
     )style";
     login_container->setStyleSheet(login_style);
-    // login_container->setStyleSheet("background-color:#009ACD;");
     QVBoxLayout* login_container_layout = new QVBoxLayout(login_container);
     login_container_layout->addStretch();
 
@@ -46,7 +40,7 @@ void setup_ui(QWidget* window){
     user_text = new ElaText(window);
     user_text->setFixedWidth(text_width);
     user_text->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-    user_text->setText("用户名");
+    user_text->setText("用户名:");
     auto font = user_text->font();
     font.setBold(false);
     font.setFamily("SimSun");
@@ -72,7 +66,7 @@ void setup_ui(QWidget* window){
     password_text = new ElaText(window);
     password_text->setFixedWidth(text_width);
     password_text->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
-    password_text->setText("密码");
+    password_text->setText("密码:");
     password_text->setFont(font);
     password_layout->addWidget(password_text);
     password_layout->addSpacing(8);
@@ -87,14 +81,6 @@ void setup_ui(QWidget* window){
     password_line_edit->addAction(password_eye_action,ElaLineEdit::TrailingPosition);
     password_layout->addWidget(password_line_edit);
     password_layout->addSpacing(2);
-    // hide_password_button = new ElaToolButton(window);
-    // //default -> hide
-    // hide_password_button->setCheckable(true);
-    // hide_password_button->setChecked(true);
-
-    
-    // hide_password_button->setIcon(QIcon(":/icons/images/hide_password.svg"));
-    // hide_password_button->setIconSize(QSize(16,16));
     password_layout->addStretch();
 
     // password_layout->addWidget(hide_password_button);
@@ -120,7 +106,7 @@ void setup_ui(QWidget* window){
             font-weight: normal;
             border: 2px solid #b9b9b9; 
             border-radius: 3px;
-            qproperty-icon: url(":icons/images/signin.svg") center;
+            qproperty-icon: url(":/icons/images/signin.svg") center;
             qproperty-iconSize: 16px 16px;
             padding-left: 15px;
         }
@@ -161,8 +147,6 @@ void setup_ui(QWidget* window){
     login_container_layout->addWidget(sign_container);
     login_container_layout->addStretch();
 
-    
-    
     window_layout->addWidget(login_container);
     
 }
